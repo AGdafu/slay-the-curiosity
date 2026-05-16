@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>怪物升级方案预览</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #0d0d1a; color: #e8e8f0; font-family: 'Segoe UI', sans-serif; padding: 24px; }
+  h1 { font-size: 1.8rem; color: #ffd700; text-align: center; margin-bottom: 8px; }
+  .subtitle { text-align: center; color: rgba(255,255,255,0.5); margin-bottom: 32px; font-size: 0.95rem; }
+  .section { margin-bottom: 40px; }
+  .section-title { font-size: 1.2rem; color: #7dccff; border-left: 4px solid #7dccff; padding-left: 12px; margin-bottom: 16px; font-weight: 700; }
+  .design-note { background: rgba(125,204,255,0.08); border: 1px solid rgba(125,204,255,0.25); border-radius: 10px; padding: 14px 18px; margin-bottom: 20px; font-size: 0.92rem; line-height: 1.7; color: rgba(255,255,255,0.8); }
+  .monster-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)); gap: 20px; }
+  .monster-card { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.12); border-radius: 14px; padding: 18px; }
+  .monster-header { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+  .monster-emoji { font-size: 2rem; }
+  .monster-name { font-size: 1.1rem; font-weight: 800; }
+  .monster-tier { font-size: 0.75rem; padding: 2px 8px; border-radius: 6px; font-weight: 700; }
+  .tier-normal { background: rgba(100,200,100,0.2); color: #7fff7f; border: 1px solid rgba(100,200,100,0.4); }
+  .tier-elite { background: rgba(200,150,50,0.2); color: #ffc060; border: 1px solid rgba(200,150,50,0.4); }
+  .tier-boss { background: rgba(200,50,50,0.2); color: #ff7070; border: 1px solid rgba(200,50,50,0.4); }
+  .action-list { display: flex; flex-direction: column; gap: 8px; }
+  .action-row { display: flex; gap: 8px; align-items: flex-start; }
+  .action-tag { min-width: 60px; text-align: center; padding: 3px 8px; border-radius: 6px; font-size: 0.78rem; font-weight: 700; flex-shrink: 0; }
+  .tag-attack { background: rgba(220,80,80,0.25); color: #ff8080; border: 1px solid rgba(220,80,80,0.4); }
+  .tag-debuff { background: rgba(180,80,220,0.25); color: #cc80ff; border: 1px solid rgba(180,80,220,0.4); }
+  .tag-buff { background: rgba(255,200,50,0.2); color: #ffd060; border: 1px solid rgba(255,200,50,0.4); }
+  .tag-defend { background: rgba(80,150,220,0.25); color: #80b8ff; border: 1px solid rgba(80,150,220,0.4); }
+  .tag-pollute { background: rgba(100,60,20,0.4); color: #c08040; border: 1px solid rgba(160,100,40,0.5); }
+  .action-desc { font-size: 0.85rem; color: rgba(255,255,255,0.75); line-height: 1.5; }
+  .new-badge { display: inline-block; background: rgba(255,100,100,0.25); color: #ff8080; border: 1px solid rgba(255,100,100,0.5); border-radius: 5px; font-size: 0.7rem; font-weight: 700; padding: 1px 6px; margin-left: 6px; vertical-align: middle; }
+  .unchanged { opacity: 0.5; font-style: italic; }
+  .divider { border: none; border-top: 1px solid rgba(255,255,255,0.08); margin: 10px 0; }
+  .susu-note { background: rgba(0,200,255,0.08); border: 1px solid rgba(0,200,255,0.25); border-radius: 10px; padding: 12px 16px; margin-top: 16px; font-size: 0.88rem; color: rgba(0,220,255,0.9); }
+  .legend { display: flex; gap: 14px; flex-wrap: wrap; margin-bottom: 20px; }
+  .legend-item { display: flex; align-items: center; gap: 6px; font-size: 0.82rem; color: rgba(255,255,255,0.6); }
+  .confirm-bar { position: sticky; bottom: 0; background: rgba(13,13,26,0.97); border-top: 1px solid rgba(255,255,255,0.1); padding: 16px 24px; display: flex; gap: 16px; justify-content: center; }
+  .btn-confirm { background: linear-gradient(135deg,#1a4a1a,#2a6a2a); color: #7fff7f; border: 2px solid #50c050; border-radius: 12px; padding: 12px 32px; font-size: 1.05rem; font-weight: 800; cursor: pointer; }
+  .btn-confirm:hover { background: linear-gradient(135deg,#2a6a2a,#3a8a3a); }
+  .btn-cancel { background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.5); border: 1px solid rgba(255,255,255,0.15); border-radius: 12px; padding: 12px 24px; font-size: 1rem; cursor: pointer; }
+  .curse-card { background: rgba(60,20,20,0.5); border: 1px solid rgba(180,60,60,0.4); border-radius: 8px; padding: 8px 12px; font-size: 0.82rem; color: #ff9090; margin-top: 6px; }
+  .curse-card b { color: #ff6060; }
+  .hp-bar-row { display: flex; gap: 8px; align-items: center; margin-bottom: 10px; }
+  .hp-label { font-size: 0.8rem; color: rgba(255,255,255,0.5); min-width: 60px; }
+  .hp-val { font-size: 0.9rem; font-weight: 700; color: #e8e8f0; }
+</style>
+</head>
+<body>
+<h1>🐉 怪物升级方案预览</h1>
+<p class="subtitle">确认后将写入游戏代码 · 新增行为以 <span style="color:#ff8080">红色NEW</span> 标注</p>
+
+<div class="section">
+  <div class="section-title">设计原则</div>
+  <div class="design-note">
+    <b>目标：</b>让怪物行为更难预测，同时为 Susu 眼罩、文豪羽毛等遗物创造更多发挥空间。<br><br>
+    <b>三类新行为：</b><br>
+    ① <b style="color:#cc80ff">状态施加</b>：虚弱（-25%伤害）、易伤（+50%受伤）、中毒（每回合-X HP）<br>
+    ② <b style="color:#c08040">牌堆污染</b>：向玩家弃牌堆/手牌插入「诅咒牌」（无法打出的废牌），增加手牌压力<br>
+    ③ <b style="color:#ffd060">自我强化</b>：部分怪物获得新的buff行为，使其成长更具威胁<br><br>
+    <b>平衡考量：</b>诅咒牌只插入弃牌堆（不直接进手牌），给玩家一回合缓冲。Susu眼罩可免疫首次debuff，眼罩价值因此大幅提升。
+  </div>
+</div>
+
+<div class="section">
+  <div class="section-title">第一层普通怪物</div>
+  <div class="monster-grid">
+
+    <!-- 史莱姆 -->
+    <div class="monster-card">
+      <div class="monster-header">
+        <div class="monster-emoji">🟢</div>
+        <div>
+          <div class="monster-name">史莱姆 <span class="monster-tier tier-normal">普通</span></div>
+          <div class="hp-bar-row"><span class="hp-label">HP</span><span class="hp-val">14</span></div>
+        </div>
+      </div>
+      <div class="action-list">
+        <div class="action-row"><span class="action-tag tag-attack">攻击</span><span class="action-desc">扑击：造成 5 点伤害</span></div>
+        <div class="action-row"><span class="action-tag tag-debuff">虚弱</span><span class="action-desc">黏液：施加 2 层【虚弱】（已有）</span></div>
+        <div class="action-row"><span class="action-tag tag-pollute" style="font-size:0.72rem">污染<span class="new-badge">NEW</span></span><span class="action-desc"><b>黏液爆裂</b>：向玩家弃牌堆插入 1 张「黏液」诅咒牌。<br>触发条件：HP 低于 50% 时，替换一次扑击为此行为。</span></div>
+      </div>
+      <div class="curse-card">📄 <b>黏液</b>（诅咒）· 费用99 · 无法打出 · 描述：「黏糊糊的，没什么用。」</div>
+    </div>
+
+    <!-- 虱子 -->
+    <div class="monster-card">
+      <div class="monster-header">
+        <div class="monster-emoji">🐛</div>
+        <div>
+          <div class="monster-name">虱子 <span class="monster-tier tier-normal">普通</span></div>
+          <div class="hp-bar-row"><span class="hp-label">HP</span><span class="hp-val">12</span></div>
+        </div>
+      </div>
+      <div class="action-list">
+        <div class="action-row"><span class="action-tag tag-attack">攻击</span><span class="action-desc">撕咬：造成 5 点伤害</span></div>
+        <div class="action-row"><span class="action-tag tag-defend">格挡</span><span class="action-desc">蜷缩：获得 6 点格挡（已有）</span></div>
+        <div class="action-row"><span class="action-tag tag-debuff" style="font-size:0.72rem">中毒<span class="new-badge">NEW</span></span><span class="action-desc"><b>寄生</b>：施加 3 层【中毒】（每回合结束 -3 HP，层数-1）。<br>行动序列改为：撕咬→撕咬→寄生→蜷缩</span></div>
+      </div>
+    </div>
+
+    <!-- 邪教徒 -->
+    <div class="monster-card">
+      <div class="monster-header">
+        <div class="monster-emoji">🧟</div>
+        <div>
+          <div class="monster-name">邪教徒 <span class="monster-tier tier-normal">普通</span></div>
+          <div class="hp-bar-row"><span class="hp-label">HP</span><span class="hp-val">20</span></div>
+        </div>
+      </div>
+      <div class="action-list">
+        <div class="action-row"><span class="action-tag tag-buff">仪式</span><span class="action-desc">叠加 3 层力量（已有）</span></div>
+        <div class="action-row"><span class="action-tag tag-attack">攻击</span><span class="action-desc">刺击：6+力量 伤害（已有）</span></div>
+        <div class="action-row"><span class="action-tag tag-debuff" style="font-size:0.72rem">易伤<span class="new-badge">NEW</span></span><span class="action-desc"><b>献祭诅咒</b>：施加 2 层【易伤】（受到伤害+50%）。<br>行动序列改为：仪式→刺击→献祭诅咒→刺击</span></div>
+      </div>
+    </div>
+
+    <!-- 颚虫 -->
+    <div class="monster-card">
+      <div class="monster-header">
+        <div class="monster-emoji">🦷</div>
+        <div>
+          <div class="monster-name">颚虫 <span class="monster-tier tier-normal">普通</span></div>
+          <div class="hp-bar-row"><span class="hp-label">HP</span><span class="hp-val">44</span></div>
+        </div>
+      </div>
+      <div class="action-list">
+        <div class="action-row"><span class="action-tag tag-attack">啃咬</span><span class="action-desc">造成 11 点伤害（已有）</span></div>
+        <div class="action-row"><span class="action-tag tag-attack">撕扯</span><span class="action-desc">7伤+6格挡（已有）</span></div>
+        <div class="action-row"><span class="action-tag tag-buff">咆哮</span><span class="action-desc">+3力量+9格挡（已有）</span></div>
+        <div class="action-row"><span class="action-tag tag-pollute" style="font-size:0.72rem">污染<span class="new-badge">NEW</span></span><span class="action-desc"><b>吞噬</b>：造成 6 点伤害，并向玩家弃牌堆插入 1 张「伤口」诅咒牌。<br>行动序列改为：啃咬→撕扯→撕扯→咆哮→吞噬</span></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="section">
+  <div class="section-title">第二层普通怪物</div>
+  <div class="monster-grid">
+
+    <!-- 狂热邪教徒 -->
+    <div class="monster-card">
+      <div class="monster-header">
+        <div class="monster-emoji">🧟</div>
+        <div>
+          <div class="monster-name">狂热邪教徒 <span class="monster-tier tier-normal">普通</span></div>
+          <div class="hp-bar-row"><span class="hp-label">HP</span><span class="hp-val">30</span></div>
+        </div>
+      </div>
+      <div class="action-list">
+        <div class="action-row"><span class="action-tag tag-buff">仪式</span><span class="action-desc">叠加 3 层力量（已有）</span></div>
+        <div class="action-row"><span class="action-tag tag-attack">刺击</span><span class="action-desc">8+力量 伤害（已有）</span></div>
+        <div class="action-row"><span class="action-tag tag-debuff" style="font-size:0.72rem">易伤<span class="new-badge">NEW</span></span><span class="action-desc"><b>血祭</b>：施加 2 层【易伤】+1 层【虚弱】。<br>行动序列改为：仪式→刺击→血祭→刺击</span></div>
+        <div class="action-row"><span class="action-tag tag-pollute" style="font-size:0.72rem">污染<span class="new-badge">NEW</span></span><span class="action-desc"><b>诅咒仪式</b>（HP≤50%触发）：向玩家弃牌堆插入 2 张「诅咒」牌，并叠加 2 层力量。</span></div>
+      </div>
+    </div>
+
+    <!-- 毒虱 -->
+    <div class="monster-card">
+      <div class="monster-header">
+        <div class="monster-emoji">🐛</div>
+        <div>
+          <div class="monster-name">毒虱 <span class="monster-tier tier-normal">普通</span></div>
+          <div class="hp-bar-row"><span class="hp-label">HP</span><span class="hp-val">18</span></div>
+        </div>
+      </div>
+      <div class="action-list">
+        <div class="action-row"><span class="action-tag tag-attack">撕咬</span><span class="action-desc">造成 7 点伤害（已有）</span></div>
+        <div class="action-row"><span class="action-tag tag-defend">蜷缩</span><span class="action-desc">获得 8 点格挡（已有）</span></div>
+        <div class="action-row"><span class="action-tag tag-debuff" style="font-size:0.72rem">中毒<span class="new-badge">NEW</span></span><span class="action-desc"><b>毒液注射</b>：造成 4 点伤害并施加 5 层【中毒】。<br>行动序列改为：撕咬→毒液注射→撕咬→蜷缩→撕咬</span></div>
+      </div>
+    </div>
+
+    <!-- 巨颚虫 -->
+    <div class="monster-card">
+      <div class="monster-header">
+        <div class="monster-emoji">🦷</div>
+        <div>
+          <div class="monster-name">巨颚虫 <span class="monster-tier tier-normal">普通</span></div>
+          <div class="hp-bar-row"><span class="hp-label">HP</span><span class="hp-val">58</span></div>
+        </div>
+      </div>
+      <div class="action-list">
+        <div class="action-row"><span class="action-tag tag-attack">啃咬</span><span class="action-desc">造成 14 点伤害（已有）</span></div>
+        <div class="action-row"><span class="action-tag tag-attack">撕扯</span><span class="action-desc">9伤+8格挡（已有）</span></div>
+        <div class="action-row"><span class="action-tag tag-buff">咆哮</span><span class="action-desc">+4力量+12格挡（已有）</span></div>
+        <div class="action-row"><span class="action-tag tag-pollute" style="font-size:0.72rem">污染<span class="new-badge">NEW</span></span><span class="action-desc"><b>深喉吞噬</b>：造成 8 点伤害，向玩家弃牌堆插入 2 张「伤口」诅咒牌，并施加 2 层【易伤】。<br>行动序列改为：啃咬→撕扯→撕扯→咆哮→深喉吞噬</span></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="section">
+  <div class="section-title">Boss 升级</div>
+  <div class="monster-grid">
+
+    <!-- 班布 -->
+    <div class="monster-card" style="border-color:rgba(255,150,50,0.3)">
+      <div class="monster-header">
+        <div class="monster-emoji">🐆</div>
+        <div>
+          <div class="monster-name">班布 <span class="monster-tier tier-boss">Boss</span></div>
+          <div class="hp-bar-row"><span class="hp-label">HP</span><span class="hp-val">180</span></div>
+        </div>
+      </div>
+      <div class="action-list">
+        <div class="action-row"><span class="action-tag tag-buff">蓄势</span><span class="action-desc">+2力量（已有）</span></div>
+        <div class="action-row"><span class="action-tag tag-attack">斩击</span><span class="action-desc">12+力量伤+8格挡（已有）</span></div>
+        <div class="action-row"><span class="action-tag tag-defend">咆哮</span><span class="action-desc">+18格挡（已有）</span></div>
+        <div class="action-row"><span class="action-tag tag-attack">猛扑</span><span class="action-desc">4×(8+力量)伤（已有）</span></div>
+        <div class="action-row"><span class="action-tag tag-debuff" style="font-size:0.72rem">虚弱<span class="new-badge">NEW</span></span><span class="action-desc"><b>恐吓咆哮</b>：施加 3 层【虚弱】+2 层【易伤】。<br>行动序列改为：蓄势→斩击→斩击→恐吓咆哮→猛扑</span></div>
+      </div>
+    </div>
+
+    <!-- 兔子（第一层Boss） -->
+    <div class="monster-card" style="border-color:rgba(255,150,50,0.3)">
+      <div class="monster-header">
+        <div class="monster-emoji">🐰</div>
+        <div>
+          <div class="monster-name">兔子 <span class="monster-tier tier-boss">Boss</span></div>
+          <div class="hp-bar-row"><span class="hp-label">HP</span><span class="hp-val">140</span></div>
+        </div>
+      </div>
+      <div class="action-list">
+        <div class="action-row"><span class="action-tag tag-defend">防御</span><span class="action-desc">+12格挡（已有）</span></div>
+        <div class="action-row"><span class="action-tag tag-attack">猛击</span><span class="action-desc">14+力量伤（已有）</span></div>
+        <div class="action-row"><span class="action-tag tag-buff">蓄力</span><span class="action-desc">+1力量（已有）</span></div>
+        <div class="action-row"><span class="action-tag tag-attack">连击</span><span class="action-desc">3×(6+力量)伤（已有）</span></div>
+        <div class="action-row"><span class="action-tag tag-pollute" style="font-size:0.72rem">污染<span class="new-badge">NEW</span></span><span class="action-desc"><b>踩踏</b>：造成 10 点伤害，向玩家弃牌堆插入 1 张「伤口」诅咒牌，并施加 2 层【虚弱】。<br>行动序列改为：防御→猛击→蓄力→防御→踩踏→连击</span></div>
+      </div>
+    </div>
+
+    <!-- 波哥 -->
+    <div class="monster-card" style="border-color:rgba(255,100,100,0.35)">
+      <div class="monster-header">
+        <div class="monster-emoji">👑</div>
+        <div>
+          <div class="monster-name">波哥 <span class="monster-tier tier-boss">终极Boss</span></div>
+          <div class="hp-bar-row"><span class="hp-label">HP</span><span class="hp-val">220</span></div>
+        </div>
+      </div>
+      <div class="action-list">
+        <div class="action-row"><span class="action-tag tag-attack">斩击</span><span class="action-desc">12+力量伤（已有）</span></div>
+        <div class="action-row"><span class="action-tag tag-attack">重击</span><span class="action-desc">20+力量伤（已有）</span></div>
+        <div class="action-row"><span class="action-tag tag-buff">鼓舞</span><span class="action-desc">+2力量+15格挡（已有）</span></div>
+        <div class="action-row"><span class="action-tag tag-attack">终极</span><span class="action-desc">3×(10+力量)伤（已有）</span></div>
+        <div class="action-row"><span class="action-tag tag-debuff" style="font-size:0.72rem">全状态<span class="new-badge">NEW</span></span><span class="action-desc"><b>王者威压</b>：施加 3 层【虚弱】+2 层【易伤】+3 层【中毒】，并向玩家弃牌堆插入 2 张「诅咒」牌。<br>行动序列改为：斩击→斩击→重击→鼓舞→王者威压→终极</span></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="section">
+  <div class="section-title">新增诅咒牌定义</div>
+  <div class="monster-grid">
+    <div class="monster-card">
+      <div class="monster-header"><div class="monster-emoji">🩸</div><div><div class="monster-name">伤口（已有）</div></div></div>
+      <div class="action-desc" style="color:rgba(255,255,255,0.6)">费用99 · 诅咒 · 无法打出 · 「诅咒。无法打出。」</div>
+    </div>
+    <div class="monster-card">
+      <div class="monster-header"><div class="monster-emoji">💚</div><div><div class="monster-name">黏液 <span class="new-badge">NEW</span></div></div></div>
+      <div class="action-desc" style="color:rgba(255,255,255,0.6)">费用99 · 诅咒 · 无法打出 · 「黏糊糊的，没什么用。」<br>由史莱姆HP≤50%时插入弃牌堆。</div>
+    </div>
+    <div class="monster-card">
+      <div class="monster-header"><div class="monster-emoji">💀</div><div><div class="monster-name">诅咒 <span class="new-badge">NEW</span></div></div></div>
+      <div class="action-desc" style="color:rgba(255,255,255,0.6)">费用99 · 诅咒 · 无法打出 · 「黑暗的力量缠绕着你。」<br>由狂热邪教徒、波哥插入弃牌堆。</div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <div class="section-title">中毒机制说明（新增）</div>
+  <div class="design-note">
+    <b>中毒</b>：每回合结束时，玩家损失等于中毒层数的 HP，然后中毒层数 -1。中毒不受格挡保护（直接扣 HP）。<br>
+    <b>实现方式</b>：在 <code>Combat.endTurn</code> 的 <code>_tickDebuffs</code> 之前，读取 <code>cs.player.debuffs.poison</code> 并扣除 HP。<br>
+    <b>Susu眼罩交互</b>：首次中毒免疫，之后正常叠加。<br>
+    <b>平衡数值</b>：虱子3层（小怪早期压力）、毒虱5层（中期威胁）、波哥3层（终局压力）。
+  </div>
+  <div class="susu-note">
+    🥽 <b>Susu眼罩价值提升分析：</b>原来只有史莱姆的虚弱能触发，升级后每场战斗都有至少1次debuff需要抵御。眼罩从「偶发有用」变为「每战必触发」，遗物价值显著提升。
+  </div>
+</div>
+
+<div class="confirm-bar">
+  <button class="btn-confirm" onclick="alert('请告知开发者确认上线！')">✅ 确认方案，写入游戏</button>
+  <button class="btn-cancel" onclick="history.back()">← 返回游戏</button>
+</div>
+
+</body>
+</html>

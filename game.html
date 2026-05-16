@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Slay the Curiosity</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=ZCOOL+KuaiLe&display=swap" rel="stylesheet">
+
+  <!-- 预加载所有游戏图片，避免进入界面时才开始加载 -->
+  <link rel="preload" as="image" href="/manus-storage/img_03_574k_632f1438.png">
+  <link rel="preload" as="image" href="/manus-storage/hanren_merchant_8f300175.png">
+  <link rel="preload" as="image" href="/manus-storage/img_00_572k_79c2d105.png">
+  <link rel="preload" as="image" href="/manus-storage/img_01_3443k_f8fb25b0.png">
+  <link rel="preload" as="image" href="/manus-storage/xiaojiu_guitar_e444f0fa.png">
+  <link rel="preload" as="image" href="/manus-storage/football_icon_0390dd99.png">
+  <link rel="preload" as="image" href="/manus-storage/laozao_icon_7788818e.png">
+  <link rel="preload" as="image" href="/manus-storage/bread_icon_15f90b35.png">
+  <link rel="preload" as="image" href="/manus-storage/img_02_6k_7120b6b8.png">
+
+  <svg style="position:absolute;width:0;height:0">
+    <defs>
+      <filter id="doodle" x="-5%" y="-5%" width="110%" height="110%">
+        <feTurbulence type="fractalNoise" baseFrequency="0.065" numOctaves="3" seed="2" result="noise"/>
+        <feDisplacementMap in="SourceGraphic" in2="noise" scale="2.5" xChannelSelector="R" yChannelSelector="G"/>
+      </filter>
+    </defs>
+  </svg>
+  <link rel="stylesheet" href="/game.css?v=35">
+</head>
+<body>
+  <div id="app"></div>
+  <div id="fx-layer"></div>
+  <script src="/game.js?v=35"></script>
+</body>
+</html>

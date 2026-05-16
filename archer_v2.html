@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>射手 v2 设计方案</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', sans-serif; background: #141418; color: #e0e0e0; padding: 24px; }
+  .wrap { max-width: 1100px; margin: 0 auto; }
+  h1 { text-align: center; color: #f5c518; font-size: 2rem; margin-bottom: 6px; }
+  .subtitle { text-align: center; color: #aaa; margin-bottom: 32px; font-size: 0.95rem; }
+  h2 { color: #f5c518; border-bottom: 1px solid #333; padding-bottom: 8px; margin: 32px 0 16px; font-size: 1.2rem; }
+  h3 { color: #ccc; margin: 20px 0 10px; font-size: 1rem; }
+
+  /* 机制说明框 */
+  .mech-box { background: #1e1e28; border: 1px solid #444; border-radius: 10px; padding: 20px 24px; margin-bottom: 16px; }
+  .mech-title { font-size: 1.1rem; font-weight: bold; color: #4fc3f7; margin-bottom: 8px; }
+  .mech-desc { color: #ccc; line-height: 1.7; }
+  .mech-desc strong { color: #f5c518; }
+
+  /* 属性表 */
+  .stat-row { display: flex; gap: 32px; flex-wrap: wrap; margin-bottom: 8px; }
+  .stat { background: #1e1e28; border-radius: 8px; padding: 12px 20px; flex: 1; min-width: 160px; text-align: center; }
+  .stat-label { font-size: 0.8rem; color: #888; margin-bottom: 4px; }
+  .stat-value { font-size: 1.4rem; font-weight: bold; color: #f5c518; }
+
+  /* 卡牌网格 */
+  .card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; margin-top: 16px; }
+
+  /* 卡牌样式 */
+  .card { border-radius: 10px; padding: 14px 16px; position: relative; background: #1e1e28; border: 1px solid #333; }
+  .card.common  { border-top: 3px solid #888; }
+  .card.uncommon{ border-top: 3px solid #4caf50; }
+  .card.rare    { border-top: 3px solid #2196f3; }
+  .card.epic    { border-top: 3px solid #9c27b0; }
+
+  .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+  .card-name { font-weight: bold; font-size: 1rem; color: #fff; }
+  .card-cost { width: 26px; height: 26px; border-radius: 50%; background: #333; color: #f5c518; font-weight: bold; display: flex; align-items: center; justify-content: center; font-size: 0.9rem; border: 1px solid #555; flex-shrink: 0; }
+  .card-tags { display: flex; gap: 6px; margin-bottom: 8px; flex-wrap: wrap; }
+  .tag { font-size: 0.72rem; padding: 2px 7px; border-radius: 4px; font-weight: bold; }
+  .tag-attack  { background: #5c1a1a; color: #ff8080; }
+  .tag-skill   { background: #1a3a5c; color: #80c8ff; }
+  .tag-power   { background: #3a2a5c; color: #c080ff; }
+  .tag-common  { background: #333; color: #aaa; }
+  .tag-uncommon{ background: #1a3a1a; color: #4caf50; }
+  .tag-rare    { background: #1a2a3a; color: #2196f3; }
+  .tag-epic    { background: #2a1a3a; color: #9c27b0; }
+  .card-desc { font-size: 0.88rem; color: #ccc; line-height: 1.55; margin-bottom: 8px; }
+  .card-desc .key { color: #f5c518; font-weight: bold; }
+  .card-desc .note { font-size: 0.78rem; color: #888; margin-top: 4px; }
+  .card-price { font-size: 0.78rem; color: #888; text-align: right; }
+
+  /* 平衡说明表 */
+  table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+  th { background: #222; color: #f5c518; padding: 10px 12px; text-align: left; }
+  td { padding: 9px 12px; border-bottom: 1px solid #2a2a2a; color: #ccc; }
+  tr:hover td { background: #1e1e28; }
+  .ok { color: #4caf50; }
+  .warn { color: #ff9800; }
+
+  /* 起始卡组 */
+  .deck-list { display: flex; gap: 10px; flex-wrap: wrap; }
+  .deck-card { background: #222; border: 1px solid #444; border-radius: 6px; padding: 6px 12px; font-size: 0.85rem; color: #ddd; }
+  .deck-card span { color: #888; font-size: 0.75rem; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>🏹 射手 (The Archer) · v2 设计方案</h1>
+  <p class="subtitle">全新机制 · 简洁直观 · HP偏低但基础牌强力</p>
+
+  <!-- 核心机制 -->
+  <h2>一、核心机制：【蓄力】</h2>
+  <div class="mech-box">
+    <div class="mech-title">🎯 蓄力 (Charge)</div>
+    <div class="mech-desc">
+      射手的专属资源，每场战斗从 <strong>0</strong> 开始积累，上限 <strong>5</strong>。<br><br>
+      <strong>积累方式：</strong>打出技能牌时，获得 1 点蓄力（能力牌不触发）。<br>
+      <strong>消耗方式：</strong>部分攻击牌打出时，消耗全部蓄力，每消耗 1 点额外造成 <strong>2 点伤害</strong>。<br>
+      <strong>保留机制：</strong>蓄力在回合结束时<strong>不会清零</strong>，可以跨回合积累。<br><br>
+      <em style="color:#888">设计意图：玩家可以连续几回合只打技能牌积累蓄力，在关键时刻打出一张重型攻击牌一次性释放，形成"蓄力→爆发"的节奏感。机制一句话就能说清楚，没有额外的引爆条件。</em>
+    </div>
+  </div>
+
+  <!-- 初始属性 -->
+  <h2>二、初始属性</h2>
+  <div class="stat-row">
+    <div class="stat"><div class="stat-label">生命值</div><div class="stat-value">65 / 65</div></div>
+    <div class="stat"><div class="stat-label">每回合能量</div><div class="stat-value">3</div></div>
+    <div class="stat"><div class="stat-label">初始手牌数</div><div class="stat-value">5</div></div>
+    <div class="stat"><div class="stat-label">蓄力上限</div><div class="stat-value">5</div></div>
+  </div>
+  <h3>初始卡组（10张）</h3>
+  <div class="deck-list">
+    <div class="deck-card">🏹 精准射击 <span>×4</span></div>
+    <div class="deck-card">🛡️ 闪身 <span>×3</span></div>
+    <div class="deck-card">🎯 瞄准 <span>×2</span></div>
+    <div class="deck-card">💨 急步 <span>×1</span></div>
+  </div>
+
+  <!-- 卡牌库 -->
+  <h2>三、完整卡牌库（20张）</h2>
+
+  <h3>普通牌（6张）</h3>
+  <div class="card-grid">
+
+    <div class="card common">
+      <div class="card-header"><span class="card-name">🏹 精准射击</span><span class="card-cost">1</span></div>
+      <div class="card-tags"><span class="tag tag-attack">攻击</span><span class="tag tag-common">普通</span></div>
+      <div class="card-desc">
+        造成 <strong>7</strong> 点伤害。
+        <div class="note">基础攻击牌，数值比其他角色的"打击"高1点，体现射手基础牌强力的设定。</div>
+      </div>
+      <div class="card-price">商店价格：60</div>
+    </div>
+
+    <div class="card common">
+      <div class="card-header"><span class="card-name">🛡️ 闪身</span><span class="card-cost">1</span></div>
+      <div class="card-tags"><span class="tag tag-skill">技能</span><span class="tag tag-common">普通</span></div>
+      <div class="card-desc">
+        获得 <strong>6</strong> 点格挡，获得 <strong>1</strong> 点蓄力。
+        <div class="note">基础防御牌，同时积累蓄力，比普通防御牌多1点格挡作为补偿。</div>
+      </div>
+      <div class="card-price">商店价格：60</div>
+    </div>
+
+    <div class="card common">
+      <div class="card-header"><span class="card-name">🎯 瞄准</span><span class="card-cost">0</span></div>
+      <div class="card-tags"><span class="tag tag-skill">技能</span><span class="tag tag-common">普通</span></div>
+      <div class="card-desc">
+        获得 <strong>2</strong> 点蓄力。
+        <div class="note">0费纯蓄力牌，是蓄力积累的核心引擎。</div>
+      </div>
+      <div class="card-price">商店价格：55</div>
+    </div>
+
+    <div class="card common">
+      <div class="card-header"><span class="card-name">💨 急步</span><span class="card-cost">1</span></div>
+      <div class="card-tags"><span class="tag tag-skill">技能</span><span class="tag tag-common">普通</span></div>
+      <div class="card-desc">
+        获得 <strong>4</strong> 点格挡，获得 <strong>1</strong> 点蓄力，抽 <strong>1</strong> 张牌。
+        <div class="note">三合一小工具牌，格挡略低但附带抽牌，保证手牌流畅。</div>
+      </div>
+      <div class="card-price">商店价格：65</div>
+    </div>
+
+    <div class="card common">
+      <div class="card-header"><span class="card-name">🏹 蓄力射击</span><span class="card-cost">1</span></div>
+      <div class="card-tags"><span class="tag tag-attack">攻击</span><span class="tag tag-common">普通</span></div>
+      <div class="card-desc">
+        造成 <strong>4</strong> 点伤害，消耗全部蓄力，每消耗 1 点额外造成 <strong>2</strong> 点伤害。
+        <div class="note">蓄力=0时仅4伤；蓄力=3时=10伤；蓄力=5时=14伤。是蓄力消耗的主力牌。</div>
+      </div>
+      <div class="card-price">商店价格：65</div>
+    </div>
+
+    <div class="card common">
+      <div class="card-header"><span class="card-name">🎯 易伤箭</span><span class="card-cost">1</span></div>
+      <div class="card-tags"><span class="tag tag-attack">攻击</span><span class="tag tag-common">普通</span></div>
+      <div class="card-desc">
+        造成 <strong>5</strong> 点伤害，施加 <strong>1</strong> 层易伤。
+        <div class="note">为后续攻击牌提供增伤加成，配合高蓄力爆发效果显著。</div>
+      </div>
+      <div class="card-price">商店价格：65</div>
+    </div>
+
+  </div>
+
+  <h3>精良牌（7张）</h3>
+  <div class="card-grid">
+
+    <div class="card uncommon">
+      <div class="card-header"><span class="card-name">🏹 双箭齐发</span><span class="card-cost">1</span></div>
+      <div class="card-tags"><span class="tag tag-attack">攻击</span><span class="tag tag-uncommon">精良</span></div>
+      <div class="card-desc">
+        造成 <strong>4</strong> 点伤害 <strong>2</strong> 次。若当前蓄力 ≥ 3，改为造成 <strong>5</strong> 点伤害 2 次。
+        <div class="note">蓄力≥3时=10伤，不消耗蓄力，是蓄力积累中途的稳定输出。</div>
+      </div>
+      <div class="card-price">商店价格：85</div>
+    </div>
+
+    <div class="card uncommon">
+      <div class="card-header"><span class="card-name">🛡️ 格挡蓄力</span><span class="card-cost">1</span></div>
+      <div class="card-tags"><span class="tag tag-skill">技能</span><span class="tag tag-uncommon">精良</span></div>
+      <div class="card-desc">
+        获得等于当前蓄力×<strong>3</strong> 的格挡，然后获得 <strong>1</strong> 点蓄力。
+        <div class="note">蓄力=0时=0格挡；蓄力=2时=6格挡+升至3；蓄力=4时=12格挡+升至5。越积越强的防御牌。</div>
+      </div>
+      <div class="card-price">商店价格：85</div>
+    </div>
+
+    <div class="card uncommon">
+      <div class="card-header"><span class="card-name">💨 翻滚闪避</span><span class="card-cost">2</span></div>
+      <div class="card-tags"><span class="tag tag-skill">技能</span><span class="tag tag-uncommon">精良</span></div>
+      <div class="card-desc">
+        获得 <strong>14</strong> 点格挡，获得 <strong>2</strong> 点蓄力。
+        <div class="note">2费高格挡，同时积累2点蓄力，是防御型回合的核心牌。</div>
+      </div>
+      <div class="card-price">商店价格：90</div>
+    </div>
+
+    <div class="card uncommon">
+      <div class="card-header"><span class="card-name">🏹 穿甲箭</span><span class="card-cost">2</span></div>
+      <div class="card-tags"><span class="tag tag-attack">攻击</span><span class="tag tag-uncommon">精良</span></div>
+      <div class="card-desc">
+        造成 <strong>12</strong> 点伤害，无视目标格挡（直接扣HP）。
+        <div class="note">破甲专用，对防御型怪物（如班布护盾阶段）有奇效，不消耗蓄力。</div>
+      </div>
+      <div class="card-price">商店价格：95</div>
+    </div>
+
+    <div class="card uncommon">
+      <div class="card-header"><span class="card-name">🔄 换箭</span><span class="card-cost">0</span></div>
+      <div class="card-tags"><span class="tag tag-skill">技能</span><span class="tag tag-uncommon">精良</span></div>
+      <div class="card-desc">
+        丢弃手牌中任意 1 张牌，抽 <strong>2</strong> 张牌，获得 <strong>1</strong> 点蓄力。
+        <div class="note">0费牌组运营，丢掉无用牌换取更好的手牌，同时积累蓄力。</div>
+      </div>
+      <div class="card-price">商店价格：80</div>
+    </div>
+
+    <div class="card uncommon">
+      <div class="card-header"><span class="card-name">🎯 连续射击</span><span class="card-cost">2</span></div>
+      <div class="card-tags"><span class="tag tag-attack">攻击</span><span class="tag tag-uncommon">精良</span></div>
+      <div class="card-desc">
+        造成 <strong>5</strong> 点伤害 <strong>3</strong> 次，消耗全部蓄力，每消耗 1 点额外造成 <strong>1</strong> 点伤害（作用于全部 3 次）。
+        <div class="note">蓄力=0时=15伤；蓄力=3时=24伤；蓄力=5时=30伤。2费多段爆发主力。</div>
+      </div>
+      <div class="card-price">商店价格：100</div>
+    </div>
+
+    <div class="card uncommon">
+      <div class="card-header"><span class="card-name">💨 风驰步</span><span class="card-cost">1</span></div>
+      <div class="card-tags"><span class="tag tag-skill">技能</span><span class="tag tag-uncommon">精良</span></div>
+      <div class="card-desc">
+        获得 <strong>5</strong> 点格挡，获得 <strong>1</strong> 点蓄力。本回合下一张攻击牌费用 -1。
+        <div class="note">为下一张攻击牌减费，可以让3费的强力攻击牌在同一回合打出。</div>
+      </div>
+      <div class="card-price">商店价格：90</div>
+    </div>
+
+  </div>
+
+  <h3>稀有牌（4张）</h3>
+  <div class="card-grid">
+
+    <div class="card rare">
+      <div class="card-header"><span class="card-name">🏹 箭雨</span><span class="card-cost">2</span></div>
+      <div class="card-tags"><span class="tag tag-attack">攻击</span><span class="tag tag-rare">稀有</span></div>
+      <div class="card-desc">
+        对所有敌人造成 <strong>5</strong> 点伤害 <strong>2</strong> 次。
+        <div class="note">多敌人场景的AoE，2费10×全体。对比原版4×3次，降低了单次伤害和段数，避免过强。</div>
+      </div>
+      <div class="card-price">商店价格：110</div>
+    </div>
+
+    <div class="card rare">
+      <div class="card-header"><span class="card-name">🎯 满蓄爆射</span><span class="card-cost">1</span></div>
+      <div class="card-tags"><span class="tag tag-attack">攻击</span><span class="tag tag-rare">稀有</span></div>
+      <div class="card-desc">
+        <strong>仅当蓄力 = 5（满蓄）时可打出。</strong>消耗全部蓄力，造成 <strong>35</strong> 点伤害。
+        <div class="note">满蓄才能触发，1费35伤是游戏内最高单次伤害，但需要5回合以上积累，风险极高。</div>
+      </div>
+      <div class="card-price">商店价格：115</div>
+    </div>
+
+    <div class="card rare">
+      <div class="card-header"><span class="card-name">💨 疾风步</span><span class="card-cost">1</span></div>
+      <div class="card-tags"><span class="tag tag-skill">技能</span><span class="tag tag-rare">稀有</span></div>
+      <div class="card-desc">
+        获得 <strong>8</strong> 点格挡，获得 <strong>2</strong> 点蓄力，抽 <strong>1</strong> 张牌。消耗。
+        <div class="note">消耗牌，一次性效果极强：1费=8格挡+2蓄力+抽牌，关键时刻的救命牌。</div>
+      </div>
+      <div class="card-price">商店价格：110</div>
+    </div>
+
+    <div class="card rare">
+      <div class="card-header"><span class="card-name">🏹 贯穿射击</span><span class="card-cost">2</span></div>
+      <div class="card-tags"><span class="tag tag-attack">攻击</span><span class="tag tag-rare">稀有</span></div>
+      <div class="card-desc">
+        对所有敌人造成 <strong>8</strong> 点伤害，消耗全部蓄力，每消耗 1 点额外造成 <strong>2</strong> 点伤害（作用于所有敌人）。
+        <div class="note">蓄力=0时=8×全体；蓄力=3时=14×全体；蓄力=5时=18×全体。AoE版蓄力爆发。</div>
+      </div>
+      <div class="card-price">商店价格：115</div>
+    </div>
+
+  </div>
+
+  <h3>史诗牌（3张）</h3>
+  <div class="card-grid">
+
+    <div class="card epic">
+      <div class="card-header"><span class="card-name">✨ 猎手直觉</span><span class="card-cost">2</span></div>
+      <div class="card-tags"><span class="tag tag-power">能力</span><span class="tag tag-epic">史诗</span></div>
+      <div class="card-desc">
+        永久：每回合开始时，获得 <strong>1</strong> 点蓄力（不超过上限）。
+        <div class="note">被动蓄力引擎，每回合免费+1蓄力，长期战斗价值极高，但单回合感受不强，不会让人觉得超模。</div>
+      </div>
+      <div class="card-price">商店价格：140</div>
+    </div>
+
+    <div class="card epic">
+      <div class="card-header"><span class="card-name">✨ 蓄力上限</span><span class="card-cost">2</span></div>
+      <div class="card-tags"><span class="tag tag-power">能力</span><span class="tag tag-epic">史诗</span></div>
+      <div class="card-desc">
+        永久：蓄力上限提升至 <strong>8</strong>（原为5）。立即获得 <strong>3</strong> 点蓄力。
+        <div class="note">配合满蓄爆射和贯穿射击，可以积累到8点蓄力释放更强爆发，但需要更长积累时间。</div>
+      </div>
+      <div class="card-price">商店价格：145</div>
+    </div>
+
+    <div class="card epic">
+      <div class="card-header"><span class="card-name">🏹 终极连射</span><span class="card-cost">3</span></div>
+      <div class="card-tags"><span class="tag tag-attack">攻击</span><span class="tag tag-epic">史诗</span></div>
+      <div class="card-desc">
+        造成 <strong>6</strong> 点伤害 <strong>4</strong> 次，消耗全部蓄力，每消耗 1 点额外造成 <strong>3</strong> 点伤害（作用于全部 4 次）。
+        <div class="note">蓄力=0时=24伤；蓄力=3时=60伤；蓄力=5时=84伤。3费终极爆发，需要蓄力配合才能发挥最大价值。</div>
+      </div>
+      <div class="card-price">商店价格：150</div>
+    </div>
+
+  </div>
+
+  <!-- 平衡性分析 -->
+  <h2>四、平衡性分析（对标现有怪物）</h2>
+  <table>
+    <tr><th>场景</th><th>射手输出</th><th>怪物HP</th><th>评估</th></tr>
+    <tr>
+      <td>一层普通战（史莱姆14HP）</td>
+      <td>精准射击7伤 × 2回合 = 14伤</td>
+      <td>14</td>
+      <td class="ok">✓ 2回合解决，合理</td>
+    </tr>
+    <tr>
+      <td>一层普通战（虱子16HP）</td>
+      <td>精准射击7 + 蓄力射击(蓄力1)6 = 13伤</td>
+      <td>16</td>
+      <td class="ok">✓ 2-3回合，合理</td>
+    </tr>
+    <tr>
+      <td>二层精英（颚虫44HP）</td>
+      <td>积累3蓄力后连续射击=24伤，需2-3轮</td>
+      <td>44</td>
+      <td class="ok">✓ 5-7回合，有压力但可行</td>
+    </tr>
+    <tr>
+      <td>Boss（兔子140HP）</td>
+      <td>终极连射(蓄力5)=84伤，需多轮积累</td>
+      <td>140</td>
+      <td class="ok">✓ 需要策略，不会轻松碾压</td>
+    </tr>
+    <tr>
+      <td>满蓄爆射（蓄力5）</td>
+      <td>1费35伤，需5回合积累</td>
+      <td>—</td>
+      <td class="warn">⚠ 单次伤害最高，但条件苛刻</td>
+    </tr>
+  </table>
+
+  <h2>五、与赛车手强度对比</h2>
+  <table>
+    <tr><th>对比项</th><th>赛车手</th><th>射手</th></tr>
+    <tr><td>初始HP</td><td>75</td><td>65（-10）</td></tr>
+    <tr><td>基础攻击牌（1费）</td><td>档位打击：5/6/8伤（档位依赖）</td><td>精准射击：固定7伤</td></tr>
+    <tr><td>基础防御牌（1费）</td><td>档位防御：4/5/7格挡</td><td>闪身：6格挡+1蓄力</td></tr>
+    <tr><td>爆发上限</td><td>涡轮压榨3挡=18伤（3费）</td><td>终极连射蓄力5=84伤（3费+5回合积累）</td></tr>
+    <tr><td>机制复杂度</td><td>中（3档位+速度感）</td><td>低（只有蓄力一个数值）</td></tr>
+    <tr><td>适合玩家</td><td>喜欢实时切换策略</td><td>喜欢积累爆发、一击必杀</td></tr>
+  </table>
+
+  <p style="color:#888;text-align:center;margin-top:32px;font-size:0.85rem">确认方案后可直接写入游戏代码</p>
+</div>
+</body>
+</html>

@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <title>射手角色设计方案预览</title>
+  <style>
+    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #1e1e24; color: #e0e0e0; margin: 0; padding: 20px; line-height: 1.6; }
+    .container { max-width: 1000px; margin: 0 auto; background: #2a2a35; padding: 30px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+    h1, h2, h3 { color: #fff; border-bottom: 1px solid #444; padding-bottom: 10px; }
+    h1 { text-align: center; color: #4caf50; border-bottom: 2px solid #4caf50; }
+    .highlight { color: #4caf50; font-weight: bold; }
+    .card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; margin-top: 20px; }
+    .card { background: #333; border-radius: 8px; padding: 15px; position: relative; }
+    .card-title { font-size: 1.2rem; font-weight: bold; margin-bottom: 10px; display: flex; justify-content: space-between; }
+    .card-cost { background: #555; color: #fff; width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.9rem; }
+    .card-desc { font-size: 0.95rem; color: #ccc; margin-bottom: 10px; }
+    .card-meta { font-size: 0.8rem; color: #888; display: flex; justify-content: space-between; border-top: 1px solid #444; padding-top: 8px; }
+    
+    /* 品质样式 */
+    .rarity-common { border-left: 4px solid #888; }
+    .rarity-uncommon { border-left: 4px solid #4caf50; }
+    .rarity-rare { border-left: 4px solid #2196f3; }
+    .rarity-epic { border-left: 4px solid #9c27b0; }
+    
+    .tag-common { color: #888; }
+    .tag-uncommon { color: #4caf50; }
+    .tag-rare { color: #2196f3; }
+    .tag-epic { color: #9c27b0; }
+    
+    table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+    th, td { padding: 12px; text-align: left; border-bottom: 1px solid #444; }
+    th { background: #333; color: #fff; }
+    tr:hover { background: #3a3a45; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🏹 射手 (The Archer) 角色设计方案</h1>
+    
+    <h2>一、 核心机制：【专注】与【印记】</h2>
+    <p>射手是一个依赖精准计算和连击爆发的角色，核心围绕两个专属机制展开：</p>
+    <ul>
+      <li><span class="highlight">【专注】(Focus)</span>：玩家专属资源。每层专注使下一张攻击牌的伤害 <strong>+2</strong>，并在造成伤害后消耗 1 层。部分卡牌在拥有专注时会触发额外效果（如抽牌、保留专注不消耗等）。</li>
+      <li><span class="highlight">【印记】(Mark)</span>：施加给敌人的专属 Debuff。每层印记使该敌人受到的所有伤害 <strong>+1</strong>。当印记达到 <strong>4层</strong> 时，会触发【引爆】：立即造成 15 点伤害，并清除所有印记。</li>
+    </ul>
+    <p><strong>战斗风格：</strong>前期通过防御和技能牌积累【专注】并给敌人挂【印记】，时机成熟时打出多段攻击牌（如连射），一次性消耗专注并引爆印记，造成巨额爆发伤害。</p>
+
+    <h2>二、 初始属性</h2>
+    <ul>
+      <li><strong>HP：</strong> 70 / 70 （身板较脆，依赖敏捷防御）</li>
+      <li><strong>初始卡组：</strong> 射击 ×4，闪避 ×4，凝神 ×1，标记箭 ×1</li>
+    </ul>
+
+    <h2>三、 完整卡牌库 (共 20 张)</h2>
+    
+    <div class="card-grid">
+      <!-- 基础牌 -->
+      <div class="card rarity-common">
+        <div class="card-title"><span>🏹 射击 (Shoot)</span><span class="card-cost">1</span></div>
+        <div class="card-desc">造成 6 点伤害。</div>
+        <div class="card-meta"><span class="tag-common">普通 · 攻击</span><span>商店: 55</span></div>
+      </div>
+      <div class="card rarity-common">
+        <div class="card-title"><span>💨 闪避 (Dodge)</span><span class="card-cost">1</span></div>
+        <div class="card-desc">获得 5 点格挡。</div>
+        <div class="card-meta"><span class="tag-common">普通 · 技能</span><span>商店: 55</span></div>
+      </div>
+      <div class="card rarity-common">
+        <div class="card-title"><span>👁️ 凝神 (Concentrate)</span><span class="card-cost">0</span></div>
+        <div class="card-desc">获得 1 层【专注】。</div>
+        <div class="card-meta"><span class="tag-common">普通 · 技能</span><span>商店: 60</span></div>
+      </div>
+      <div class="card rarity-common">
+        <div class="card-title"><span>🎯 标记箭 (Marking Arrow)</span><span class="card-cost">1</span></div>
+        <div class="card-desc">造成 4 点伤害。给予 1 层【印记】。</div>
+        <div class="card-meta"><span class="tag-common">普通 · 攻击</span><span>商店: 65</span></div>
+      </div>
+      <div class="card rarity-common">
+        <div class="card-title"><span>🏹 穿透箭 (Piercing Arrow)</span><span class="card-cost">1</span></div>
+        <div class="card-desc">造成 8 点伤害。若目标有【印记】，额外造成 3 点伤害。</div>
+        <div class="card-meta"><span class="tag-common">普通 · 攻击</span><span>商店: 65</span></div>
+      </div>
+      <div class="card rarity-common">
+        <div class="card-title"><span>🛡️ 战术后撤 (Tactical Retreat)</span><span class="card-cost">1</span></div>
+        <div class="card-desc">获得 7 点格挡。抽 1 张牌。</div>
+        <div class="card-meta"><span class="tag-common">普通 · 技能</span><span>商店: 70</span></div>
+      </div>
+
+      <!-- 精良牌 -->
+      <div class="card rarity-uncommon">
+        <div class="card-title"><span>🏹 双连射 (Double Shot)</span><span class="card-cost">1</span></div>
+        <div class="card-desc">造成 4 点伤害 2 次。</div>
+        <div class="card-meta"><span class="tag-uncommon">精良 · 攻击</span><span>商店: 80</span></div>
+      </div>
+      <div class="card rarity-uncommon">
+        <div class="card-title"><span>🎯 追踪箭 (Tracking Arrow)</span><span class="card-cost">1</span></div>
+        <div class="card-desc">造成 5 点伤害。给予 2 层【印记】。</div>
+        <div class="card-meta"><span class="tag-uncommon">精良 · 攻击</span><span>商店: 85</span></div>
+      </div>
+      <div class="card rarity-uncommon">
+        <div class="card-title"><span>👁️ 深度专注 (Deep Focus)</span><span class="card-cost">1</span></div>
+        <div class="card-desc">获得 2 层【专注】。获得 5 点格挡。</div>
+        <div class="card-meta"><span class="tag-uncommon">精良 · 技能</span><span>商店: 85</span></div>
+      </div>
+      <div class="card rarity-uncommon">
+        <div class="card-title"><span>💨 灵动身姿 (Agile Movement)</span><span class="card-cost">2</span></div>
+        <div class="card-desc">获得 12 点格挡。本回合每打出一张攻击牌，额外获得 2 点格挡。</div>
+        <div class="card-meta"><span class="tag-uncommon">精良 · 技能</span><span>商店: 90</span></div>
+      </div>
+      <div class="card rarity-uncommon">
+        <div class="card-title"><span>🏹 狙击 (Snipe)</span><span class="card-cost">2</span></div>
+        <div class="card-desc">造成 14 点伤害。若你有【专注】，此牌不消耗专注层数。</div>
+        <div class="card-meta"><span class="tag-uncommon">精良 · 攻击</span><span>商店: 95</span></div>
+      </div>
+      <div class="card rarity-uncommon">
+        <div class="card-title"><span>🔄 箭袋整理 (Quiver Prep)</span><span class="card-cost">0</span></div>
+        <div class="card-desc">抽 2 张牌。丢弃 1 张牌。</div>
+        <div class="card-meta"><span class="tag-uncommon">精良 · 技能</span><span>商店: 75</span></div>
+      </div>
+      <div class="card rarity-uncommon">
+        <div class="card-title"><span>🎯 弱点打击 (Weakpoint Strike)</span><span class="card-cost">1</span></div>
+        <div class="card-desc">造成 6 点伤害。给予 1 层【易伤】。</div>
+        <div class="card-meta"><span class="tag-uncommon">精良 · 攻击</span><span>商店: 85</span></div>
+      </div>
+
+      <!-- 稀有牌 -->
+      <div class="card rarity-rare">
+        <div class="card-title"><span>🏹 箭雨 (Arrow Rain)</span><span class="card-cost">2</span></div>
+        <div class="card-desc">对所有敌人造成 4 点伤害 3 次。</div>
+        <div class="card-meta"><span class="tag-rare">稀有 · 攻击</span><span>商店: 110</span></div>
+      </div>
+      <div class="card rarity-rare">
+        <div class="card-title"><span>🎯 致命印记 (Fatal Mark)</span><span class="card-cost">1</span></div>
+        <div class="card-desc">给予目标 3 层【印记】。消耗。</div>
+        <div class="card-meta"><span class="tag-rare">稀有 · 技能</span><span>商店: 100</span></div>
+      </div>
+      <div class="card rarity-rare">
+        <div class="card-title"><span>👁️ 心流 (Flow State)</span><span class="card-cost">1</span></div>
+        <div class="card-desc">获得 3 层【专注】。抽 1 张牌。消耗。</div>
+        <div class="card-meta"><span class="tag-rare">稀有 · 技能</span><span>商店: 105</span></div>
+      </div>
+      <div class="card rarity-rare">
+        <div class="card-title"><span>🏹 爆裂箭 (Explosive Arrow)</span><span class="card-cost">2</span></div>
+        <div class="card-desc">造成 10 点伤害。若目标因此次攻击触发了【印记】引爆，恢复 2 点能量。</div>
+        <div class="card-meta"><span class="tag-rare">稀有 · 攻击</span><span>商店: 115</span></div>
+      </div>
+
+      <!-- 史诗牌 -->
+      <div class="card rarity-epic">
+        <div class="card-title"><span>✨ 鹰眼 (Eagle Eye)</span><span class="card-cost">2</span></div>
+        <div class="card-desc">能力：每回合开始时，获得 1 层【专注】。</div>
+        <div class="card-meta"><span class="tag-epic">史诗 · 能力</span><span>商店: 140</span></div>
+      </div>
+      <div class="card rarity-epic">
+        <div class="card-title"><span>✨ 猎手本能 (Hunter's Instinct)</span><span class="card-cost">2</span></div>
+        <div class="card-desc">能力：【印记】引爆所需的层数降为 3 层，且引爆伤害提升至 20 点。</div>
+        <div class="card-meta"><span class="tag-epic">史诗 · 能力</span><span>商店: 150</span></div>
+      </div>
+      <div class="card rarity-epic">
+        <div class="card-title"><span>🏹 幻影连射 (Phantom Barrage)</span><span class="card-cost">3</span></div>
+        <div class="card-desc">造成 3 点伤害 X 次（X 为你当前的【专注】层数 + 2）。消耗所有专注。</div>
+        <div class="card-meta"><span class="tag-epic">史诗 · 攻击</span><span>商店: 135</span></div>
+      </div>
+    </div>
+
+  </div>
+</body>
+</html>

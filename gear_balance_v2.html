@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>档位卡组 · 三档系统平衡报告 v2</title>
+<style>
+:root{--bg:#0e1117;--s1:#1a1f2e;--s2:#232940;--border:rgba(255,255,255,0.1);--text:#e8e8f0;--dim:rgba(255,255,255,0.5);--gold:#f1c40f;--red:#e74c3c;--green:#2ecc71;--blue:#3498db;--orange:#e67e22;--purple:#9b59b6;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif;font-size:15px;line-height:1.65;}
+.page{max-width:1120px;margin:0 auto;padding:36px 20px 80px;}
+h1{font-size:2rem;color:var(--gold);text-align:center;margin-bottom:6px;}
+.sub{text-align:center;color:var(--dim);font-size:0.9rem;margin-bottom:40px;}
+h2{font-size:1.15rem;color:var(--gold);margin:36px 0 14px;padding-left:10px;border-left:3px solid var(--gold);}
+h3{font-size:0.95rem;color:rgba(255,255,255,0.75);margin:18px 0 8px;}
+hr{border:none;border-top:1px solid var(--border);margin:32px 0;}
+p{color:var(--dim);font-size:0.9rem;line-height:1.7;margin-bottom:10px;}
+strong{color:var(--text);}
+b{color:#fff;}
+
+/* 基准表格 */
+table{width:100%;border-collapse:collapse;margin-bottom:6px;font-size:0.88rem;}
+th{background:var(--s2);color:var(--gold);padding:9px 12px;border:1px solid var(--border);text-align:center;font-weight:700;}
+td{padding:8px 12px;border:1px solid var(--border);text-align:center;color:var(--dim);}
+td.l{text-align:left;}
+td b{color:#fff;}
+tr:nth-child(even) td{background:rgba(255,255,255,0.025);}
+.g1{color:#5dade2;font-weight:700;}
+.g2{color:#aab7b8;font-weight:700;}
+.g3{color:#f0b27a;font-weight:700;}
+
+/* 档位说明框 */
+.gear-box{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:8px;}
+.gear-card{border-radius:12px;padding:16px;text-align:center;border:2px solid;}
+.gear-card.def{background:rgba(93,173,226,0.1);border-color:rgba(93,173,226,0.4);}
+.gear-card.neu{background:rgba(170,183,184,0.08);border-color:rgba(170,183,184,0.3);}
+.gear-card.atk{background:rgba(240,178,122,0.1);border-color:rgba(240,178,122,0.4);}
+.gear-card .gname{font-size:1.3rem;font-weight:900;margin-bottom:6px;}
+.gear-card.def .gname{color:#5dade2;}
+.gear-card.neu .gname{color:#aab7b8;}
+.gear-card.atk .gname{color:#f0b27a;}
+.gear-card .gstat{font-size:0.85rem;color:var(--dim);line-height:1.8;}
+.gear-card .gstat b{font-size:1rem;}
+
+/* 卡牌网格 */
+.cards-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:14px;margin-bottom:8px;}
+.card{background:var(--s1);border:1px solid var(--border);border-radius:12px;padding:15px;position:relative;}
+.card.op{border-color:rgba(231,76,60,0.5);background:rgba(231,76,60,0.06);}
+.card.up{border-color:rgba(52,152,219,0.4);background:rgba(52,152,219,0.05);}
+.card.ok{border-color:rgba(46,204,113,0.3);}
+.card-head{display:flex;align-items:center;gap:8px;margin-bottom:10px;}
+.cost{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:0.95rem;flex-shrink:0;}
+.c0{background:rgba(255,255,255,0.12);color:#fff;}
+.c1{background:rgba(46,204,113,0.2);color:#2ecc71;border:1px solid rgba(46,204,113,0.4);}
+.c2{background:rgba(241,196,15,0.18);color:#f1c40f;border:1px solid rgba(241,196,15,0.35);}
+.c3{background:rgba(231,76,60,0.18);color:#e74c3c;border:1px solid rgba(231,76,60,0.3);}
+.cname{font-size:1rem;font-weight:700;color:#fff;}
+.tags{display:flex;gap:4px;flex-wrap:wrap;margin-left:auto;}
+.tag{font-size:0.7rem;padding:2px 7px;border-radius:8px;font-weight:600;}
+.ta{background:rgba(192,57,43,0.28);color:#e74c3c;border:1px solid rgba(231,76,60,0.3);}
+.ts{background:rgba(41,128,185,0.28);color:#5dade2;border:1px solid rgba(52,152,219,0.3);}
+.tp{background:rgba(142,68,173,0.28);color:#bb8fce;border:1px solid rgba(155,89,182,0.3);}
+.tg{background:rgba(241,196,15,0.18);color:#f1c40f;border:1px solid rgba(241,196,15,0.3);}
+.te{background:rgba(127,140,141,0.22);color:#aab7b8;border:1px solid rgba(127,140,141,0.3);}
+.orig{font-size:0.82rem;color:var(--dim);padding:7px 10px;background:rgba(0,0,0,0.2);border-radius:6px;border-left:2px solid rgba(255,255,255,0.12);margin-bottom:8px;}
+.orig .lbl{font-size:0.72rem;color:rgba(255,255,255,0.3);margin-bottom:2px;}
+.analysis{font-size:0.82rem;color:var(--dim);margin-bottom:8px;line-height:1.6;}
+.final{font-size:0.85rem;padding:8px 10px;border-radius:6px;border-left:3px solid;}
+.final.changed{border-color:#f1c40f;background:rgba(241,196,15,0.07);}
+.final.same{border-color:rgba(46,204,113,0.5);background:rgba(46,204,113,0.05);}
+.final .lbl{font-size:0.72rem;color:rgba(255,255,255,0.35);margin-bottom:2px;}
+.final .txt{color:#e8e8f0;}
+.verdict{position:absolute;top:13px;right:13px;font-size:0.7rem;font-weight:700;padding:2px 7px;border-radius:7px;}
+.v-op{background:rgba(231,76,60,0.22);color:#e74c3c;border:1px solid rgba(231,76,60,0.4);}
+.v-up{background:rgba(52,152,219,0.18);color:#5dade2;border:1px solid rgba(52,152,219,0.35);}
+.v-ok{background:rgba(46,204,113,0.14);color:#2ecc71;border:1px solid rgba(46,204,113,0.3);}
+
+/* 交互检查 */
+.check-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px;}
+.check-item{background:var(--s1);border:1px solid var(--border);border-radius:10px;padding:14px;}
+.check-item.ok{border-color:rgba(46,204,113,0.3);}
+.check-item.warn{border-color:rgba(241,196,15,0.4);background:rgba(241,196,15,0.05);}
+.check-item.bug{border-color:rgba(231,76,60,0.5);background:rgba(231,76,60,0.07);}
+.check-head{display:flex;align-items:center;gap:8px;margin-bottom:8px;}
+.check-icon{font-size:1.3rem;}
+.check-name{font-size:0.95rem;font-weight:700;color:#fff;}
+.check-status{margin-left:auto;font-size:0.72rem;font-weight:700;padding:2px 7px;border-radius:7px;}
+.cs-ok{background:rgba(46,204,113,0.14);color:#2ecc71;border:1px solid rgba(46,204,113,0.3);}
+.cs-warn{background:rgba(241,196,15,0.18);color:#f1c40f;border:1px solid rgba(241,196,15,0.35);}
+.cs-bug{background:rgba(231,76,60,0.22);color:#e74c3c;border:1px solid rgba(231,76,60,0.4);}
+.check-desc{font-size:0.82rem;color:var(--dim);line-height:1.6;}
+.check-desc .fix{color:#f1c40f;font-weight:600;}
+
+/* 总结 */
+.summary{background:var(--s1);border:1px solid var(--border);border-radius:12px;padding:20px 24px;}
+.summary p{margin-bottom:10px;}
+
+.note{background:rgba(241,196,15,0.07);border:1px solid rgba(241,196,15,0.25);border-radius:8px;padding:11px 15px;font-size:0.85rem;color:rgba(255,255,255,0.7);margin-bottom:16px;}
+.note b{color:var(--gold);}
+</style>
+</head>
+<body>
+<div class="page">
+
+<h1>🏎️ 档位卡组 · 三档系统平衡报告 v2</h1>
+<div class="sub">以怪物数值为强度基准 · 三档整数化 · 遗物/药水交互全检查</div>
+
+<!-- ══ 一、怪物数值基准 ══ -->
+<h2>一、怪物数值基准（强度参照系）</h2>
+<div class="note"><b>评判原则：</b>卡牌强度以「能否在合理回合数内击败当前层怪物，同时不被秒杀」为基准，而非对标其他玩家卡牌。</div>
+<table>
+  <thead><tr><th>怪物</th><th>层级</th><th>HP</th><th>每回合伤害（典型）</th><th>特殊威胁</th></tr></thead>
+  <tbody>
+    <tr><td class="l">史莱姆 / 虱子</td><td>第1层小怪</td><td>12–14</td><td>5</td><td>虚弱2层</td></tr>
+    <tr><td class="l">邪教徒</td><td>第1层小怪</td><td>20</td><td>6（+力量雪球）</td><td>每3回合+3力量</td></tr>
+    <tr><td class="l">颚虫</td><td>第1层精英</td><td>44</td><td>7–11</td><td>bellow后+3力量+9格挡</td></tr>
+    <tr><td class="l">兔子（Boss1）</td><td>第1层Boss</td><td>140</td><td>12–18（3×6）</td><td>每5回合ultimate 18伤</td></tr>
+    <tr><td class="l">毒虱 / 狂热邪教徒</td><td>第2层小怪</td><td>18–30</td><td>7–8</td><td>力量雪球更快</td></tr>
+    <tr><td class="l">巨颚虫</td><td>第2层精英</td><td>58</td><td>9–14</td><td>bellow后+4力量+12格挡</td></tr>
+    <tr><td class="l">班布（Boss2）</td><td>第2层Boss</td><td>180</td><td>12–32（4×8）</td><td>pounce 4连击32伤</td></tr>
+    <tr><td class="l">波哥（Boss3）</td><td>第3层Boss</td><td>220</td><td>12–30（3×10）</td><td>heavy 20伤、ultimate 30伤</td></tr>
+  </tbody>
+</table>
+<p>玩家HP 75，每回合能量3。<b>第1层生存压力</b>：需每回合格挡5~12伤，同时在约10~15回合内输出140伤击败兔子。<b>第2层</b>：需格挡7~14伤，约12~18回合输出180伤。</p>
+
+<!-- ══ 二、三档系统设计 ══ -->
+<h2>二、三档系统设计（整数化）</h2>
+<div class="note"><b>核心规则：</b>初始进入战斗时处于 <b>2挡（中立）</b>，只能升1挡（→3挡）或降1挡（→1挡）。档位影响攻击伤害和格挡获取，所有数值均为整数，无小数。</div>
+<div class="gear-box">
+  <div class="gear-card def">
+    <div class="gname">🛡 1挡·防御</div>
+    <div class="gstat">
+      攻击伤害 <b>×0.8</b>（取整）<br>
+      格挡获取 <b>×1.3</b>（取整）<br>
+      速度感积累 <b>+3/回合</b><br>
+      <span style="color:rgba(255,255,255,0.4);font-size:0.78rem">适合扛伤、回血、等待时机</span>
+    </div>
+  </div>
+  <div class="gear-card neu">
+    <div class="gname">⚖️ 2挡·中立</div>
+    <div class="gstat">
+      攻击伤害 <b>×1.0</b>（基准）<br>
+      格挡获取 <b>×1.0</b>（基准）<br>
+      速度感积累 <b>+6/回合</b><br>
+      <span style="color:rgba(255,255,255,0.4);font-size:0.78rem">初始档位，无加成无减损</span>
+    </div>
+  </div>
+  <div class="gear-card atk">
+    <div class="gname">⚔️ 3挡·攻击</div>
+    <div class="gstat">
+      攻击伤害 <b>×1.3</b>（取整）<br>
+      格挡获取 <b>×0.7</b>（取整）<br>
+      速度感积累 <b>+9/回合</b><br>
+      <span style="color:rgba(255,255,255,0.4);font-size:0.78rem">高爆发，格挡效率下降</span>
+    </div>
+  </div>
+</div>
+<h3>各档位实际数值对照（以基础值6伤/5挡为例）</h3>
+<table>
+  <thead><tr><th>基础值</th><th class="g1">1挡（防御）</th><th class="g2">2挡（中立）</th><th class="g3">3挡（攻击）</th></tr></thead>
+  <tbody>
+    <tr><td>6 点伤害</td><td class="g1">5</td><td class="g2">6</td><td class="g3">8</td></tr>
+    <tr><td>7 点伤害</td><td class="g1">6</td><td class="g2">7</td><td class="g3">9</td></tr>
+    <tr><td>8 点伤害</td><td class="g1">6</td><td class="g2">8</td><td class="g3">10</td></tr>
+    <tr><td>10 点伤害</td><td class="g1">8</td><td class="g2">10</td><td class="g3">13</td></tr>
+    <tr><td>12 点伤害</td><td class="g1">10</td><td class="g2">12</td><td class="g3">16</td></tr>
+    <tr><td>5 点格挡</td><td class="g1">7</td><td class="g2">5</td><td class="g3">4</td></tr>
+    <tr><td>8 点格挡</td><td class="g1">10</td><td class="g2">8</td><td class="g3">6</td></tr>
+    <tr><td>10 点格挡</td><td class="g1">13</td><td class="g2">10</td><td class="g3">7</td></tr>
+  </tbody>
+</table>
+<p style="margin-top:6px;">注：所有乘法结果均向下取整（floor），确保无小数。</p>
+
+<hr>
+
+<!-- ══ 三、起始牌组 ══ -->
+<h2>三、起始牌组（4种，共10张）</h2>
+<p>起始牌组：档位打击×4、档位防御×3、换挡时机×2、刹车漂移×1。</p>
+<div class="cards-grid">
+
+  <div class="card ok">
+    <span class="verdict v-ok">✓ 平衡</span>
+    <div class="card-head"><div class="cost c1">1</div><div class="cname">档位打击</div><div class="tags"><span class="tag ta">攻击</span></div></div>
+    <div class="orig"><div class="lbl">原效果</div>造成6点伤害，高档加成更高。</div>
+    <div class="analysis">2挡=6伤，3挡=8伤，1挡=5伤。对比第1层小怪（12~20HP），2挡需2~4回合击杀，合理。3挡爆发可1~2回合击杀小怪。</div>
+    <div class="final same"><div class="lbl">最终效果</div><div class="txt">造成 6 点伤害。<b>1挡=5伤，2挡=6伤，3挡=8伤</b>（含档位倍率，取整）。</div></div>
+  </div>
+
+  <div class="card ok">
+    <span class="verdict v-ok">✓ 平衡</span>
+    <div class="card-head"><div class="cost c1">1</div><div class="cname">档位防御</div><div class="tags"><span class="tag ts">技能</span></div></div>
+    <div class="orig"><div class="lbl">原效果</div>获得5点格挡，低档加成更高。</div>
+    <div class="analysis">1挡=7挡，2挡=5挡，3挡=4挡。第1层怪物每回合5~11伤，1挡7格挡可完全抵消小怪伤害，合理。3挡4格挡偏弱但符合高档攻击定位。</div>
+    <div class="final same"><div class="lbl">最终效果</div><div class="txt">获得 5 点格挡。<b>1挡=7挡，2挡=5挡，3挡=4挡</b>（含档位倍率，取整）。</div></div>
+  </div>
+
+  <div class="card ok">
+    <span class="verdict v-ok">✓ 平衡</span>
+    <div class="card-head"><div class="cost c0">0</div><div class="cname">换挡时机</div><div class="tags"><span class="tag ts">技能</span><span class="tag tg">换挡</span></div></div>
+    <div class="orig"><div class="lbl">原效果</div>升1挡或降1挡（选择）。本轮最多使用2次。</div>
+    <div class="analysis">三档系统中，换挡时机是唯一的自由换挡工具。0费限2次合理，防止无限刷速度感/势头。</div>
+    <div class="final same"><div class="lbl">最终效果（保持）</div><div class="txt">升 1 挡或降 1 挡（选择）。本卡本轮最多使用 2 次。</div></div>
+  </div>
+
+  <div class="card ok">
+    <span class="verdict v-ok">✓ 平衡</span>
+    <div class="card-head"><div class="cost c1">1</div><div class="cname">刹车漂移</div><div class="tags"><span class="tag ta">攻击</span></div></div>
+    <div class="orig"><div class="lbl">原效果</div>造成8点伤害。若处于3挡以上，额外施加2层「减速」。</div>
+    <div class="analysis">三档系统中"3挡以上"即3挡。2挡=8伤，3挡=10伤+减速2层。减速使怪物伤害-2/层，对兔子（12~18伤/回合）有显著控制价值。整体合理。</div>
+    <div class="final same"><div class="lbl">最终效果（保持）</div><div class="txt">造成 8 点伤害（含档位倍率）。若处于 3 挡，额外施加 2 层「减速」。<br><span style="color:var(--dim);font-size:0.8rem">1挡=6伤，2挡=8伤，3挡=10伤+减速2</span></div></div>
+  </div>
+
+</div>
+
+<hr>
+
+<!-- ══ 四、攻击牌 ══ -->
+<h2>四、攻击牌（6张）</h2>
+<div class="cards-grid">
+
+  <div class="card ok">
+    <span class="verdict v-ok">✓ 平衡</span>
+    <div class="card-head"><div class="cost c2">2</div><div class="cname">氮气加速</div><div class="tags"><span class="tag ta">攻击</span><span class="tag tg">换挡</span></div></div>
+    <div class="orig"><div class="lbl">原效果</div>造成12点伤害并立即升1挡。若已处于6挡，改为造成20点伤害。</div>
+    <div class="analysis">三档系统中已无6挡，特殊条件需重设。2费12伤+升挡（2→3挡）：2挡=12伤，3挡=16伤（已在3挡时触发）。对兔子140HP，约9~12回合可击败，合理。</div>
+    <div class="final changed"><div class="lbl">调整后效果</div><div class="txt">造成 12 点伤害并立即升 1 挡。若已处于 <b>3 挡（最高挡）</b>，改为造成 <b>16 点伤害</b>（不再升挡）。<br><span style="color:var(--dim);font-size:0.8rem">2挡出牌=12伤+升至3挡；3挡出牌=16伤</span></div></div>
+  </div>
+
+  <div class="card ok">
+    <span class="verdict v-ok">✓ 平衡</span>
+    <div class="card-head"><div class="cost c1">1</div><div class="cname">碰撞拦截</div><div class="tags"><span class="tag ta">攻击</span></div></div>
+    <div class="orig"><div class="lbl">原效果</div>获得4点格挡，随后造成等同于当前格挡值的伤害。</div>
+    <div class="analysis">先获得4格挡（受档位影响：1挡=5格挡，2挡=4格挡，3挡=3格挡），再造成等同当前格挡总量的伤害。1费价值约7~9，对比第1层精英颚虫（44HP）有合理贡献。</div>
+    <div class="final same"><div class="lbl">最终效果（保持）</div><div class="txt">获得 4 点格挡（受档位影响），随后造成等同于<b>当前格挡总量</b>的伤害。<br><span style="color:var(--dim);font-size:0.8rem">例：2挡时先获得4格挡，若原有3格挡则造成7伤</span></div></div>
+  </div>
+
+  <div class="card ok">
+    <span class="verdict v-ok">✓ 平衡</span>
+    <div class="card-head"><div class="cost c2">2</div><div class="cname">甩尾冲锋</div><div class="tags"><span class="tag ta">攻击</span></div></div>
+    <div class="orig"><div class="lbl">原效果</div>对所有敌人造成6点伤害。速度感每有10点，额外造成2点伤害。</div>
+    <div class="analysis">三档系统速度感积累更慢（最高9/回合），10回合最多积累90点，加成+18伤。早期几乎无加成，后期有成长。2费5伤全体（调整后）对比颚虫（44HP）需约9回合，合理。基础改为5伤以匹配2费全体攻击区间。</div>
+    <div class="final changed"><div class="lbl">调整后效果</div><div class="txt">对所有敌人造成 <b>5 点伤害</b>（含档位倍率）。速度感每有 10 点，额外造成 2 点伤害。<br><span style="color:var(--dim);font-size:0.8rem">2挡=5伤全体；3挡=7伤全体（+速度感加成）</span></div></div>
+  </div>
+
+  <div class="card ok">
+    <span class="verdict v-ok">✓ 平衡</span>
+    <div class="card-head"><div class="cost c1">1</div><div class="cname">超车外线</div><div class="tags"><span class="tag ta">攻击</span></div></div>
+    <div class="orig"><div class="lbl">原效果</div>造成5+5点伤害（两段）。若处于4挡以上，本卡免费使用。</div>
+    <div class="analysis">三档系统中"4挡以上"不存在，条件需调整为"3挡时免费"。2挡=5+5=10伤，3挡时免费=10伤+节省1费，价值合理。两段伤害可打破格挡后再造成实际伤害。</div>
+    <div class="final changed"><div class="lbl">调整后效果</div><div class="txt">造成 5+5 点伤害（两段，含档位倍率）。若处于 <b>3 挡</b>，本卡免费使用。<br><span style="color:var(--dim);font-size:0.8rem">2挡=5+5=10伤；3挡=7+7=14伤且免费</span></div></div>
+  </div>
+
+  <div class="card ok">
+    <span class="verdict v-ok">✓ 平衡</span>
+    <div class="card-head"><div class="cost c3">3</div><div class="cname">涡轮压榨</div><div class="tags"><span class="tag ta">攻击</span><span class="tag tg">换挡</span></div></div>
+    <div class="orig"><div class="lbl">原效果</div>造成4×（当前档位）点伤害，随后降2挡。</div>
+    <div class="analysis">三档系统中最高3挡，4×3=12伤，3费12伤偏弱。改为6×档位：1挡=6伤，2挡=12伤，3挡=18伤，降2挡（3挡→1挡）。3费18伤+降至1挡，代价真实（下回合需重新升挡），对兔子有显著贡献。</div>
+    <div class="final changed"><div class="lbl">调整后效果</div><div class="txt">造成 <b>6×（当前档位）</b> 点伤害，随后降 2 挡（最低降至 1 挡）。<br><span style="color:var(--dim);font-size:0.8rem">1挡=6伤，2挡=12伤，3挡=18伤+降至1挡</span></div></div>
+  </div>
+
+  <div class="card ok">
+    <span class="verdict v-ok">✓ 平衡</span>
+    <div class="card-head"><div class="cost c0">0</div><div class="cname">超速警告</div><div class="tags"><span class="tag ta">攻击</span><span class="tag tg">换挡</span><span class="tag te">消耗</span></div></div>
+    <div class="orig"><div class="lbl">原效果</div>若处于5挡或6挡，造成12点伤害并强制降1挡。否则无效。消耗。</div>
+    <div class="analysis">三档系统中"5挡或6挡"不存在，条件改为"3挡时"。0费消耗，3挡时造成10伤+降至2挡。对兔子（140HP）有合理贡献，消耗限制重复使用。</div>
+    <div class="final changed"><div class="lbl">调整后效果</div><div class="txt">若处于 <b>3 挡</b>，造成 <b>10 点伤害</b>并强制降 1 挡（→2挡）。否则此牌无效果。消耗。<br><span style="color:var(--dim);font-size:0.8rem">3挡时=10伤（含×1.3倍率=13伤）+降至2挡</span></div></div>
+  </div>
+
+</div>
+
+<hr>
+
+<!-- ══ 五、技能牌 ══ -->
+<h2>五、技能牌（8张）</h2>
+<div class="cards-grid">
+
+  <div class="card ok">
+    <span class="verdict v-ok">✓ 平衡</span>
+    <div class="card-head"><div class="cost c1">1</div><div class="cname">进站维修</div><div class="tags"><span class="tag ts">技能</span></div></div>
+    <div class="orig"><div class="lbl">原效果</div>获得10点格挡。若处于1挡或2挡，额外恢复4点生命。</div>
+    <div class="analysis">1挡=13格挡，2挡=10格挡，3挡=7格挡。第1层Boss兔子每回合12~18伤，1挡13格挡可完全抵消普通攻击。低档回血4点符合防御流定位，整体合理。</div>
+    <div class="final same"><div class="lbl">最终效果（保持）</div><div class="txt">获得 10 点格挡（含档位倍率）。若处于 1 挡或 2 挡，额外恢复 4 点生命值。<br><span style="color:var(--dim);font-size:0.8rem">1挡=13格挡+4回血，2挡=10格挡+4回血，3挡=7格挡</span></div></div>
+  </div>
+
+  <div class="card ok">
+    <span class="verdict v-ok">✓ 平衡</span>
+    <div class="card-head"><div class="cost c0">0</div><div class="cname">换挡时机</div><div class="tags"><span class="tag ts">技能</span><span class="tag tg">换挡</span></div></div>
+    <div class="orig"><div class="lbl">原效果</div>升1挡或降1挡（选择）。本轮最多使用2次。</div>
+    <div class="analysis">起始牌，见上文。</div>
+    <div class="final same"><div class="lbl">最终效果（保持）</div><div class="txt">升 1 挡或降 1 挡（选择）。本卡本轮最多使用 2 次。</div></div>
+  </div>
+
+  <div class="card ok">
+    <span class="verdict v-ok">✓ 平衡</span>
+    <div class="card-head"><div class="cost c1">1</div><div class="cname">赛线预判</div><div class="tags"><span class="tag ts">技能</span></div></div>
+    <div class="orig"><div class="lbl">原效果</div>查看牌堆顶3张牌，可重新排列顺序，再抽1张牌。</div>
+    <div class="analysis">1费看3+排序+摸1，是牌序操控工具。三档系统中换挡时机有限，提前规划换挡顺序价值更高。整体合理。</div>
+    <div class="final same"><div class="lbl">最终效果（保持）</div><div class="txt">查看牌堆顶 3 张牌，可重新排列顺序，再抽 1 张牌。</div></div>
+  </div>
+
+  <div class="card ok">
+    <span class="verdict v-ok">✓ 平衡</span>
+    <div class="card-head"><div class="cost c2">2</div><div class="cname">压力测试</div><div class="tags"><span class="tag ts">技能</span></div></div>
+    <div class="orig"><div class="lbl">原效果</div>获得1层「超载」（+1挡持续效果，上限3层），然后抽2张牌。</div>
+    <div class="analysis">三档系统中"超载"效果需重新定义：不再是"+1档位"，而是"+1格挡/每次受到伤害时"（持续效果）。2费摸2是合理的费用交换，超载是额外奖励。</div>
+    <div class="final changed"><div class="lbl">调整后效果</div><div class="txt">获得 1 层「超载」（<b>每次受到伤害时额外获得 1 点格挡</b>，上限 3 层，本战斗持续），然后抽 2 张牌。</div></div>
+  </div>
+
+  <div class="card ok">
+    <span class="verdict v-ok">✓ 平衡</span>
+    <div class="card-head"><div class="cost c1">1</div><div class="cname">节油行驶</div><div class="tags"><span class="tag ts">技能</span><span class="tag tg">换挡</span></div></div>
+    <div class="orig"><div class="lbl">原效果</div>降1挡，本回合所有技能费用-1。</div>
+    <div class="analysis">三档系统中降1挡（3→2或2→1），技能费-1。若手牌有2张1费技能，净赚1费。降挡代价真实，整体合理。</div>
+    <div class="final same"><div class="lbl">最终效果（保持）</div><div class="txt">降 1 挡。本回合所有技能牌费用 -1（最低 0）。</div></div>
+  </div>
+
+  <div class="card ok">
+    <span class="verdict v-ok">✓ 平衡</span>
+    <div class="card-head"><div class="cost c0">0</div><div class="cname">过弯线路</div><div class="tags"><span class="tag ts">技能</span></div></div>
+    <div class="orig"><div class="lbl">原效果</div>如果此回合已经升过挡，获得8点格挡；否则获得5点格挡。</div>
+    <div class="analysis">0费，有条件8格挡/无条件5格挡。三档系统中升挡频率更高（换挡时机0费），条件容易满足。8格挡对第1层怪物（5~11伤/回合）有显著防御价值，合理。</div>
+    <div class="final same"><div class="lbl">最终效果（保持）</div><div class="txt">如果此回合已经升过挡，获得 8 点格挡；否则获得 5 点格挡。</div></div>
+  </div>
+
+  <div class="card ok">
+    <span class="verdict v-ok">✓ 平衡</span>
+    <div class="card-head"><div class="cost c1">1</div><div class="cname">瞬时升挡</div><div class="tags"><span class="tag ts">技能</span><span class="tag tg">换挡</span></div></div>
+    <div class="orig"><div class="lbl">原效果</div>升2挡（不超过6挡上限），抽1张牌。</div>
+    <div class="analysis">三档系统中"升2挡"从1挡可直接到3挡，从2挡则升至3挡（上限）。1费升2挡+摸1，是快速进入攻击档的核心工具，合理。</div>
+    <div class="final changed"><div class="lbl">调整后效果</div><div class="txt">升 2 挡（<b>不超过 3 挡上限</b>），抽 1 张牌。<br><span style="color:var(--dim);font-size:0.8rem">1挡→3挡；2挡→3挡（上限）</span></div></div>
+  </div>
+
+  <div class="card ok">
+    <span class="verdict v-ok">✓ 平衡</span>
+    <div class="card-head"><div class="cost c0">0</div><div class="cname">强制降挡</div><div class="tags"><span class="tag ts">技能</span><span class="tag tg">换挡</span><span class="tag te">消耗</span></div></div>
+    <div class="orig"><div class="lbl">原效果</div>降2挡。对敌人施加「减速」层数等于降幅×2。消耗。</div>
+    <div class="analysis">三档系统中降2挡（3→1挡），降幅最多2，施加4层减速（敌人伤害-4/层）。对兔子（12~18伤）减速4层后=8~14伤，有显著控制价值。0费消耗合理。</div>
+    <div class="final same"><div class="lbl">最终效果（保持）</div><div class="txt">降 2 挡（最低降至 1 挡）。对所有敌人施加「减速」层数等于降幅×2。消耗。<br><span style="color:var(--dim);font-size:0.8rem">3挡→1挡：施加4层减速；2挡→1挡：施加2层减速</span></div></div>
+  </div>
+
+  <div class="card ok">
+    <span class="verdict v-ok">✓ 平衡</span>
+    <div class="card-head"><div class="cost c1">1</div><div class="cname">档位锁定</div><div class="tags"><span class="tag ts">技能</span><span class="tag tg">换挡</span></div></div>
+    <div class="orig"><div class="lbl">原效果</div>本回合档位不会因任何效果改变。获得等于当前档位×2的格挡。</div>
+    <div class="analysis">三档系统：1挡=2格挡，2挡=4格挡，3挡=6格挡。格挡值偏低，改为×3：1挡=3格挡，2挡=6格挡，3挡=9格挡，同时锁定档位防止被涡轮压榨等牌意外降挡。整体合理。</div>
+    <div class="final changed"><div class="lbl">调整后效果</div><div class="txt">本回合档位不会因任何效果改变。获得等于当前档位 <b>×3</b> 的格挡。<br><span style="color:var(--dim);font-size:0.8rem">1挡=3格挡，2挡=6格挡，3挡=9格挡</span></div></div>
+  </div>
+
+</div>
+
+<hr>
+
+<!-- ══ 六、能力牌 ══ -->
+<h2>六、能力牌（4张）</h2>
+<div class="cards-grid">
+
+  <div class="card ok">
+    <span class="verdict v-ok">✓ 平衡</span>
+    <div class="card-head"><div class="cost c3">3</div><div class="cname">红线突破</div><div class="tags"><span class="tag tp">能力</span><span class="tag tg">换挡</span></div></div>
+    <div class="orig"><div class="lbl">原效果</div>永久：进入6挡时不受无格挡加成惩罚。每回合开始时，若处于5挡以上，抽1张牌。</div>
+    <div class="analysis">三档系统中无6挡惩罚机制，原效果需重设。改为：永久解除3挡的格挡惩罚（×0.7→×1.0），每回合若处于3挡则抽1张牌。3费投资合理，是高档流核心能力。</div>
+    <div class="final changed"><div class="lbl">调整后效果</div><div class="txt">永久：处于 <b>3 挡</b>时，格挡获取不受减损（视为 2 挡倍率）。每回合开始时，若处于 3 挡，抽 1 张牌。</div></div>
+  </div>
+
+  <div class="card ok">
+    <span class="verdict v-ok">✓ 平衡</span>
+    <div class="card-head"><div class="cost c2">2</div><div class="cname">赛车直觉</div><div class="tags"><span class="tag tp">能力</span></div></div>
+    <div class="orig"><div class="lbl">原效果</div>永久：每当你升挡，获得1点「势头」（战斗内可用作额外费用，上限4点）。</div>
+    <div class="analysis">三档系统中每回合最多升挡2次（换挡时机×2），最多获得2势头。2费能力获得0~2势头/回合，等效0~0.67费/回合，合理。</div>
+    <div class="final same"><div class="lbl">最终效果（保持）</div><div class="txt">永久：每当你升挡，获得 1 点「势头」（战斗内可用作额外费用，上限 4 点）。</div></div>
+  </div>
+
+  <div class="card ok">
+    <span class="verdict v-ok">✓ 平衡</span>
+    <div class="card-head"><div class="cost c2">2</div><div class="cname">全油门</div><div class="tags"><span class="tag tp">能力</span></div></div>
+    <div class="orig"><div class="lbl">原效果</div>永久：攻击牌造成的伤害+1。若你在这一回合升过挡，攻击牌改为+3。</div>
+    <div class="analysis">三档系统中升挡频率合理（每回合0~2次），升挡回合+3伤/张。若一回合打3张攻击牌+升挡=+9伤，2费投资约5~6回合回本，合理。</div>
+    <div class="final same"><div class="lbl">最终效果（保持）</div><div class="txt">永久：攻击牌造成的伤害 +1。若你在这一回合升过挡，攻击牌改为 +3。</div></div>
+  </div>
+
+  <div class="card ok">
+    <span class="verdict v-ok">✓ 平衡</span>
+    <div class="card-head"><div class="cost c1">1</div><div class="cname">防侧滑系统</div><div class="tags"><span class="tag tp">能力</span></div></div>
+    <div class="orig"><div class="lbl">原效果</div>永久：每当你降挡，获得3点格挡。</div>
+    <div class="analysis">三档系统中每回合最多降挡2次（换挡时机×2），最多+6格挡。1费能力获得0~6格挡/回合，是防御流核心，合理。</div>
+    <div class="final same"><div class="lbl">最终效果（保持）</div><div class="txt">永久：每当你降挡，获得 3 点格挡。</div></div>
+  </div>
+
+</div>
+
+<hr>
+
+<!-- ══ 七、遗物/药水交互检查 ══ -->
+<h2>七、遗物与药水交互检查</h2>
+<div class="note"><b>检查范围：</b>所有影响伤害、格挡、费用、抽牌的遗物和药水，与档位系统的交互兼容性。</div>
+
+<h3>遗物交互</h3>
+<div class="check-grid">
+
+  <div class="check-item ok">
+    <div class="check-head"><div class="check-icon">💪</div><div class="check-name">大眼的蛋白粉</div><span class="check-status cs-ok">✓ 兼容</span></div>
+    <div class="check-desc">永久+1力量（攻击+1伤）。力量加成在<code>dealDamage</code>中叠加在档位倍率之后，不影响档位计算。<br>交互：3挡时6伤×1.3+1=<b>9伤</b>，数值合理。</div>
+  </div>
+
+  <div class="check-item ok">
+    <div class="check-head"><div class="check-icon">🧥</div><div class="check-name">高山的冲锋衣</div><span class="check-status cs-ok">✓ 兼容</span></div>
+    <div class="check-desc">第一次获得格挡时翻倍。档位格挡（如1挡进站维修=13格挡）翻倍=26格挡，数值偏高但属于遗物强力效果，可接受。无代码冲突。</div>
+  </div>
+
+  <div class="check-item ok">
+    <div class="check-head"><div class="check-icon">🔍</div><div class="check-name">大眼的放大镜</div><span class="check-status cs-ok">✓ 兼容</span></div>
+    <div class="check-desc">战斗开始时1张手牌费用变0。与档位系统无直接交互，0费打出换挡时机/档位打击均正常。</div>
+  </div>
+
+  <div class="check-item ok">
+    <div class="check-head"><div class="check-icon">🥁</div><div class="check-name">大头的鼓棒</div><span class="check-status cs-ok">✓ 兼容</span></div>
+    <div class="check-desc">攻击牌20%概率额外释放一次。额外释放时档位状态不变，伤害倍率正常应用。<br>注意：超速警告（消耗牌）触发鼓棒时，额外释放不会再次消耗（消耗在第一次打出时已处理）。</div>
+  </div>
+
+  <div class="check-item warn">
+    <div class="check-head"><div class="check-icon">🎺</div><div class="check-name">大头的哨子</div><span class="check-status cs-warn">⚠ 需注意</span></div>
+    <div class="check-desc">回合结束时，若未打出防御牌，获得10点格挡。<br><span class="fix">注意：</span>档位防御、进站维修、过弯线路、档位锁定均为技能牌（type:'skill'），需确认代码中「防御牌」的判断条件是否包含这些牌。若<code>defensePlayedThisTurn</code>仅在type='skill'时设置，则这些牌均可触发哨子失效，逻辑正确。建议验证。</div>
+  </div>
+
+  <div class="check-item ok">
+    <div class="check-head"><div class="check-icon">📖</div><div class="check-name">大头的西班牙语书</div><span class="check-status cs-ok">✓ 兼容</span></div>
+    <div class="check-desc">回合结束时，若造成过伤害，回复2HP。档位攻击牌均调用<code>dealDamage</code>，会正确设置<code>dealtDamageThisTurn</code>标记。</div>
+  </div>
+
+  <div class="check-item ok">
+    <div class="check-head"><div class="check-icon">👓</div><div class="check-name">王微的眼镜</div><span class="check-status cs-ok">✓ 兼容</span></div>
+    <div class="check-desc">受伤时20%概率无视。与档位系统无交互，正常工作。</div>
+  </div>
+
+  <div class="check-item warn">
+    <div class="check-head"><div class="check-icon">🥽</div><div class="check-name">Susu的眼罩</div><span class="check-status cs-warn">⚠ 需注意</span></div>
+    <div class="check-desc">首次受debuff时免疫。刹车漂移和强制降挡会对敌人施加「减速」debuff，但这些是对<b>敌人</b>施加的，眼罩只保护<b>玩家</b>，无冲突。<br><span class="fix">注意：</span>若未来「减速」debuff也可施加给玩家，需检查眼罩逻辑。</div>
+  </div>
+
+  <div class="check-item ok">
+    <div class="check-head"><div class="check-icon">🔮</div><div class="check-name">大眼的水晶球</div><span class="check-status cs-ok">✓ 兼容</span></div>
+    <div class="check-desc">首次致死时以1HP存活。与档位系统无交互。</div>
+  </div>
+
+  <div class="check-item ok">
+    <div class="check-head"><div class="check-icon">📿</div><div class="check-name">王微的手绳</div><span class="check-status cs-ok">✓ 兼容</span></div>
+    <div class="check-desc">战斗开始时获得3格挡。不受档位影响（遗物触发使用<code>fromPlayer=false</code>），正常工作。</div>
+  </div>
+
+  <div class="check-item warn">
+    <div class="check-head"><div class="check-icon">🧥</div><div class="check-name">高山的冲锋衣（补充）</div><span class="check-status cs-warn">⚠ 需注意</span></div>
+    <div class="check-desc"><span class="fix">潜在问题：</span>冲锋衣翻倍触发条件为<code>fromPlayer=true</code>的第一次格挡。若玩家在1挡打出进站维修（13格挡），冲锋衣触发=26格挡，加上防侧滑系统降挡触发3格挡，总计29格挡。数值偏高但属于遗物combo，可接受。建议在说明文档中注明。</div>
+  </div>
+
+  <div class="check-item bug">
+    <div class="check-head"><div class="check-icon">🔒</div><div class="check-name">档位锁定 × 涡轮压榨</div><span class="check-status cs-bug">⚠ 需修复</span></div>
+    <div class="check-desc"><span class="fix">潜在Bug：</span>档位锁定设置<code>cs._gearLocked=true</code>后，涡轮压榨调用<code>Combat._changeGear(cs,-2)</code>。若<code>_changeGear</code>未检查<code>_gearLocked</code>标记，则锁定无效。<br><b>修复方案：</b>在<code>_changeGear</code>函数开头加入：<code>if(cs._gearLocked) return;</code></div>
+  </div>
+
+  <div class="check-item bug">
+    <div class="check-head"><div class="check-icon">⬆️</div><div class="check-name">瞬时升挡 × 换挡时机（次数限制）</div><span class="check-status cs-bug">⚠ 需确认</span></div>
+    <div class="check-desc"><span class="fix">潜在问题：</span>换挡时机有「本轮最多使用2次」限制，但瞬时升挡无此限制。若两张换挡时机+两张瞬时升挡同时在手，一回合可升挡4次（触发赛车直觉4势头+全油门+3伤）。<br>建议：将「每回合换挡总次数」限制为3次（跨所有换挡牌），或保持现状并在测试中观察。</div>
+  </div>
+
+</div>
+
+<h3>药水交互</h3>
+<div class="check-grid">
+
+  <div class="check-item ok">
+    <div class="check-head"><div class="check-icon">🍵</div><div class="check-name">乌龙茶</div><span class="check-status cs-ok">✓ 兼容</span></div>
+    <div class="check-desc">回复20%最大HP。与档位系统无交互，正常工作。</div>
+  </div>
+
+  <div class="check-item warn">
+    <div class="check-head"><div class="check-icon">🍶</div><div class="check-name">skype的醒糟水</div><span class="check-status cs-warn">⚠ 需注意</span></div>
+    <div class="check-desc">本回合所有手牌费用随机变为0~3。<br><span class="fix">注意：</span>若换挡时机被随机为2费或3费，玩家可能无法打出（能量不足），但这是醒糟水的随机性设计，属于正常风险。超速警告（0费消耗）若被随机为3费，则本回合无法打出，逻辑正确。</div>
+  </div>
+
+  <div class="check-item ok">
+    <div class="check-head"><div class="check-icon">🍞</div><div class="check-name">小七的面包</div><span class="check-status cs-ok">✓ 兼容</span></div>
+    <div class="check-desc">本回合+2能量。与档位系统无交互。额外能量可用于打出更多换挡牌或高费攻击牌，正常工作。</div>
+  </div>
+
+  <div class="check-item ok">
+    <div class="check-head"><div class="check-icon">🧴</div><div class="check-name">coco的洗发水</div><span class="check-status cs-ok">✓ 兼容</span></div>
+    <div class="check-desc">本回合抽3张牌。与档位系统无交互，正常工作。额外抽牌可能摸到换挡时机，提升档位灵活性。</div>
+  </div>
+
+</div>
+
+<hr>
+
+<!-- ══ 八、需要新增的代码逻辑 ══ -->
+<h2>八、上线前需要新增/修改的代码逻辑</h2>
+<table>
+  <thead><tr><th>优先级</th><th>内容</th><th>位置</th><th>说明</th></tr></thead>
+  <tbody>
+    <tr><td style="color:#e74c3c;font-weight:700;">必须</td><td class="l">档位系统初始化</td><td class="l">Combat.init()</td><td class="l">战斗开始时设置 <code>cs.gear = 2</code>（初始2挡）</td></tr>
+    <tr><td style="color:#e74c3c;font-weight:700;">必须</td><td class="l">_changeGear 函数</td><td class="l">Combat对象</td><td class="l">限制范围1~3，检查 <code>cs._gearLocked</code>，触发防侧滑/赛车直觉/全油门/过弯线路标记</td></tr>
+    <tr><td style="color:#e74c3c;font-weight:700;">必须</td><td class="l">档位倍率应用</td><td class="l">dealDamage / gainBlock</td><td class="l">攻击牌调用前乘以档位倍率（floor取整），格挡牌同理</td></tr>
+    <tr><td style="color:#e74c3c;font-weight:700;">必须</td><td class="l">_gearLocked检查</td><td class="l">_changeGear</td><td class="l">开头加 <code>if(cs._gearLocked) return;</code></td></tr>
+    <tr><td style="color:#e74c3c;font-weight:700;">必须</td><td class="l">速度感积累</td><td class="l">endTurn()</td><td class="l">回合结束时按档位积累速度感（1挡+3，2挡+6，3挡+9）</td></tr>
+    <tr><td style="color:#e74c3c;font-weight:700;">必须</td><td class="l">势头资源系统</td><td class="l">playCard() / UI</td><td class="l">势头作为额外费用，需在费用计算中加入 <code>cs.momentum</code>，UI需显示</td></tr>
+    <tr><td style="color:#e74c3c;font-weight:700;">必须</td><td class="l">超载buff效果</td><td class="l">enemyAttack()</td><td class="l">受伤时检查 <code>cs.player.buffs.overload</code>，触发额外格挡</td></tr>
+    <tr><td style="color:#f1c40f;font-weight:700;">建议</td><td class="l">档位UI显示</td><td class="l">_renderCombat()</td><td class="l">在战斗界面显示当前档位（1/2/3）和速度感数值</td></tr>
+    <tr><td style="color:#f1c40f;font-weight:700;">建议</td><td class="l">_shiftedUpThisTurn标记</td><td class="l">_changeGear</td><td class="l">升挡时设置 <code>cs._shiftedUpThisTurn=true</code>，回合开始时重置</td></tr>
+    <tr><td style="color:#aab7b8;">可选</td><td class="l">换挡动画/音效</td><td class="l">_changeGear</td><td class="l">档位变化时播放音效并显示档位变化提示</td></tr>
+    <tr><td style="color:#aab7b8;">可选</td><td class="l">减速debuff显示</td><td class="l">_debuffDescs</td><td class="l">在debuff字典中添加 <code>slow</code> 的名称/图标/描述</td></tr>
+  </tbody>
+</table>
+
+<hr>
+
+<!-- ══ 九、完整卡牌数值速查表 ══ -->
+<h2>九、完整卡牌数值速查表（最终版）</h2>
+<table>
+  <thead><tr><th>卡牌</th><th>类型</th><th>费用</th><th>1挡效果</th><th>2挡效果</th><th>3挡效果</th><th>备注</th></tr></thead>
+  <tbody>
+    <tr><td class="l"><b>档位打击</b></td><td>攻击</td><td>1</td><td class="g1">5伤</td><td class="g2">6伤</td><td class="g3">8伤</td><td class="l">起始牌×4</td></tr>
+    <tr><td class="l"><b>档位防御</b></td><td>技能</td><td>1</td><td class="g1">7挡</td><td class="g2">5挡</td><td class="g3">4挡</td><td class="l">起始牌×3</td></tr>
+    <tr><td class="l"><b>换挡时机</b></td><td>技能/换挡</td><td>0</td><td colspan="3" style="color:var(--dim)">升或降1挡（选择），本轮限2次</td><td class="l">起始牌×2</td></tr>
+    <tr><td class="l"><b>刹车漂移</b></td><td>攻击</td><td>1</td><td class="g1">6伤</td><td class="g2">8伤</td><td class="g3">10伤+减速2</td><td class="l">起始牌×1</td></tr>
+    <tr><td class="l"><b>氮气加速</b></td><td>攻击/换挡</td><td>2</td><td class="g1">10伤+升挡</td><td class="g2">12伤+升挡</td><td class="g3">16伤（不升挡）</td><td class="l">—</td></tr>
+    <tr><td class="l"><b>碰撞拦截</b></td><td>攻击</td><td>1</td><td class="g1">5挡+伤</td><td class="g2">4挡+伤</td><td class="g3">3挡+伤</td><td class="l">伤=当前格挡总量</td></tr>
+    <tr><td class="l"><b>甩尾冲锋</b></td><td>攻击</td><td>2</td><td class="g1">4伤全体</td><td class="g2">5伤全体</td><td class="g3">7伤全体</td><td class="l">+速度感/10×2伤</td></tr>
+    <tr><td class="l"><b>超车外线</b></td><td>攻击</td><td>1</td><td class="g1">4+4伤</td><td class="g2">5+5伤</td><td class="g3">7+7伤（免费）</td><td class="l">3挡时费用=0</td></tr>
+    <tr><td class="l"><b>涡轮压榨</b></td><td>攻击/换挡</td><td>3</td><td class="g1">6伤+降至1</td><td class="g2">12伤+降至1</td><td class="g3">18伤+降至1</td><td class="l">降2挡（最低1挡）</td></tr>
+    <tr><td class="l"><b>超速警告</b></td><td>攻击/换挡</td><td>0消耗</td><td class="g1">无效</td><td class="g2">无效</td><td class="g3">10伤+降至2挡</td><td class="l">仅3挡有效，消耗</td></tr>
+    <tr><td class="l"><b>进站维修</b></td><td>技能</td><td>1</td><td class="g1">13挡+4回血</td><td class="g2">10挡+4回血</td><td class="g3">7挡</td><td class="l">1/2挡时额外回血</td></tr>
+    <tr><td class="l"><b>赛线预判</b></td><td>技能</td><td>1</td><td colspan="3" style="color:var(--dim)">看牌堆顶3张，重排，抽1张</td><td class="l">不受档位影响</td></tr>
+    <tr><td class="l"><b>压力测试</b></td><td>技能</td><td>2</td><td colspan="3" style="color:var(--dim)">获得1层超载（受伤时+1格挡，上限3层），抽2张</td><td class="l">不受档位影响</td></tr>
+    <tr><td class="l"><b>节油行驶</b></td><td>技能/换挡</td><td>1</td><td colspan="3" style="color:var(--dim)">降1挡，本回合技能费-1</td><td class="l">—</td></tr>
+    <tr><td class="l"><b>过弯线路</b></td><td>技能</td><td>0</td><td colspan="3" style="color:var(--dim)">升过挡=8格挡，否则=5格挡</td><td class="l">不受档位倍率影响</td></tr>
+    <tr><td class="l"><b>瞬时升挡</b></td><td>技能/换挡</td><td>1</td><td colspan="3" style="color:var(--dim)">升2挡（上限3挡），抽1张</td><td class="l">—</td></tr>
+    <tr><td class="l"><b>强制降挡</b></td><td>技能/换挡</td><td>0消耗</td><td colspan="3" style="color:var(--dim)">降2挡（最低1挡），对敌施加减速=降幅×2</td><td class="l">消耗</td></tr>
+    <tr><td class="l"><b>档位锁定</b></td><td>技能/换挡</td><td>1</td><td class="g1">3格挡+锁定</td><td class="g2">6格挡+锁定</td><td class="g3">9格挡+锁定</td><td class="l">本回合档位不变</td></tr>
+    <tr><td class="l"><b>红线突破</b></td><td>能力/换挡</td><td>3</td><td colspan="3" style="color:var(--dim)">永久：3挡时格挡不减损；每回合若处于3挡，抽1张</td><td class="l">—</td></tr>
+    <tr><td class="l"><b>赛车直觉</b></td><td>能力</td><td>2</td><td colspan="3" style="color:var(--dim)">永久：每次升挡获得1势头（上限4，可作额外费用）</td><td class="l">—</td></tr>
+    <tr><td class="l"><b>全油门</b></td><td>能力</td><td>2</td><td colspan="3" style="color:var(--dim)">永久：攻击+1伤；升挡回合改为+3伤</td><td class="l">—</td></tr>
+    <tr><td class="l"><b>防侧滑系统</b></td><td>能力</td><td>1</td><td colspan="3" style="color:var(--dim)">永久：每次降挡获得3格挡</td><td class="l">—</td></tr>
+  </tbody>
+</table>
+
+<hr>
+
+<!-- ══ 十、总结 ══ -->
+<h2>十、总结</h2>
+<div class="summary">
+  <p><strong>三档系统的核心优势：</strong>所有数值均为整数，玩家可以直观计算「我现在3挡，档位打击打8伤，还需要X回合击败兔子」。档位切换的权衡更清晰：1挡防御、2挡中立、3挡爆发，没有中间地带的模糊感。</p>
+  <p><strong>平衡性评估：</strong>调整后的卡组在2挡（初始）状态下，每3费能量约可输出15~20伤或获得15~20格挡，与第1层Boss兔子（140HP，12~18伤/回合）的节奏匹配。高档流（3挡）在约10回合内可击败兔子，低档流（1挡）可以完全格挡普通攻击并依靠进站维修回血。</p>
+  <p><strong>需要重点测试的combo：</strong>① 防侧滑系统+强制降挡（3→1挡+6格挡+4层减速）；② 全油门+超车外线3挡免费（3挡=7+7+3=17伤/1费）；③ 赛车直觉+换挡时机×2（每回合+2势头）。</p>
+  <p><strong>上线前必须实现的代码：</strong>见第八节清单，共5项「必须」项目，其中档位锁定×涡轮压榨的Bug需要优先修复。</p>
+</div>
+
+</div>
+</body>
+</html>

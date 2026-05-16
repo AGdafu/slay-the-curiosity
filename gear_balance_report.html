@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>档位卡组平衡性报告</title>
+<style>
+  :root {
+    --bg: #0e1117;
+    --surface: #1a1f2e;
+    --surface2: #232940;
+    --border: rgba(255,255,255,0.1);
+    --text: #e8e8f0;
+    --text-dim: rgba(255,255,255,0.55);
+    --gold: #f1c40f;
+    --red: #e74c3c;
+    --green: #2ecc71;
+    --blue: #3498db;
+    --orange: #e67e22;
+    --purple: #9b59b6;
+    --attack: #c0392b;
+    --skill: #2980b9;
+    --power: #8e44ad;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif; font-size: 15px; line-height: 1.6; }
+  
+  .page { max-width: 1100px; margin: 0 auto; padding: 32px 20px 60px; }
+  
+  h1 { font-size: 2rem; color: var(--gold); text-align: center; margin-bottom: 6px; letter-spacing: 0.05em; }
+  .subtitle { text-align: center; color: var(--text-dim); font-size: 0.95rem; margin-bottom: 36px; }
+  
+  h2 { font-size: 1.2rem; color: var(--gold); margin: 32px 0 14px; padding-left: 10px; border-left: 3px solid var(--gold); }
+  h3 { font-size: 1rem; color: rgba(255,255,255,0.8); margin: 20px 0 10px; }
+  
+  /* 基准参考面板 */
+  .benchmark-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; margin-bottom: 8px; }
+  .benchmark-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; }
+  .benchmark-card .label { font-size: 0.8rem; color: var(--text-dim); margin-bottom: 4px; }
+  .benchmark-card .value { font-size: 1.4rem; font-weight: 700; color: var(--gold); }
+  .benchmark-card .note { font-size: 0.78rem; color: var(--text-dim); margin-top: 4px; }
+
+  /* 档位系统说明 */
+  .gear-table { width: 100%; border-collapse: collapse; margin-bottom: 8px; }
+  .gear-table th, .gear-table td { padding: 9px 14px; border: 1px solid var(--border); text-align: center; font-size: 0.9rem; }
+  .gear-table th { background: var(--surface2); color: var(--gold); font-weight: 700; }
+  .gear-table tr:nth-child(even) td { background: rgba(255,255,255,0.03); }
+  .gear-table .g1 { color: #5dade2; }
+  .gear-table .g2 { color: #85c1e9; }
+  .gear-table .g3 { color: #aab7b8; }
+  .gear-table .g4 { color: #f0b27a; }
+  .gear-table .g5 { color: #e59866; }
+  .gear-table .g6 { color: #e74c3c; }
+
+  /* 卡牌列表 */
+  .card-section { margin-bottom: 28px; }
+  .cards-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 14px; }
+  .card-entry { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px; position: relative; }
+  .card-entry.overpowered { border-color: rgba(231,76,60,0.5); background: rgba(231,76,60,0.07); }
+  .card-entry.underpowered { border-color: rgba(52,152,219,0.4); background: rgba(52,152,219,0.05); }
+  .card-entry.balanced { border-color: rgba(46,204,113,0.35); }
+  
+  .card-header { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+  .card-cost { width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 1rem; flex-shrink: 0; }
+  .cost-0 { background: rgba(255,255,255,0.15); color: #fff; }
+  .cost-1 { background: rgba(46,204,113,0.25); color: #2ecc71; border: 1px solid rgba(46,204,113,0.4); }
+  .cost-2 { background: rgba(241,196,15,0.2); color: #f1c40f; border: 1px solid rgba(241,196,15,0.35); }
+  .cost-3 { background: rgba(231,76,60,0.2); color: #e74c3c; border: 1px solid rgba(231,76,60,0.35); }
+  .card-name { font-size: 1.05rem; font-weight: 700; color: #fff; }
+  .card-tags { display: flex; gap: 5px; flex-wrap: wrap; margin-left: auto; }
+  .tag { font-size: 0.72rem; padding: 2px 8px; border-radius: 10px; font-weight: 600; }
+  .tag-attack { background: rgba(192,57,43,0.3); color: #e74c3c; border: 1px solid rgba(231,76,60,0.3); }
+  .tag-skill { background: rgba(41,128,185,0.3); color: #5dade2; border: 1px solid rgba(52,152,219,0.3); }
+  .tag-power { background: rgba(142,68,173,0.3); color: #bb8fce; border: 1px solid rgba(155,89,182,0.3); }
+  .tag-shift { background: rgba(241,196,15,0.2); color: #f1c40f; border: 1px solid rgba(241,196,15,0.3); }
+  .tag-exhaust { background: rgba(127,140,141,0.25); color: #aab7b8; border: 1px solid rgba(127,140,141,0.3); }
+  
+  .card-original { font-size: 0.85rem; color: var(--text-dim); margin-bottom: 8px; padding: 8px 10px; background: rgba(0,0,0,0.2); border-radius: 6px; border-left: 2px solid rgba(255,255,255,0.15); }
+  .card-original .label { font-size: 0.75rem; color: rgba(255,255,255,0.35); margin-bottom: 3px; }
+
+  .card-analysis { font-size: 0.85rem; color: var(--text-dim); margin-bottom: 8px; }
+  
+  .card-adjusted { font-size: 0.88rem; color: var(--text); padding: 8px 10px; border-radius: 6px; border-left: 3px solid; }
+  .card-adjusted.changed { border-color: #f1c40f; background: rgba(241,196,15,0.08); }
+  .card-adjusted.unchanged { border-color: rgba(46,204,113,0.5); background: rgba(46,204,113,0.06); }
+  .card-adjusted .label { font-size: 0.75rem; color: rgba(255,255,255,0.4); margin-bottom: 3px; }
+  .card-adjusted .text { color: #e8e8f0; }
+
+  .verdict { position: absolute; top: 14px; right: 14px; font-size: 0.72rem; font-weight: 700; padding: 2px 8px; border-radius: 8px; }
+  .verdict-op { background: rgba(231,76,60,0.25); color: #e74c3c; border: 1px solid rgba(231,76,60,0.4); }
+  .verdict-up { background: rgba(52,152,219,0.2); color: #5dade2; border: 1px solid rgba(52,152,219,0.35); }
+  .verdict-ok { background: rgba(46,204,113,0.15); color: #2ecc71; border: 1px solid rgba(46,204,113,0.3); }
+
+  /* 强度对比图 */
+  .strength-chart { display: flex; flex-direction: column; gap: 8px; }
+  .strength-row { display: flex; align-items: center; gap: 10px; }
+  .strength-name { width: 100px; font-size: 0.85rem; color: var(--text-dim); text-align: right; flex-shrink: 0; }
+  .strength-bar-wrap { flex: 1; height: 20px; background: rgba(255,255,255,0.06); border-radius: 4px; overflow: hidden; position: relative; }
+  .strength-bar { height: 100%; border-radius: 4px; transition: width 0.3s; }
+  .strength-val { width: 40px; font-size: 0.82rem; color: var(--text-dim); text-align: left; flex-shrink: 0; }
+  .bar-baseline { position: absolute; left: 50%; top: 0; bottom: 0; width: 2px; background: rgba(255,255,255,0.25); }
+
+  /* 总结 */
+  .summary-box { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 20px 24px; margin-top: 8px; }
+  .summary-box p { color: var(--text-dim); font-size: 0.92rem; margin-bottom: 10px; line-height: 1.7; }
+  .summary-box p:last-child { margin-bottom: 0; }
+  .summary-box strong { color: var(--text); }
+
+  .divider { border: none; border-top: 1px solid var(--border); margin: 28px 0; }
+
+  .note-box { background: rgba(241,196,15,0.07); border: 1px solid rgba(241,196,15,0.25); border-radius: 8px; padding: 12px 16px; font-size: 0.85rem; color: rgba(255,255,255,0.7); margin-bottom: 16px; }
+  .note-box strong { color: var(--gold); }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <h1>🏎️ 档位卡组 · 平衡性分析报告</h1>
+  <div class="subtitle">对比《Slay the Curiosity》现有数值体系，逐张评估并给出调整建议</div>
+
+  <!-- ── 游戏数值基准 ── -->
+  <h2>一、游戏现有数值基准</h2>
+  <div class="benchmark-grid">
+    <div class="benchmark-card">
+      <div class="label">玩家 HP 范围</div>
+      <div class="value">70 – 90</div>
+      <div class="note">三角色：70 / 80 / 90</div>
+    </div>
+    <div class="benchmark-card">
+      <div class="label">每回合能量</div>
+      <div class="value">3</div>
+      <div class="note">固定值，遗物可+1</div>
+    </div>
+    <div class="benchmark-card">
+      <div class="label">1费攻击基准</div>
+      <div class="value">6 – 9 伤</div>
+      <div class="note">打击6 / 剑柄击9+摸牌</div>
+    </div>
+    <div class="benchmark-card">
+      <div class="label">1费格挡基准</div>
+      <div class="value">5 – 8 挡</div>
+      <div class="note">防御5 / 耸肩8+摸牌</div>
+    </div>
+    <div class="benchmark-card">
+      <div class="label">2费攻击基准</div>
+      <div class="value">8 – 12 伤</div>
+      <div class="note">猛击8+易伤 / 铁浪双效</div>
+    </div>
+    <div class="benchmark-card">
+      <div class="label">第1层Boss HP</div>
+      <div class="value">140</div>
+      <div class="note">兔子，攻击12-18/回合</div>
+    </div>
+    <div class="benchmark-card">
+      <div class="label">第2层Boss HP</div>
+      <div class="value">180</div>
+      <div class="note">班布，攻击12-32/回合</div>
+    </div>
+    <div class="benchmark-card">
+      <div class="label">第3层Boss HP</div>
+      <div class="value">220</div>
+      <div class="note">波哥，攻击12-30/回合</div>
+    </div>
+  </div>
+
+  <!-- ── 档位系统说明 ── -->
+  <h2>二、档位系统核心设计</h2>
+  <div class="note-box">
+    <strong>档位</strong>是赛车手角色的核心资源，初始为 3 挡，范围 1–6 挡。高档提升伤害倍率，低档提升格挡倍率，6 挡时格挡效率大幅下降但伤害最高。<br>
+    <strong>速度感</strong>是辅助资源，每回合结束时按档位积累（1挡+3，6挡+18），部分卡牌消耗或利用速度感。
+  </div>
+  <table class="gear-table">
+    <thead>
+      <tr><th>档位</th><th>伤害倍率</th><th>格挡倍率</th><th>速度感积累/回合</th><th>定位</th></tr>
+    </thead>
+    <tbody>
+      <tr><td class="g1">1 挡</td><td class="g1">×0.80</td><td class="g1">×1.30</td><td class="g1">+3</td><td>纯防御，格挡最高</td></tr>
+      <tr><td class="g2">2 挡</td><td class="g2">×0.90</td><td class="g2">×1.15</td><td class="g2">+6</td><td>防御为主</td></tr>
+      <tr><td class="g3">3 挡</td><td class="g3">×1.00</td><td class="g3">×1.00</td><td class="g3">+9</td><td>基准，无加成</td></tr>
+      <tr><td class="g4">4 挡</td><td class="g4">×1.15</td><td class="g4">×0.85</td><td class="g4">+12</td><td>攻击为主</td></tr>
+      <tr><td class="g5">5 挡</td><td class="g5">×1.30</td><td class="g5">×0.75</td><td class="g5">+15</td><td>高攻击，格挡弱</td></tr>
+      <tr><td class="g6">6 挡</td><td class="g6">×1.50</td><td class="g6">×0.50</td><td class="g6">+18</td><td>极限爆发，格挡减半</td></tr>
+    </tbody>
+  </table>
+  <p style="font-size:0.82rem;color:var(--text-dim);margin-top:6px;">注：档位倍率作用于<b>基础卡牌数值</b>，不叠加力量加成。</p>
+
+  <hr class="divider">
+
+  <!-- ── 起始牌组 ── -->
+  <h2>三、起始牌组（4张，各×2~4）</h2>
+  <div class="note-box">起始牌组共 10 张：档位打击×4、档位防御×3、换挡时机×2、刹车漂移×1。设计目标是让玩家在游戏初期就能感受到档位系统的核心权衡，同时保持与现有角色相近的起始强度。</div>
+  <div class="cards-grid">
+
+    <div class="card-entry balanced">
+      <span class="verdict verdict-ok">✓ 平衡</span>
+      <div class="card-header">
+        <div class="card-cost cost-1">1</div>
+        <div class="card-name">档位打击</div>
+        <div class="card-tags"><span class="tag tag-attack">攻击</span></div>
+      </div>
+      <div class="card-original"><div class="label">原始效果</div>造成 8 点伤害。若处于 3 挡以上，额外施加 2 层「减速」。</div>
+      <div class="card-analysis">原版与刹车漂移功能重叠，且基础伤害8偏高。拆分为纯攻击牌，引入档位倍率使其在不同挡位表现差异化。</div>
+      <div class="card-adjusted changed">
+        <div class="label">调整后效果</div>
+        <div class="text">造成 6 点伤害。<b>高挡加成更高</b>（1挡≈5伤，3挡=6伤，5挡≈8伤，6挡=9伤）。</div>
+      </div>
+    </div>
+
+    <div class="card-entry balanced">
+      <span class="verdict verdict-ok">✓ 平衡</span>
+      <div class="card-header">
+        <div class="card-cost cost-1">1</div>
+        <div class="card-name">档位防御</div>
+        <div class="card-tags"><span class="tag tag-skill">技能</span></div>
+      </div>
+      <div class="card-original"><div class="label">原始效果</div>获得 5 点格挡。低挡加成更高。</div>
+      <div class="card-analysis">与现有「防御」（5挡/1费）对标，档位倍率使其在低挡时更强（1挡≈6.5挡），高挡时弱化（6挡≈2.5挡），体现系统权衡。</div>
+      <div class="card-adjusted unchanged">
+        <div class="label">调整后效果（保持）</div>
+        <div class="text">获得 5 点格挡。<b>低挡加成更高</b>（1挡≈6.5挡，3挡=5挡，6挡≈2.5挡）。</div>
+      </div>
+    </div>
+
+    <div class="card-entry balanced">
+      <span class="verdict verdict-ok">✓ 平衡</span>
+      <div class="card-header">
+        <div class="card-cost cost-0">0</div>
+        <div class="card-name">换挡时机</div>
+        <div class="card-tags"><span class="tag tag-skill">技能</span><span class="tag tag-shift">换挡</span></div>
+      </div>
+      <div class="card-original"><div class="label">原始效果</div>升 1 挡或降 1 挡（选择）。此卡本轮最多使用 2 次。</div>
+      <div class="card-analysis">0费换挡是整个系统的润滑剂，合理。每轮限2次防止无限换挡刷速度感/势头，设计合理。</div>
+      <div class="card-adjusted unchanged">
+        <div class="label">调整后效果（保持）</div>
+        <div class="text">升 1 挡或降 1 挡（选择）。此卡本轮最多使用 2 次。</div>
+      </div>
+    </div>
+
+    <div class="card-entry balanced">
+      <span class="verdict verdict-ok">✓ 平衡</span>
+      <div class="card-header">
+        <div class="card-cost cost-1">1</div>
+        <div class="card-name">刹车漂移</div>
+        <div class="card-tags"><span class="tag tag-attack">攻击</span></div>
+      </div>
+      <div class="card-original"><div class="label">原始效果</div>造成 8 点伤害。若处于 3 挡以上，额外施加 2 层「减速」。</div>
+      <div class="card-analysis">8伤+减速在3挡以上相当于1费9~10伤等效，略强。降至7伤后，3挡=7伤+减速，对标剑柄击（9伤+摸牌），弱一档但有减速控制价值。</div>
+      <div class="card-adjusted changed">
+        <div class="label">调整后效果</div>
+        <div class="text">造成 <b>7 点伤害</b>（含档位倍率）。若处于 3 挡以上，额外施加 2 层「减速」。</div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ── 攻击牌 ── -->
+  <h2>四、攻击牌（6张）</h2>
+  <div class="cards-grid">
+
+    <div class="card-entry overpowered">
+      <span class="verdict verdict-op">⚠ 偏强</span>
+      <div class="card-header">
+        <div class="card-cost cost-2">2</div>
+        <div class="card-name">氮气加速</div>
+        <div class="card-tags"><span class="tag tag-attack">攻击</span><span class="tag tag-shift">换挡</span></div>
+      </div>
+      <div class="card-original"><div class="label">原始效果</div>造成 12 点伤害并立即升 1 挡。若已处于 6 挡，改为造成 20 点伤害。</div>
+      <div class="card-analysis">2费20伤远超基准（猛击2费8伤+易伤）。12伤+升挡本身已是2费合理上限，6挡时20伤过于暴力，且6挡本身已是最高伤害档位，等于双重奖励。</div>
+      <div class="card-adjusted changed">
+        <div class="label">调整后效果</div>
+        <div class="text">造成 12 点伤害并立即升 1 挡。若已处于 6 挡，改为造成 <b>16 点伤害</b>。</div>
+      </div>
+    </div>
+
+    <div class="card-entry balanced">
+      <span class="verdict verdict-ok">✓ 平衡</span>
+      <div class="card-header">
+        <div class="card-cost cost-1">1</div>
+        <div class="card-name">碰撞拦截</div>
+        <div class="card-tags"><span class="tag tag-attack">攻击</span></div>
+      </div>
+      <div class="card-original"><div class="label">原始效果</div>获得 5 点格挡，随后造成等同于当前格挡值的伤害。</div>
+      <div class="card-analysis">1费5挡+5伤=10点价值，超出1费基准（8~9点）。改为4挡后，4挡+4伤=8点价值，与剑柄击（9伤+摸牌）相近，且有格挡留存价值。</div>
+      <div class="card-adjusted changed">
+        <div class="label">调整后效果</div>
+        <div class="text">获得 <b>4 点格挡</b>，随后造成等同于当前格挡值的伤害。</div>
+      </div>
+    </div>
+
+    <div class="card-entry balanced">
+      <span class="verdict verdict-ok">✓ 平衡</span>
+      <div class="card-header">
+        <div class="card-cost cost-2">2</div>
+        <div class="card-name">甩尾冲锋</div>
+        <div class="card-tags"><span class="tag tag-attack">攻击</span></div>
+      </div>
+      <div class="card-original"><div class="label">原始效果</div>对所有敌人造成 6 点伤害。速度感每有 10 点，额外造成 2 点伤害。</div>
+      <div class="card-analysis">2费全体6伤对比霹雳（1费全体4伤+易伤），多1费多2伤但无易伤，基础合理。速度感加成是中长期奖励，早期几乎无加成，后期最多+6伤（30速度感），整体合理。降至5伤基础以匹配2费全体攻击的合理区间。</div>
+      <div class="card-adjusted changed">
+        <div class="label">调整后效果</div>
+        <div class="text">对所有敌人造成 <b>5 点伤害</b>。速度感每有 10 点，额外造成 2 点伤害。</div>
+      </div>
+    </div>
+
+    <div class="card-entry balanced">
+      <span class="verdict verdict-ok">✓ 平衡</span>
+      <div class="card-header">
+        <div class="card-cost cost-1">1</div>
+        <div class="card-name">超车外线</div>
+        <div class="card-tags"><span class="tag tag-attack">攻击</span></div>
+      </div>
+      <div class="card-original"><div class="label">原始效果</div>造成 6+6 点伤害（两段）。若处于 4 挡及以上，本卡免费使用。</div>
+      <div class="card-analysis">1费12伤两段已偏强（对比剑柄击9伤+摸牌）。4挡以上免费等于额外+1能量，条件合理但基础伤害需下调。改为5+5=10伤，免费条件保留，整体价值与剑柄击相近。</div>
+      <div class="card-adjusted changed">
+        <div class="label">调整后效果</div>
+        <div class="text">造成 <b>5+5 点伤害</b>（两段）。若处于 4 挡以上，本卡免费使用。</div>
+      </div>
+    </div>
+
+    <div class="card-entry overpowered">
+      <span class="verdict verdict-op">⚠ 偏强</span>
+      <div class="card-header">
+        <div class="card-cost cost-3">3</div>
+        <div class="card-name">涡轮压榨</div>
+        <div class="card-tags"><span class="tag tag-attack">攻击</span><span class="tag tag-shift">换挡</span></div>
+      </div>
+      <div class="card-original"><div class="label">原始效果</div>造成 5×（当前档位） 点伤害，随后降 2 挡。</div>
+      <div class="card-analysis">6挡时5×6=30伤，3费30伤即使有降挡代价也远超基准（3费上限约20~22伤）。降2挡代价真实，但30伤过高。改为4×档位，6挡时=24伤，5挡时=20伤，与3费价值区间匹配。</div>
+      <div class="card-adjusted changed">
+        <div class="label">调整后效果</div>
+        <div class="text">造成 <b>4×（当前档位）</b> 点伤害，随后降 2 挡。（6挡=24伤，5挡=20伤，3挡=12伤）</div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ── 技能牌 ── -->
+  <h2>五、技能牌（8张）</h2>
+  <div class="cards-grid">
+
+    <div class="card-entry balanced">
+      <span class="verdict verdict-ok">✓ 平衡</span>
+      <div class="card-header">
+        <div class="card-cost cost-1">1</div>
+        <div class="card-name">进站维修</div>
+        <div class="card-tags"><span class="tag tag-skill">技能</span></div>
+      </div>
+      <div class="card-original"><div class="label">原始效果</div>获得 10 点格挡。若处于 1 挡或 2 挡，额外恢复 4 点生命值。</div>
+      <div class="card-analysis">1费10挡比耸肩（8挡+摸牌）多2挡但无摸牌，低档回血是额外奖励，整体合理。鼓励低档防御流，符合设计意图。</div>
+      <div class="card-adjusted unchanged">
+        <div class="label">调整后效果（保持）</div>
+        <div class="text">获得 10 点格挡。若处于 1 挡或 2 挡，额外恢复 4 点生命值。</div>
+      </div>
+    </div>
+
+    <div class="card-entry balanced">
+      <span class="verdict verdict-ok">✓ 平衡</span>
+      <div class="card-header">
+        <div class="card-cost cost-1">1</div>
+        <div class="card-name">赛线预判</div>
+        <div class="card-tags"><span class="tag tag-skill">技能</span></div>
+      </div>
+      <div class="card-original"><div class="label">原始效果</div>查看牌堆顶 3 张牌，可重新排列顺序，再抽 1 张牌。</div>
+      <div class="card-analysis">1费看3张+排序+摸1，属于牌序操控类，价值与耸肩（8挡+摸1）相当，但提供牌序控制而非格挡，定位差异化，合理。</div>
+      <div class="card-adjusted unchanged">
+        <div class="label">调整后效果（保持）</div>
+        <div class="text">查看牌堆顶 3 张牌，可重新排列顺序，再抽 1 张牌。</div>
+      </div>
+    </div>
+
+    <div class="card-entry balanced">
+      <span class="verdict verdict-ok">✓ 平衡</span>
+      <div class="card-header">
+        <div class="card-cost cost-2">2</div>
+        <div class="card-name">压力测试</div>
+        <div class="card-tags"><span class="tag tag-skill">技能</span></div>
+      </div>
+      <div class="card-original"><div class="label">原始效果</div>获得 1 层「超载」（+1 挡持续效果），然后抽 2 张牌。超载最多叠加 3 层。</div>
+      <div class="card-analysis">2费摸2+升挡（超载），上限3层意味着最多+3档位，是长期投资型卡牌。2费摸2已是合理价值，升挡是额外奖励，上限限制防止过强，整体合理。</div>
+      <div class="card-adjusted unchanged">
+        <div class="label">调整后效果（保持）</div>
+        <div class="text">获得 1 层「超载」（+1 挡持续效果，上限 3 层），然后抽 2 张牌。</div>
+      </div>
+    </div>
+
+    <div class="card-entry balanced">
+      <span class="verdict verdict-ok">✓ 平衡</span>
+      <div class="card-header">
+        <div class="card-cost cost-1">1</div>
+        <div class="card-name">节油行驶</div>
+        <div class="card-tags"><span class="tag tag-skill">技能</span><span class="tag tag-shift">换挡</span></div>
+      </div>
+      <div class="card-original"><div class="label">原始效果</div>降 1 挡，本回合所有技能费用降低 1。</div>
+      <div class="card-analysis">1费降挡+技能费-1，本回合若有2张1费技能则净赚1费，是费用管理工具。降挡代价真实，整体合理。</div>
+      <div class="card-adjusted unchanged">
+        <div class="label">调整后效果（保持）</div>
+        <div class="text">降 1 挡，本回合所有技能牌费用 -1（最低 0）。</div>
+      </div>
+    </div>
+
+    <div class="card-entry underpowered">
+      <span class="verdict verdict-up">↑ 略弱</span>
+      <div class="card-header">
+        <div class="card-cost cost-0">0</div>
+        <div class="card-name">过弯线路</div>
+        <div class="card-tags"><span class="tag tag-skill">技能</span></div>
+      </div>
+      <div class="card-original"><div class="label">原始效果</div>如果此回合已经升过挡，获得 8 点格挡；否则获得 4 点格挡。</div>
+      <div class="card-analysis">0费条件8挡合理，但无升挡时4挡略弱（对比0费冲撞6伤）。提升至5挡使无条件情况下也有基础价值。</div>
+      <div class="card-adjusted changed">
+        <div class="label">调整后效果</div>
+        <div class="text">如果此回合已经升过挡，获得 8 点格挡；否则获得 <b>5 点格挡</b>。</div>
+      </div>
+    </div>
+
+    <div class="card-entry balanced">
+      <span class="verdict verdict-ok">✓ 平衡</span>
+      <div class="card-header">
+        <div class="card-cost cost-1">1</div>
+        <div class="card-name">瞬时升挡</div>
+        <div class="card-tags"><span class="tag tag-skill">技能</span><span class="tag tag-shift">换挡</span></div>
+      </div>
+      <div class="card-original"><div class="label">原始效果</div>升 2 挡（不超过 6 挡上限），抽 1 张牌。</div>
+      <div class="card-analysis">1费升2挡+摸1，快速进入高档的核心工具。摸牌补偿了费用，升挡本身无直接价值，需配合其他卡发挥，合理。</div>
+      <div class="card-adjusted unchanged">
+        <div class="label">调整后效果（保持）</div>
+        <div class="text">升 2 挡（不超过 6 挡上限），抽 1 张牌。</div>
+      </div>
+    </div>
+
+    <div class="card-entry balanced">
+      <span class="verdict verdict-ok">✓ 平衡</span>
+      <div class="card-header">
+        <div class="card-cost cost-0">0</div>
+        <div class="card-name">强制降挡</div>
+        <div class="card-tags"><span class="tag tag-skill">技能</span><span class="tag tag-shift">换挡</span><span class="tag tag-exhaust">消耗</span></div>
+      </div>
+      <div class="card-original"><div class="label">原始效果</div>降 2 挡。对敌人施加「减速」层数等于降幅×2。消耗。</div>
+      <div class="card-analysis">0费消耗，降2挡+施加4层减速（敌人伤害-4），是高价值控制牌。消耗限制了重复使用，降挡代价真实，整体合理。</div>
+      <div class="card-adjusted unchanged">
+        <div class="label">调整后效果（保持）</div>
+        <div class="text">降 2 挡。对敌人施加「减速」层数等于降幅×2。消耗。</div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ── 能力牌 ── -->
+  <h2>六、能力牌（4张）</h2>
+  <div class="cards-grid">
+
+    <div class="card-entry balanced">
+      <span class="verdict verdict-ok">✓ 平衡</span>
+      <div class="card-header">
+        <div class="card-cost cost-3">3</div>
+        <div class="card-name">红线突破</div>
+        <div class="card-tags"><span class="tag tag-power">能力</span><span class="tag tag-shift">换挡</span></div>
+      </div>
+      <div class="card-original"><div class="label">原始效果</div>永久：进入 6 挡时不受无格挡加成惩罚。每回合开始时，若处于 5 挡以上，抽 1 张牌。</div>
+      <div class="card-analysis">3费能力，解除6挡格挡惩罚+高档摸牌，是高档流的核心支撑。3费投资合理，效果强但需要先到达高档才能发挥，有条件限制。整体合理。</div>
+      <div class="card-adjusted unchanged">
+        <div class="label">调整后效果（保持）</div>
+        <div class="text">永久：进入 6 挡时不受无格挡加成惩罚。每回合开始时，若处于 5 挡以上，抽 1 张牌。</div>
+      </div>
+    </div>
+
+    <div class="card-entry overpowered">
+      <span class="verdict verdict-op">⚠ 偏强</span>
+      <div class="card-header">
+        <div class="card-cost cost-2">2</div>
+        <div class="card-name">赛车直觉</div>
+        <div class="card-tags"><span class="tag tag-power">能力</span></div>
+      </div>
+      <div class="card-original"><div class="label">原始效果</div>永久：每当你升挡，获得 2 点「势头」（战斗内可用作额外费用，上限 6）。</div>
+      <div class="card-analysis">每次升挡+2势头，上限6。一回合内可升挡2~3次（换挡时机×2+瞬时升挡），等于每回合额外+4~6势头，相当于1~2费。2费能力获得等效1~2费/回合过强。改为每次升挡+1势头，上限4，等效0.5~1费/回合，更合理。</div>
+      <div class="card-adjusted changed">
+        <div class="label">调整后效果</div>
+        <div class="text">永久：每当你升挡，获得 <b>1 点「势头」</b>（战斗内可用作额外费用，<b>上限 4 点</b>）。</div>
+      </div>
+    </div>
+
+    <div class="card-entry overpowered">
+      <span class="verdict verdict-op">⚠ 偏强</span>
+      <div class="card-header">
+        <div class="card-cost cost-2">2</div>
+        <div class="card-name">全油门</div>
+        <div class="card-tags"><span class="tag tag-power">能力</span></div>
+      </div>
+      <div class="card-original"><div class="label">原始效果</div>永久：攻击牌造成的伤害 +2。若你在这一回合升过挡，攻击牌改为 +5。</div>
+      <div class="card-analysis">永久+2伤对标激怒（1费+2力量），但全油门2费且升挡回合+5。一回合4张攻击牌×5=+20伤，雪球效应极强。改为+1/+3，对标激怒强度，升挡奖励保留但幅度合理。</div>
+      <div class="card-adjusted changed">
+        <div class="label">调整后效果</div>
+        <div class="text">永久：攻击牌造成的伤害 <b>+1</b>。若你在这一回合升过挡，攻击牌改为 <b>+3</b>。</div>
+      </div>
+    </div>
+
+    <div class="card-entry balanced">
+      <span class="verdict verdict-ok">✓ 平衡</span>
+      <div class="card-header">
+        <div class="card-cost cost-1">1</div>
+        <div class="card-name">防侧滑系统</div>
+        <div class="card-tags"><span class="tag tag-power">能力</span></div>
+      </div>
+      <div class="card-original"><div class="label">原始效果</div>永久：每当你降挡，获得 3 点格挡。</div>
+      <div class="card-analysis">1费能力，降挡触发3格挡。一回合降2~3挡最多+9格挡，是防御流的核心遗物。1费投资合理，与防侧滑流（节油行驶+强制降挡）形成协同，整体合理。</div>
+      <div class="card-adjusted unchanged">
+        <div class="label">调整后效果（保持）</div>
+        <div class="text">永久：每当你降挡，获得 3 点格挡。</div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ── 换挡标签牌 ── -->
+  <h2>七、换挡标签牌（2张）</h2>
+  <div class="cards-grid">
+
+    <div class="card-entry balanced">
+      <span class="verdict verdict-ok">✓ 平衡</span>
+      <div class="card-header">
+        <div class="card-cost cost-1">1</div>
+        <div class="card-name">档位锁定</div>
+        <div class="card-tags"><span class="tag tag-skill">技能</span><span class="tag tag-shift">换挡</span></div>
+      </div>
+      <div class="card-original"><div class="label">原始效果</div>本回合档位不会因任何效果改变。获得等于当前档位×2 的格挡。</div>
+      <div class="card-analysis">1费，档位×2格挡（6挡=12挡，3挡=6挡）。6挡时12格挡+锁定=1费高价值，但6挡本身格挡效率已减半，实际等效约6格挡。锁定机制防止被自己的降挡牌意外触发，整体合理。</div>
+      <div class="card-adjusted unchanged">
+        <div class="label">调整后效果（保持）</div>
+        <div class="text">本回合档位不会因任何效果改变。获得等于当前档位×2 的格挡。</div>
+      </div>
+    </div>
+
+    <div class="card-entry overpowered">
+      <span class="verdict verdict-op">⚠ 偏强</span>
+      <div class="card-header">
+        <div class="card-cost cost-0">0</div>
+        <div class="card-name">超速警告</div>
+        <div class="card-tags"><span class="tag tag-attack">攻击</span><span class="tag tag-shift">换挡</span><span class="tag tag-exhaust">消耗</span></div>
+      </div>
+      <div class="card-original"><div class="label">原始效果</div>若你处于 5 挡或 6 挡，造成 18 点伤害并强制降 1 挡。否则此牌无效果。消耗。</div>
+      <div class="card-analysis">0费消耗18伤，对比0费冲撞（条件14伤），强出28%且条件更容易满足（高档流必然满足）。消耗限制了重复使用，但单次价值过高。降至12伤，与0费冲撞形成合理对比（条件更简单但伤害略低）。</div>
+      <div class="card-adjusted changed">
+        <div class="label">调整后效果</div>
+        <div class="text">若你处于 5 挡或 6 挡，造成 <b>12 点伤害</b>并强制降 1 挡。否则此牌无效果。消耗。</div>
+      </div>
+    </div>
+
+  </div>
+
+  <hr class="divider">
+
+  <!-- ── 强度总览 ── -->
+  <h2>八、调整前后强度对比</h2>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
+    <div>
+      <h3 style="color:var(--red);margin-bottom:12px;">调整前（原始）</h3>
+      <div class="strength-chart">
+        <div class="strength-row"><div class="strength-name">氮气加速</div><div class="strength-bar-wrap"><div class="strength-bar" style="width:90%;background:linear-gradient(90deg,#e74c3c,#c0392b)"></div><div class="bar-baseline"></div></div><div class="strength-val" style="color:#e74c3c">偏强</div></div>
+        <div class="strength-row"><div class="strength-name">涡轮压榨</div><div class="strength-bar-wrap"><div class="strength-bar" style="width:88%;background:linear-gradient(90deg,#e74c3c,#c0392b)"></div><div class="bar-baseline"></div></div><div class="strength-val" style="color:#e74c3c">偏强</div></div>
+        <div class="strength-row"><div class="strength-name">超速警告</div><div class="strength-bar-wrap"><div class="strength-bar" style="width:85%;background:linear-gradient(90deg,#e74c3c,#c0392b)"></div><div class="bar-baseline"></div></div><div class="strength-val" style="color:#e74c3c">偏强</div></div>
+        <div class="strength-row"><div class="strength-name">全油门</div><div class="strength-bar-wrap"><div class="strength-bar" style="width:82%;background:linear-gradient(90deg,#e67e22,#d35400)"></div><div class="bar-baseline"></div></div><div class="strength-val" style="color:#e67e22">偏强</div></div>
+        <div class="strength-row"><div class="strength-name">赛车直觉</div><div class="strength-bar-wrap"><div class="strength-bar" style="width:80%;background:linear-gradient(90deg,#e67e22,#d35400)"></div><div class="bar-baseline"></div></div><div class="strength-val" style="color:#e67e22">偏强</div></div>
+        <div class="strength-row"><div class="strength-name">碰撞拦截</div><div class="strength-bar-wrap"><div class="strength-bar" style="width:72%;background:linear-gradient(90deg,#e67e22,#d35400)"></div><div class="bar-baseline"></div></div><div class="strength-val" style="color:#e67e22">略强</div></div>
+        <div class="strength-row"><div class="strength-name">超车外线</div><div class="strength-bar-wrap"><div class="strength-bar" style="width:70%;background:linear-gradient(90deg,#e67e22,#d35400)"></div><div class="bar-baseline"></div></div><div class="strength-val" style="color:#e67e22">略强</div></div>
+        <div class="strength-row"><div class="strength-name">进站维修</div><div class="strength-bar-wrap"><div class="strength-bar" style="width:58%;background:linear-gradient(90deg,#2ecc71,#27ae60)"></div><div class="bar-baseline"></div></div><div class="strength-val" style="color:#2ecc71">合理</div></div>
+        <div class="strength-row"><div class="strength-name">过弯线路</div><div class="strength-bar-wrap"><div class="strength-bar" style="width:38%;background:linear-gradient(90deg,#3498db,#2980b9)"></div><div class="bar-baseline"></div></div><div class="strength-val" style="color:#3498db">略弱</div></div>
+      </div>
+    </div>
+    <div>
+      <h3 style="color:var(--green);margin-bottom:12px;">调整后（建议）</h3>
+      <div class="strength-chart">
+        <div class="strength-row"><div class="strength-name">氮气加速</div><div class="strength-bar-wrap"><div class="strength-bar" style="width:62%;background:linear-gradient(90deg,#2ecc71,#27ae60)"></div><div class="bar-baseline"></div></div><div class="strength-val" style="color:#2ecc71">合理</div></div>
+        <div class="strength-row"><div class="strength-name">涡轮压榨</div><div class="strength-bar-wrap"><div class="strength-bar" style="width:65%;background:linear-gradient(90deg,#2ecc71,#27ae60)"></div><div class="bar-baseline"></div></div><div class="strength-val" style="color:#2ecc71">合理</div></div>
+        <div class="strength-row"><div class="strength-name">超速警告</div><div class="strength-bar-wrap"><div class="strength-bar" style="width:58%;background:linear-gradient(90deg,#2ecc71,#27ae60)"></div><div class="bar-baseline"></div></div><div class="strength-val" style="color:#2ecc71">合理</div></div>
+        <div class="strength-row"><div class="strength-name">全油门</div><div class="strength-bar-wrap"><div class="strength-bar" style="width:60%;background:linear-gradient(90deg,#2ecc71,#27ae60)"></div><div class="bar-baseline"></div></div><div class="strength-val" style="color:#2ecc71">合理</div></div>
+        <div class="strength-row"><div class="strength-name">赛车直觉</div><div class="strength-bar-wrap"><div class="strength-bar" style="width:62%;background:linear-gradient(90deg,#2ecc71,#27ae60)"></div><div class="bar-baseline"></div></div><div class="strength-val" style="color:#2ecc71">合理</div></div>
+        <div class="strength-row"><div class="strength-name">碰撞拦截</div><div class="strength-bar-wrap"><div class="strength-bar" style="width:58%;background:linear-gradient(90deg,#2ecc71,#27ae60)"></div><div class="bar-baseline"></div></div><div class="strength-val" style="color:#2ecc71">合理</div></div>
+        <div class="strength-row"><div class="strength-name">超车外线</div><div class="strength-bar-wrap"><div class="strength-bar" style="width:60%;background:linear-gradient(90deg,#2ecc71,#27ae60)"></div><div class="bar-baseline"></div></div><div class="strength-val" style="color:#2ecc71">合理</div></div>
+        <div class="strength-row"><div class="strength-name">进站维修</div><div class="strength-bar-wrap"><div class="strength-bar" style="width:58%;background:linear-gradient(90deg,#2ecc71,#27ae60)"></div><div class="bar-baseline"></div></div><div class="strength-val" style="color:#2ecc71">合理</div></div>
+        <div class="strength-row"><div class="strength-name">过弯线路</div><div class="strength-bar-wrap"><div class="strength-bar" style="width:52%;background:linear-gradient(90deg,#2ecc71,#27ae60)"></div><div class="bar-baseline"></div></div><div class="strength-val" style="color:#2ecc71">合理</div></div>
+      </div>
+    </div>
+  </div>
+
+  <hr class="divider">
+
+  <!-- ── 调整汇总表 ── -->
+  <h2>九、调整汇总</h2>
+  <table class="gear-table">
+    <thead>
+      <tr><th>卡牌</th><th>类型</th><th>费用</th><th>调整内容</th><th>调整幅度</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>刹车漂移</td><td>攻击</td><td>1</td><td>基础伤害 8 → 7</td><td style="color:#f1c40f">-12%</td></tr>
+      <tr><td>氮气加速</td><td>攻击+换挡</td><td>2</td><td>6挡特殊伤害 20 → 16</td><td style="color:#e74c3c">-20%</td></tr>
+      <tr><td>碰撞拦截</td><td>攻击</td><td>1</td><td>格挡值 5 → 4（连带伤害也降低）</td><td style="color:#f1c40f">-20%</td></tr>
+      <tr><td>甩尾冲锋</td><td>攻击</td><td>2</td><td>基础伤害 6 → 5（全体）</td><td style="color:#f1c40f">-17%</td></tr>
+      <tr><td>超车外线</td><td>攻击</td><td>1</td><td>两段伤害 6+6 → 5+5</td><td style="color:#f1c40f">-17%</td></tr>
+      <tr><td>涡轮压榨</td><td>攻击+换挡</td><td>3</td><td>倍数 5× → 4×（6挡 30→24）</td><td style="color:#e74c3c">-20%</td></tr>
+      <tr><td>过弯线路</td><td>技能</td><td>0</td><td>无条件格挡 4 → 5</td><td style="color:#2ecc71">+25%（补强）</td></tr>
+      <tr><td>赛车直觉</td><td>能力</td><td>2</td><td>势头+2/次→+1/次，上限6→4</td><td style="color:#e74c3c">-50%</td></tr>
+      <tr><td>全油门</td><td>能力</td><td>2</td><td>攻击+2/+5 → +1/+3</td><td style="color:#e74c3c">-40%</td></tr>
+      <tr><td>超速警告</td><td>攻击+换挡</td><td>0消耗</td><td>伤害 18 → 12</td><td style="color:#e74c3c">-33%</td></tr>
+      <tr style="background:rgba(46,204,113,0.05)"><td colspan="4" style="text-align:left;color:rgba(255,255,255,0.5)">以下卡牌无需调整（共10张）：档位打击、档位防御、换挡时机、进站维修、赛线预判、压力测试、节油行驶、瞬时升挡、强制降挡、红线突破、防侧滑系统、档位锁定</td><td style="color:#2ecc71">✓</td></tr>
+    </tbody>
+  </table>
+
+  <hr class="divider">
+
+  <!-- ── 综合评估 ── -->
+  <h2>十、综合评估与建议</h2>
+  <div class="summary-box">
+    <p><strong>整体判断：</strong>原始设计的系统逻辑非常清晰，档位权衡、速度感积累、换挡触发链的设计思路都很扎实。主要问题集中在<strong>数值上限过高</strong>——尤其是0费消耗牌（超速警告18伤）和能力牌（全油门+5、赛车直觉+2势头）的爆发上限，与现有游戏的1费6伤基准相比差距过大，容易导致高档流在中后期形成碾压。</p>
+    <p><strong>调整后预期：</strong>调整后的卡组在3挡基准下与现有角色强度相当，高档流（5~6挡）有约20~30%的伤害溢出，低档流（1~2挡）有约15~20%的格挡溢出，两条路线均有竞争力但不至于碾压。速度感流（甩尾冲锋）在中后期有合理的成长空间。</p>
+    <p><strong>需要额外注意的交互：</strong>① <strong>全油门 + 涡轮压榨</strong>：6挡时4×6+3=27伤，3费合理；② <strong>赛车直觉 + 瞬时升挡</strong>：1费升2挡+2势头，等于1费换2费，需在实际测试中观察；③ <strong>防侧滑系统 + 强制降挡</strong>：0费消耗降2挡+6格挡，是低档防御流的核心combo，价值合理。</p>
+    <p><strong>建议下一步：</strong>可以先将调整后的数值接入游戏进行实际测试，重点观察第1层Boss（兔子，140HP）的通关率。若赛车手通关率明显高于其他角色，可进一步下调档位倍率（如6挡从×1.5降至×1.4）。</p>
+  </div>
+
+</div>
+</body>
+</html>
