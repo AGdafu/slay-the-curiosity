@@ -4,17 +4,48 @@ const Data = {
     {
       id: 'archer', name: '射手', emoji: '🏹', color: '#27ae60',
       hp: 60, maxHp: 60, description: '蓄力型角色。打出技能牌积累蓄力，在关键时刻一击爆发。HP较低。',
-      startingDeck: ['ar_shoot','ar_shoot','ar_shoot','ar_shoot','ar_dodge','ar_dodge','ar_dodge','ar_aim','ar_aim','ar_sprint']
+      startingDeck: ['ar_shoot','ar_shoot','ar_shoot','ar_shoot','ar_dodge','ar_dodge','ar_dodge','ar_aim','ar_aim','ar_sprint'],
+      detail: {
+        gold: 75,
+        playstyle: '蓄力爆发流。平时用技能牌积攒蓄力值（上限5点），攒满后用消耗蓄力的攻击牌一波输出高额伤害。格挡与蓄力往往同步增长，前期稳住防线、中期蓄势待发、关键时刻一击制敌是核心节奏。',
+        mechanics: [
+          { name: '🏹 蓄力（Charge）', desc: '上限默认5点。打出稀有强化牌「蓄力上限」后可提升至8点。消耗全部蓄力的攻击牌：每消耗1点额外造成3~4点伤害，蓄力越满爆发越高。' },
+          { name: '🛡 格挡蓄力联动', desc: '大量技能牌同时增加格挡+蓄力，打防守就等于在攒爆发，攻防一体是射手的核心优势。闪身、格挡蓄力、疾风步等都是典型例子。' },
+          { name: '🎯 消耗型爆发', desc: '攻击牌打出时将蓄力清零并转化为伤害。蓄满5点后一击输出可达15~25点以上。「满蓄爆射」须满蓄才能打出，造成30点高额伤害。' },
+          { name: '💥 易伤利用', desc: '给敌人施加易伤（受到伤害×1.5）后，配合高蓄力爆发牌可将单回合伤害最大化。弱化箭、易伤箭是前期破防的核心工具。' },
+        ]
+      }
     },
     {
       id: 'brute', name: 'The Brute', emoji: '⚔️', color: '#c0392b',
       hp: 90, maxHp: 90, description: '力量型角色，重伤敌人。',
-      startingDeck: ['strike','strike','strike','strike','strike','strike','defend','defend','defend','clash']
+      startingDeck: ['strike','strike','strike','strike','strike','strike','defend','defend','defend','clash'],
+      detail: {
+        gold: 99,
+        playstyle: '硬桥硬马暴力流。HP最高、金币最多，直接靠攻击力和血量碾压敌人。机制简单直白，适合初次上手，也适合喜欢稳扎稳打风格的玩家。',
+        mechanics: [
+          { name: '❤️ 高HP（90点）', desc: '三角色中血量最厚，能扛住更多伤害，容错空间最大，不需要精确计算格挡也能撑过来。' },
+          { name: '💰 高起始金币（99金）', desc: '初始资金最充裕，可以在商店优先购买强力遗物或删牌，让牌组更精锐。' },
+          { name: '💪 力量叠加', desc: '通过特定牌积累力量层数，每1点力量使所有攻击额外+1伤害。力量越高，每张攻击牌的边际收益越大。' },
+          { name: '💢 冲撞（0费）', desc: '当手牌全为攻击牌时造成14点高伤，否则仅6点。合理安排手牌顺序能让0费牌稳定触发全额伤害。' },
+        ]
+      }
     },
     {
       id: 'racer', name: '赛车手', emoji: '🏎️', color: '#e67e22',
       hp: 75, maxHp: 75, description: '档位系统角色。通过换挡在攻守之间切换，高档爆发伤害，低档厚实防御。',
-      startingDeck: ['gear_strike','gear_strike','gear_strike','gear_strike','gear_defend','gear_defend','gear_defend','gear_shift','gear_shift','gear_brake']
+      startingDeck: ['gear_strike','gear_strike','gear_strike','gear_strike','gear_defend','gear_defend','gear_defend','gear_shift','gear_shift','gear_brake'],
+      detail: {
+        gold: 85,
+        playstyle: '档位操控流。战斗中灵活升降档位在攻守之间切换：3挡爆发伤害最高，1挡防御最厚实，2挡为中立初始档位。每次换挡都有额外收益，节奏感极强，上手需要一定练习。',
+        mechanics: [
+          { name: '⚙️ 档位（Gear 1–3）', desc: '战斗初始档位2（中立）。1挡防御×1.3、伤害×0.8；2挡标准倍率；3挡伤害×1.3、防御×0.7。换挡是最核心的决策点。' },
+          { name: '⚡ 动力值（Momentum）', desc: '升档时积累，上限3点；升级「竞速本能」牌后上限提升至5点。回合开始时动力值转化为额外能量，是赛车手能量优势的来源。' },
+          { name: '🔥 全油门（Full Throttle）', desc: '激活后所有攻击额外+1伤害；升档时收益翻倍（+2）。升级后即使不升档也保持+1，是中后期核心输出增益。' },
+          { name: '🌀 过热（Overload）', desc: '压力测试等牌会在当前档位较高时叠加过热层数。过热达到阈值后可触发强化效果，是高档位专属爆发手段。' },
+          { name: '🏁 竞速本能（Race Instinct）', desc: '升档时积累动力值，可视作"回合内额外能量储蓄"。配合多张换挡牌可在一回合内打出超过能量上限的牌。' },
+        ]
+      }
     }
   ],
   cards: {
@@ -55,58 +86,58 @@ const Data = {
     // 档位格挡倍率：1挡=1.3 2挡=1.15 3挡=1.0 4挡=0.85 5挡=0.75 6挡=0.5
 
     // 起始牌：档位打击（替代打击）
-    gear_strike: { id:'gear_strike', rarity:'common', name:'档位打击', cost:1, type:'attack', emoji:'👊', description:'造成 6 点伤害。<br><span style="font-size:0.8em;opacity:0.7">1挡=5伤 · 2挡=6伤 · 3挡=8伤</span>', needsTarget:true,
+    gear_strike: { id:'gear_strike', rarity:'common', name:'档位打击', cost:1, type:'attack', emoji:'👊', description:'造成 <b>6</b> 点伤害（含档位倍率）。', needsTarget:true,
       effect(cs,ti){ const g=cs.gear||2; const dmgMult=[0,0.8,1.0,1.3][g]; const bonus=Combat._getFtBonus(cs); Combat.dealDamage(cs,ti,Math.floor(6*dmgMult)+bonus); } },
     // 起始牌：档位防御（替代防御）
-    gear_defend: { id:'gear_defend', rarity:'common', name:'档位防御', cost:1, type:'skill', emoji:'🛡', description:'获得 5 点格挡。<br><span style="font-size:0.8em;opacity:0.7">1挡=7挡 · 2挡=5挡 · 3挡=4挡（红线突破时=5挡）</span>', needsTarget:false,
+    gear_defend: { id:'gear_defend', rarity:'common', name:'档位防御', cost:1, type:'skill', emoji:'🛡', description:'获得 <b>5</b> 点格挡（含档位倍率）。', needsTarget:false,
       effect(cs){ const g=cs.gear||2; const hasRedline=(cs.player.buffs.redline||0)>0; const blkMult=hasRedline&&g>=3?1.0:[0,1.3,1.0,0.7][g]; Combat.gainBlock(cs,Math.floor(5*blkMult),true); } },
     // 起始牌：换挡时机
     gear_shift: { id:'gear_shift', rarity:'common', name:'换挡时机', cost:0, type:'skill', emoji:'🔄', description:'升 1 挡或降 1 挡（选择）。本卡本轮最多使用 2 次。', needsTarget:false,
       effect(cs){ Combat._gearShiftInteractive(cs, 'gear_shift'); } },
     // 起始牌：刹车漂移（替代猛击）
-    gear_brake: { id:'gear_brake', rarity:'common', name:'刹车漂移', cost:1, type:'attack', emoji:'💨', description:'造成 8 点伤害。<br><span style="font-size:0.8em;opacity:0.7">1挡=6伤 · 2挡=8伤 · 3挡=10伤+减速2</span>', needsTarget:true,
+    gear_brake: { id:'gear_brake', rarity:'common', name:'刹车漂移', cost:1, type:'attack', emoji:'💨', description:'造成 <b>8</b> 点伤害（含档位倍率）。3 挡时附加 2 层减速。', needsTarget:true,
       effect(cs,ti){ const g=cs.gear||2; const dmgMult=[0,0.8,1.0,1.3][g]; const bonus=Combat._getFtBonus(cs); Combat.dealDamage(cs,ti,Math.floor(8*dmgMult)+bonus); if(g>=3){ Combat.applyDebuff(cs.enemies[ti],'slow',2); } } },
 
     // ── 攻击牌（6张）────────────────────────────────────────────────────────────────────────────────
     // 1. 刹车漂移（起始牌已包含）
     // 2. 氮气加速：2费 攻击+换挡 12伤+升±1挡，6挡时改为16伤
-    nitro_boost: { id:'nitro_boost', rarity:'rare', name:'氮气加速', cost:2, type:'attack', emoji:'💥', description:'造成 12 点伤害并立即升 1 挡。若已处于 3 挡（最高），改为造成 16 点伤害。<br><span style="font-size:0.8em;opacity:0.7">2挡出牌=12伤+升至3挡 · 3挡出牌=16伤</span>', needsTarget:true,
+    nitro_boost: { id:'nitro_boost', rarity:'rare', name:'氮气加速', cost:2, type:'attack', emoji:'💥', description:'造成 <b>12</b> 点伤害并升 1 挡。若已处于 3 挡，改为造成 <b>16</b> 点伤害。', needsTarget:true,
       effect(cs,ti){ const g=cs.gear||2; const bonus=Combat._getFtBonus(cs); if(g>=3){ Combat.dealDamage(cs,ti,16+bonus); } else { Combat.dealDamage(cs,ti,12+bonus); Combat._changeGear(cs,1); } } },
     // 3. 碰撞拦截：1费 攻击 4格挡+造成等同格挡值伤害
-    collision_block: { id:'collision_block', rarity:'uncommon', name:'碰撞拦截', cost:1, type:'attack', emoji:'💥', description:'获得 4 点格挡（含档位加成），随后造成等同于当前格挡总量的伤害。', needsTarget:true,
-      effect(cs,ti){ const g=cs.gear||2; const blkMult=[0,1.3,1.0,0.7][g]; Combat.gainBlock(cs,Math.floor(4*blkMult),true); const bonus=Combat._getFtBonus(cs); Combat.dealDamage(cs,ti,(cs.player.block||0)+bonus); } },
+    collision_block: { id:'collision_block', rarity:'uncommon', name:'碰撞拦截', cost:1, type:'attack', emoji:'💥', description:'获得 <b>5</b> 点格挡，造成 <b>7</b> 点伤害（均含档位倍率）。', needsTarget:true,
+      effect(cs,ti,lv=0){ const g=cs.gear||2; const blkMult=[0,1.3,1.0,0.7][g]; const dmgMult=[0,0.8,1.0,1.3][g]; const blk=[5,6,7][lv]||5; const dmg=[7,9,10][lv]||7; const bonus=Combat._getFtBonus(cs); Combat.gainBlock(cs,Math.floor(blk*blkMult),true); Combat.dealDamage(cs,ti,Math.floor(dmg*dmgMult)+bonus); if(lv>=2) Combat.applyDebuff(cs.enemies[ti],'vulnerable',1); } },
     // 4. 甩尾冲锋：2费 全体攻击 5伤，速度感每10点+2伤
-    drift_charge: { id:'drift_charge', rarity:'rare', name:'甩尾冲锋', cost:2, type:'attack', emoji:'🏎️', description:'对所有敌人造成 5 点伤害（含档位倍率）。速度感每有 10 点，额外造成 2 点伤害。', needsTarget:false,
-      effect(cs){ const g=cs.gear||2; const dmgMult=[0,0.8,1.0,1.3][g]; const speedBonus=Math.floor((cs.speed||0)/10)*2; const ftBonus=Combat._getFtBonus(cs); cs.enemies.forEach((_,i)=>{ if(!cs.enemies[i]._dead) Combat.dealDamage(cs,i,Math.floor(5*dmgMult)+speedBonus+ftBonus); }); } },
-    // 5. 超车外线：1费 攻击 5+5伤（两段），3挡时免费
-    overtake: { id:'overtake', rarity:'rare', name:'超车外线', cost:1, type:'attack', emoji:'🏎️', description:'造成 5+5 点伤害（两段，含档位倍率）。若处于 3 挡，本卡免费使用。<br><span style="font-size:0.8em;opacity:0.7">2挡=5+5伤 · 3挡=7+7伤且免费</span>', needsTarget:true,
-      effect(cs,ti){ const g=cs.gear||2; const dmgMult=[0,0.8,1.0,1.3][g]; const ftBonus=Combat._getFtBonus(cs); const hit=Math.floor(5*dmgMult)+ftBonus; Combat.dealDamage(cs,ti,hit); Combat.dealDamage(cs,ti,hit); } },
+    drift_charge: { id:'drift_charge', rarity:'rare', name:'甩尾冲锋', cost:2, type:'attack', emoji:'🏎️', description:'对所有敌人造成 <b>6</b> 点伤害（含档位倍率）。速度感每满 <b>20</b> 点，额外造成 <b>2</b> 点伤害（最多 +8）。', needsTarget:false,
+      effect(cs,lv=0){ const g=cs.gear||2; const dmgMult=[0,0.8,1.0,1.3][g]; const base=[6,7,7][lv]||6; const step=[20,20,16][lv]||20; const speedBonus=Math.min(Math.floor((cs.speed||0)/step)*2,8); const ftBonus=Combat._getFtBonus(cs); cs.enemies.forEach((_,i)=>{ if(!cs.enemies[i]._dead) Combat.dealDamage(cs,i,Math.floor(base*dmgMult)+speedBonus+ftBonus); }); } },
+    // 5. 超车外线：1费 攻击 4+4伤（两段），3挡时免费
+    overtake: { id:'overtake', rarity:'uncommon', name:'超车外线', cost:1, type:'attack', emoji:'🏎️', description:'造成两段 <b>4</b> 点伤害（含档位倍率）。处于 3 挡时，本卡费用变为 <b>0</b>。', needsTarget:true,
+      effect(cs,ti,lv=0){ const g=cs.gear||2; const dmgMult=[0,0.8,1.0,1.3][g]; const ftBonus=Combat._getFtBonus(cs); const base=[4,5,6][lv]||4; const hit=Math.floor(base*dmgMult)+ftBonus; Combat.dealDamage(cs,ti,hit); Combat.dealDamage(cs,ti,hit); if(lv>=2) Combat.applyDebuff(cs.enemies[ti],'slow',1); } },
     // 6. 涡轮压榨：3费 攻击+换挡 6×档位伤害，降2挡
-    turbo_crush: { id:'turbo_crush', rarity:'rare', name:'涡轮压榨', cost:3, type:'attack', emoji:'⚡', description:'造成 6×（当前档位）点伤害，随后降 2 挡（最低降至 1 挡）。<br><span style="font-size:0.8em;opacity:0.7">1挡=6伤 · 2挡=12伤 · 3挡=18伤+降至1挡</span>', needsTarget:true,
+    turbo_crush: { id:'turbo_crush', rarity:'rare', name:'涡轮压榨', cost:3, type:'attack', emoji:'⚡', description:'造成 <b>6×档位</b> 点伤害（6 / 12 / 18），随后降 2 挡。', needsTarget:true,
       effect(cs,ti){ const g=cs.gear||2; const ftBonus=Combat._getFtBonus(cs); Combat.dealDamage(cs,ti,6*g+ftBonus); Combat._changeGear(cs,-2); } },
 
     // ── 技能牌（8张）────────────────────────────────────────────────────────────────────────────────
     // 7. 进站维修：1费 技能 10格挡，1/2挡时+4回血
-    pit_repair: { id:'pit_repair', rarity:'uncommon', name:'进站维修', cost:1, type:'skill', emoji:'🔧', description:'获得 10 点格挡（含档位倍率）。若处于 1 挡或 2 挡，额外恢复 4 点生命。<br><span style="font-size:0.8em;opacity:0.7">1挡=13挡+4回血 · 2挡=10挡+4回血 · 3挡=7挡</span>', needsTarget:false,
+    pit_repair: { id:'pit_repair', rarity:'uncommon', name:'进站维修', cost:1, type:'skill', emoji:'🔧', description:'获得 <b>10</b> 点格挡（含档位倍率）。非 3 挡时额外恢复 <b>4</b> 点生命。', needsTarget:false,
       effect(cs){ const g=cs.gear||2; const blkMult=[0,1.3,1.0,0.7][g]; Combat.gainBlock(cs,Math.floor(10*blkMult),true); if(g<=2){ cs.player.hp=Math.min(cs.player.hp+4,cs.player.maxHp); State.run.character.hp=cs.player.hp; } } },
     // 8. 换挡时机（起始牌已包含）
     // 9. 赛线预判：1费 技能 看牌堆顶3张，可重新排列，再抄±1张
     race_predict: { id:'race_predict', rarity:'uncommon', name:'赛线预判', cost:1, type:'skill', emoji:'🔮', description:'查看牌堆顶 3 张牌，可重新排列顺序，再抄 1 张牌。', needsTarget:false,
       effect(cs){ Combat._racePredictInteractive(cs); } },
-    // 10. 压力测试：2费 技能 获得1层超载（受伤时+1格挡），抄2，上限3层
-    pressure_test: { id:'pressure_test', rarity:'rare', name:'压力测试', cost:2, type:'skill', emoji:'📊', description:'获得 1 层「超载」（每次受到伤害时额外获得 1 点格挡，上限 3 层，本战斗持续），然后抽 2 张牌。', needsTarget:false,
-      effect(cs){ const cur=cs.player.buffs.overload||0; if(cur<3){ Combat.applyBuff(cs.player,'overload',1); } Combat.drawCards(cs,2); } },
+    // 10. 压力测试：2费 技能 获得1层超载（受伤时+1格挡），抄2，上限2层
+    pressure_test: { id:'pressure_test', rarity:'uncommon', name:'压力测试', cost:2, type:'skill', emoji:'📊', description:'获得 1 层「超载」（每次受到伤害时额外获得 1 点格挡，上限 2 层，本战斗持续），然后抽 2 张牌。', needsTarget:false,
+      effect(cs){ const cur=cs.player.buffs.overload||0; if(cur<2){ Combat.applyBuff(cs.player,'overload',1); } Combat.drawCards(cs,2); } },
     // 11. 节油行驶：1费 换挡+技能 降1挡，本回合所有技能费用-1
     fuel_save: { id:'fuel_save', rarity:'uncommon', name:'节油行驶', cost:1, type:'skill', emoji:'⛽', description:'降 1 挡。本回合所有技能牌费用 -1（最低 0）。', needsTarget:false,
-      effect(cs){ Combat._changeGear(cs,-1); cs._fuelSaveActive=true; } },
+      effect(cs,ti,lv=0){ Combat._changeGear(cs,-1); if(lv>=2){ cs._fuelSaveAllActive=true; } else { cs._fuelSaveActive=true; } } },
     // 12. 过弯线路：0费 技能 升过挡获得8格挡，否则获得5格挡（不受档位倍率影响）
-    corner_line: { id:'corner_line', rarity:'common', name:'过弯线路', cost:0, type:'skill', emoji:'🛣️', description:'如果此回合已经升过挡，获得 8 点格挡；否则获得 5 点格挡。（不受档位倍率影响）', needsTarget:false,
-      effect(cs){ const amt = cs._shiftedUpThisTurn ? 8 : 5; cs.player.block=(cs.player.block||0)+amt; } },
+    corner_line: { id:'corner_line', rarity:'common', name:'过弯线路', cost:0, type:'skill', emoji:'🛣️', description:'如果此回合已经升过挡，获得 <b>8</b> 点格挡；否则获得 <b>5</b> 点格挡。（不受档位倍率影响）', needsTarget:false,
+      effect(cs,ti,lv=0){ const baseUp=lv>=1?10:8; const baseNo=lv>=1?6:5; const amt = cs._shiftedUpThisTurn ? baseUp : baseNo; cs.player.block=(cs.player.block||0)+amt; if(lv>=2 && cs._shiftedUpThisTurn) Combat.drawCards(cs,1); } },
     // 13. 瞬时升挡：1费 换挡+技能 升2挡（不超过3挡上限），抄1张
-    quick_upshift: { id:'quick_upshift', rarity:'uncommon', name:'瞬时升挡', cost:1, type:'skill', emoji:'⬆️', description:'升 2 挡（不超过 3 挡上限），抽 1 张牌。<br><span style="font-size:0.8em;opacity:0.7">1挡→3挡 · 2挡→3挡（上限）</span>', needsTarget:false,
+    quick_upshift: { id:'quick_upshift', rarity:'common', name:'瞬时升挡', cost:1, type:'skill', emoji:'⬆️', description:'升 <b>2</b> 挡（上限 3 挡），抽 <b>1</b> 张牌。', needsTarget:false,
       effect(cs){ Combat._changeGear(cs,2); Combat.drawCards(cs,1); } },
     // 14. 强制降挡：0费消耗 换挡+技能 降±2挡，对敌施加减速层数=降幅×2
-    forced_downshift: { id:'forced_downshift', rarity:'uncommon', name:'强制降挡', cost:0, type:'skill', emoji:'⬇️', description:'降 2 挡。对敌人施加「减速」层数等于降幅×2。消耗。', needsTarget:false,
+    forced_downshift: { id:'forced_downshift', rarity:'common', name:'强制降挡', cost:0, type:'skill', emoji:'⬇️', description:'降 2 挡。对敌人施加「减速」层数等于降幅×2。消耗。', needsTarget:false,
       effect(cs){ const prev=cs.gear||2; Combat._changeGear(cs,-2); const dropped=prev-(cs.gear||2); if(dropped>0){ cs.enemies.forEach(e=>{ if(!e._dead) Combat.applyDebuff(e,'slow',dropped*2); }); }
       // 消耗牌：从手牌移出后不再进入弃牌堆，而是进入消耗堆
       const ci=cs.discardPile.lastIndexOf('forced_downshift'); if(ci!==-1) cs.discardPile.splice(ci,1); cs.exhaustPile.push('forced_downshift'); } },
@@ -115,24 +146,36 @@ const Data = {
     // 15. 红线突破：3费 能力+换挡 永久：6挡时无格挡惩罚，5挡以上每回合开始抄±1
     redline: { id:'redline', rarity:'epic', name:'红线突破', cost:3, type:'power', emoji:'🔴', description:'永久：处于 3 挡时，格挡获取不受减损（视为 2 挡倍率）。每回合开始时，若处于 3 挡，抽 1 张牌。', needsTarget:false,
       effect(cs){ Combat.applyBuff(cs.player,'redline',1); } },
-    // 16. 赛车直觉：2费 能力 永久：每次升挡获得1点势头（战斗内可用作额外费用，上限±4）
-    race_instinct: { id:'race_instinct', rarity:'epic', name:'赛车直觉', cost:2, type:'power', emoji:'💡', description:'永久：每当你升挡，获得 1 点「势头」（战斗内可用作额外费用，上限 4 点）。', needsTarget:false,
+    // 16. 赛车直觉：2费 能力 永久：每次升挡获得1点势头（战斗内可用作额外费用，上限±3）
+    race_instinct: { id:'race_instinct', rarity:'rare', name:'赛车直觉', cost:2, type:'power', emoji:'💡', description:'永久：每当你升挡，获得 1 点「势头」（战斗内可用作额外费用，上限 3 点）。', needsTarget:false,
       effect(cs){ Combat.applyBuff(cs.player,'race_instinct',1); } },
-    // 17. 全油门：2费 能力 永久：攻击牌伤害+1，升挡回合攻击牌伤害+3
-    full_throttle: { id:'full_throttle', rarity:'epic', name:'全油门', cost:2, type:'power', emoji:'🔥', description:'永久：攻击牌造成的伤害 +1。若你在这一回合升过挡，攻击牌改为 +3。', needsTarget:false,
+    // 17. 全油门：2费 能力 永久：攻击牌伤害+1，升挡回合攻击牌伤害+2
+    full_throttle: { id:'full_throttle', rarity:'rare', name:'全油门', cost:2, type:'power', emoji:'🔥', description:'永久：攻击牌造成的伤害 +1。若你在这一回合升过挡，攻击牌改为 +2。', needsTarget:false,
       effect(cs){ Combat.applyBuff(cs.player,'full_throttle',1); } },
-    // 18. 防侧滑系统：1费 能力 永久：每次降挡获得3格挡
-    anti_skid: { id:'anti_skid', rarity:'rare', name:'防侧滑系统', cost:1, type:'power', emoji:'🔧', description:'永久：每当你降挡，获得 3 点格挡。', needsTarget:false,
+    // 18. 防侧滑系统：1费 能力 永久：每次降挡获得2格挡
+    anti_skid: { id:'anti_skid', rarity:'uncommon', name:'防侧滑系统', cost:1, type:'power', emoji:'🔧', description:'永久：每当你降挡，获得 2 点格挡。', needsTarget:false,
       effect(cs){ Combat.applyBuff(cs.player,'anti_skid',1); } },
 
     // ── 换挡标签牌（2张）────────────────────────────────────────────────────────────────────────────────
     // 19. 档位锁定：1费 技能+换挡 本回合档位不变，获得档位×3格挡
-    gear_lock: { id:'gear_lock', rarity:'uncommon', name:'档位锁定', cost:1, type:'skill', emoji:'🔒', description:'本回合档位不会因任何效果改变。获得等于当前档位×3 的格挡。<br><span style="font-size:0.8em;opacity:0.7">1挡=3格挡 · 2挡=6格挡 · 3挡=9格挡</span>', needsTarget:false,
+    gear_lock: { id:'gear_lock', rarity:'common', name:'档位锁定', cost:1, type:'skill', emoji:'🔒', description:'本回合档位锁定。获得 <b>档位×3</b> 点格挡（最多 9）。', needsTarget:false,
       effect(cs){ cs._gearLocked=true; Combat.gainBlock(cs,(cs.gear||2)*3,true); } },
     // 20. 超速警告：0费消耗 攻击+换挡 3挡时造成10伤+降至2挡，否则无效
-    overspeed: { id:'overspeed', rarity:'common', name:'超速警告', cost:0, type:'attack', emoji:'🚨', description:'若你处于 3 挡，造成 10 点伤害（含×1.3倍率=13伤）并强制降 1 挡（→2挡）。否则此牌无效果。消耗。', needsTarget:true,
+    overspeed: { id:'overspeed', rarity:'common', name:'超速警告', cost:0, type:'attack', emoji:'🚨', description:'若处于 3 挡，造成 <b>13</b> 点伤害并强制降至 2 挡。否则无效果。消耗。', needsTarget:true,
       effect(cs,ti){ const g=cs.gear||2; if(g>=3){ const ftBonus=Combat._getFtBonus(cs); Combat.dealDamage(cs,ti,Math.floor(10*1.3)+ftBonus); Combat._changeGear(cs,-1); }
       const oi=cs.discardPile.lastIndexOf('overspeed'); if(oi!==-1) cs.discardPile.splice(oi,1); cs.exhaustPile.push('overspeed'); } },
+
+    // ── 赛车手扩池 A：速度感深化（5张）────────────────────────────────────────────────────────
+    speed_rush:     { id:'speed_rush',     rarity:'common',   name:'急加速',   cost:1, type:'attack', emoji:'💨', description:'造成 <b>3</b> 点伤害（含档位倍率），获得 <b>档位×3</b> 点速度感。', needsTarget:true,
+      effect(cs,ti,lv=0){ const g=cs.gear||2; const dmgMult=[0,0.8,1.0,1.3][g]; const bonus=Combat._getFtBonus(cs); const base=[3,4,5][lv]||3; const spMult=[3,4,5][lv]||3; Combat.dealDamage(cs,ti,Math.floor(base*dmgMult)+bonus); cs.speed=(cs.speed||0)+(g*spMult); } },
+    corner_guard:   { id:'corner_guard',   rarity:'common',   name:'弯道守势', cost:1, type:'skill',  emoji:'🛡️', description:'获得 <b>5</b> 点格挡。若本回合已升过挡，额外获得 <b>3</b> 点格挡。', needsTarget:false,
+      effect(cs,ti,lv=0){ const base=[5,6,7][lv]||5; const extra=cs._shiftedUpThisTurn?([3,4,5][lv]||3):0; Combat.gainBlock(cs,base+extra,true); } },
+    inertia_strike: { id:'inertia_strike', rarity:'uncommon', name:'惯性冲击', cost:1, type:'attack', emoji:'⚡', description:'造成 <b>8</b> 点伤害（含档位倍率）。速度感每满 <b>20</b> 点，追加 <b>2</b> 点伤害。', needsTarget:true,
+      effect(cs,ti,lv=0){ const g=cs.gear||2; const dmgMult=[0,0.8,1.0,1.3][g]; const base=[8,9,10][lv]||8; const spBonus=Math.floor((cs.speed||0)/20)*2; const bonus=Combat._getFtBonus(cs); Combat.dealDamage(cs,ti,Math.floor((base+spBonus)*dmgMult)+bonus); } },
+    speed_limit_break: { id:'speed_limit_break', rarity:'uncommon', name:'飙车极限', cost:0, type:'skill', emoji:'🏁', description:'若速度感 ≥ <b>50</b>，本回合能量 +1。消耗。', needsTarget:false,
+      effect(cs,ti,lv=0){ const threshold=lv>=1?35:50; if((cs.speed||0)>=threshold){ cs.energy+=1; } if(lv>=2){ return; } const oi=cs.discardPile.lastIndexOf('speed_limit_break'); if(oi!==-1) cs.discardPile.splice(oi,1); cs.exhaustPile.push('speed_limit_break'); } },
+    speed_activate: { id:'speed_activate', rarity:'epic',   name:'速度感激活', cost:2, type:'power',  emoji:'✨', description:'永久：每回合开始额外获得 <b>8</b> 点速度感（上限 80）。', needsTarget:false,
+      effect(cs,ti,lv=0){ Combat.applyBuff(cs.player,'speed_activate',1); } },
 
     // ── 负面牌（怪物插入手牌）────────────────────────────────────────────────────────────────
     // 黏液：史莱姆插入，99费无法打出，纯占手牌位
@@ -156,7 +199,9 @@ const Data = {
     ar_dodge:   { id:'ar_dodge',   rarity:'common',   name:'闪身',     cost:1, type:'skill',  emoji:'🛡️', description:'获得 <b>4</b> 点格挡，获得 <b>1</b> 点蓄力。', needsTarget:false,
       effect(cs,ti,lv){ const blk=lv>=1?6:4; const chg=lv>=2?2:1; Combat.gainBlock(cs,blk,true); Combat.archerGainCharge(cs,chg); } },
     ar_aim:     { id:'ar_aim',     rarity:'common',   name:'瞄准',     cost:0, type:'skill',  emoji:'🎯', description:'获得 <b>2</b> 点蓄力。', needsTarget:false,
-      effect(cs,ti,lv){ const amt=lv>=1?4:3; Combat.archerGainCharge(cs,amt); if(lv>=2) Combat.drawCards(cs,1); } },
+      effect(cs,ti,lv){ const amt=lv>=1?3:2; Combat.archerGainCharge(cs,amt); if(lv>=2) Combat.drawCards(cs,1); } },
+    ar_focus_aim: { id:'ar_focus_aim', rarity:'uncommon', name:'专注瞄准', cost:0, type:'skill', emoji:'🎯', description:'获得 <b>3</b> 点蓄力。消耗。', needsTarget:false,
+      effect(cs,ti,lv=0){ const amt=lv>=1?4:3; Combat.archerGainCharge(cs,amt); if(lv>=2){ return; } const oi=cs.discardPile.lastIndexOf('ar_focus_aim'); if(oi!==-1) cs.discardPile.splice(oi,1); cs.exhaustPile.push('ar_focus_aim'); } },
     ar_sprint:  { id:'ar_sprint',  rarity:'common',   name:'急步',     cost:1, type:'skill',  emoji:'💨', description:'获得 <b>3</b> 点格挡，获得 <b>1</b> 点蓄力，抽 <b>1</b> 张牌。', needsTarget:false,
       effect(cs,ti,lv){ const blk=lv>=1?5:3; Combat.gainBlock(cs,blk,true); Combat.archerGainCharge(cs,1); Combat.drawCards(cs,1); } },
     ar_charge_shot: { id:'ar_charge_shot', rarity:'common', name:'蓄力射击', cost:1, type:'attack', emoji:'🏹', description:'造成 <b>4</b> 点伤害，消耗全部蓄力，每消耗 1 点额外造成 <b>3</b> 点伤害。', needsTarget:true,
@@ -167,36 +212,64 @@ const Data = {
     // 精良牌
     ar_double_shot: { id:'ar_double_shot', rarity:'uncommon', name:'双箭齐发', cost:1, type:'attack', emoji:'🏹', description:'造成 <b>3</b> 点伤害 2 次，消耗全部蓄力，每消耗 1 点额外造成 <b>2</b> 点伤害（作用于 2 次）。', needsTarget:true,
       effect(cs,ti,lv){ const c=cs.charge||0; cs.charge=0; const base=lv>=2?5:(lv>=1?4:3); const mult=lv>=2?3:2; Combat.dealDamage(cs,ti,base+c*mult); Combat.dealDamage(cs,ti,base+c*mult); } },
-    ar_block_charge: { id:'ar_block_charge', rarity:'uncommon', name:'格挡蓄力', cost:1, type:'skill', emoji:'🛡️', description:'获得等于当前蓄力×<b>2</b> 的格挡，然后获得 <b>1</b> 点蓄力。', needsTarget:false,
-      effect(cs){ const c=cs.charge||0; Combat.gainBlock(cs,c*2,true); Combat.archerGainCharge(cs,1); } },
+    ar_block_charge: { id:'ar_block_charge', rarity:'common', name:'格挡蓄力', cost:1, type:'skill', emoji:'🛡️', description:'获得 <b>5</b> 点格挡，然后获得 <b>1</b> 点蓄力。', needsTarget:false,
+      effect(cs){ Combat.gainBlock(cs,5,true); Combat.archerGainCharge(cs,1); } },
     ar_roll:    { id:'ar_roll',    rarity:'uncommon', name:'翻滚闪避', cost:2, type:'skill',  emoji:'💨', description:'获得 <b>10</b> 点格挡，获得 <b>2</b> 点蓄力。', needsTarget:false,
       effect(cs){ Combat.gainBlock(cs,10,true); Combat.archerGainCharge(cs,2); } },
     ar_pierce:  { id:'ar_pierce',  rarity:'uncommon', name:'穿甲箭',   cost:2, type:'attack', emoji:'🏹', description:'造成 <b>8</b> 点伤害，无视目标格挡，消耗全部蓄力，每消耗 1 点额外造成 <b>3</b> 点伤害。', needsTarget:true,
       effect(cs,ti,lv){ const c=cs.charge||0; cs.charge=0; const e=cs.enemies[ti]; const oldBlock=e.block; e.block=0; const base=lv>=1?10:8; const mult=lv>=2?4:3; Combat.dealDamage(cs,ti,base+c*mult); e.block=oldBlock; } },
     ar_swap:    { id:'ar_swap',    rarity:'uncommon', name:'换箭',     cost:0, type:'skill',  emoji:'🔄', description:'丢弃手牌中任意 1 张牌，抽 <b>2</b> 张牌，获得 <b>1</b> 点蓄力。', needsTarget:false,
-      effect(cs){ if(cs.hand.length>0){ const idx=Math.floor(Math.random()*cs.hand.length); cs.discardPile.push(cs.hand.splice(idx,1)[0]); } Combat.drawCards(cs,2); Combat.archerGainCharge(cs,1); } },
-    ar_rapid_fire: { id:'ar_rapid_fire', rarity:'uncommon', name:'连续射击', cost:2, type:'attack', emoji:'🎯', description:'造成 <b>4</b> 点伤害 3 次，消耗全部蓄力，每消耗 1 点额外造成 <b>2</b> 点伤害（作用于全部 3 次）。', needsTarget:true,
-      effect(cs,ti,lv){ const c=cs.charge||0; cs.charge=0; const base=lv>=1?5:4; for(let i=0;i<3;i++) Combat.dealDamage(cs,ti,base+c*2); } },
+      effect(cs,ti,lv=0){ Combat._arSwapInteractive(cs,lv); } },
+    ar_rapid_fire: { id:'ar_rapid_fire', rarity:'common', name:'连续射击', cost:2, type:'attack', emoji:'🎯', description:'造成 <b>4</b> 点伤害 2 次，消耗全部蓄力，每消耗 1 点额外造成 <b>2</b> 点伤害（作用于全部 2 次）。', needsTarget:true,
+      effect(cs,ti,lv){ const c=cs.charge||0; cs.charge=0; const base=lv>=1?5:4; for(let i=0;i<2;i++) Combat.dealDamage(cs,ti,base+c*2); } },
     ar_wind_step: { id:'ar_wind_step', rarity:'uncommon', name:'风驰步', cost:1, type:'skill', emoji:'💨', description:'获得 <b>4</b> 点格挡，获得 <b>1</b> 点蓄力。本回合下一张攻击牌费用 -1。', needsTarget:false,
       effect(cs){ Combat.gainBlock(cs,4,true); Combat.archerGainCharge(cs,1); cs._archerNextAttackDiscount=(cs._archerNextAttackDiscount||0)+1; } },
 
     // 稀有牌
-    ar_arrow_rain: { id:'ar_arrow_rain', rarity:'rare', name:'箭雨', cost:2, type:'attack', emoji:'🏹', description:'对所有敌人造成 <b>3</b> 点伤害 <b>2</b> 次，消耗全部蓄力，每消耗 1 点额外造成 <b>2</b> 点伤害（作用于全体每次）。', needsTarget:false,
-      effect(cs,ti,lv){ const c=cs.charge||0; cs.charge=0; const base=lv>=2?5:(lv>=1?4:3); cs.enemies.forEach((_,i)=>{ if(!cs.enemies[i]._dead){ Combat.dealDamage(cs,i,base+c*2); Combat.dealDamage(cs,i,base+c*2); } }); } },
-    ar_full_charge: { id:'ar_full_charge', rarity:'rare', name:'满蓄爆射', cost:1, type:'attack', emoji:'🎯', description:'<b>仅当蓄力 = 5（满蓄）时可打出。</b>消耗全部蓄力，造成 <b>50</b> 点伤害。', needsTarget:true,
-      effect(cs,ti,lv){ const c=cs.charge||0; const threshold=lv>=2?4:(cs.chargeMax||5); const dmg=lv>=1?60:50; if(c>=threshold){ cs.charge=0; Combat.dealDamage(cs,ti,dmg); } } },
-    ar_gale:    { id:'ar_gale',    rarity:'rare',     name:'疾风步',   cost:1, type:'skill',  emoji:'💨', description:'获得 <b>6</b> 点格挡，获得 <b>2</b> 点蓄力，抽 <b>1</b> 张牌。消耗。', needsTarget:false,
-      effect(cs){ Combat.gainBlock(cs,6,true); Combat.archerGainCharge(cs,2); Combat.drawCards(cs,1); const oi=cs.discardPile.lastIndexOf('ar_gale'); if(oi!==-1) cs.discardPile.splice(oi,1); cs.exhaustPile.push('ar_gale'); } },
-    ar_pierce_all: { id:'ar_pierce_all', rarity:'rare', name:'贯穿射击', cost:2, type:'attack', emoji:'🏹', description:'对所有敌人造成 <b>8</b> 点伤害，消耗全部蓄力，每消耗 1 点额外造成 <b>3</b> 点伤害（作用于所有敌人）。', needsTarget:false,
-      effect(cs,ti,lv){ const c=cs.charge||0; cs.charge=0; const base=lv>=1?10:8; cs.enemies.forEach((_,i)=>{ if(!cs.enemies[i]._dead) Combat.dealDamage(cs,i,base+c*3); }); } },
+    ar_arrow_rain: { id:'ar_arrow_rain', rarity:'uncommon', name:'箭雨', cost:2, type:'attack', emoji:'🏹', description:'对所有敌人造成 <b>2</b> 点伤害 <b>2</b> 次，消耗全部蓄力，每消耗 1 点额外造成 <b>2</b> 点伤害（作用于全体每次）。', needsTarget:false,
+      effect(cs,ti,lv){ const c=cs.charge||0; cs.charge=0; const base=lv>=2?4:(lv>=1?3:2); cs.enemies.forEach((_,i)=>{ if(!cs.enemies[i]._dead){ Combat.dealDamage(cs,i,base+c*2); Combat.dealDamage(cs,i,base+c*2); } }); } },
+    ar_full_charge: { id:'ar_full_charge', rarity:'epic', name:'满蓄爆射', cost:2, type:'attack', emoji:'🎯', description:'<b>仅当蓄力 = 5（满蓄）时可打出。</b>消耗全部蓄力，造成 <b>30</b> 点伤害。', needsTarget:true,
+      effect(cs,ti,lv){ const c=cs.charge||0; const threshold=lv>=2?4:(cs.chargeMax||5); const dmg=lv>=1?38:30; if(c>=threshold){ cs.charge=0; Combat.dealDamage(cs,ti,dmg); } } },
+    ar_gale:    { id:'ar_gale',    rarity:'uncommon', name:'疾风步',   cost:1, type:'skill',  emoji:'💨', description:'获得 <b>5</b> 点格挡，获得 <b>2</b> 点蓄力，抽 <b>1</b> 张牌。消耗。', needsTarget:false,
+      effect(cs){ Combat.gainBlock(cs,5,true); Combat.archerGainCharge(cs,2); Combat.drawCards(cs,1); const oi=cs.discardPile.lastIndexOf('ar_gale'); if(oi!==-1) cs.discardPile.splice(oi,1); cs.exhaustPile.push('ar_gale'); } },
+    ar_pierce_all: { id:'ar_pierce_all', rarity:'uncommon', name:'贯穿射击', cost:2, type:'attack', emoji:'🏹', description:'对所有敌人造成 <b>6</b> 点伤害，消耗全部蓄力，每消耗 1 点额外造成 <b>3</b> 点伤害（作用于所有敌人）。', needsTarget:false,
+      effect(cs,ti,lv){ const c=cs.charge||0; cs.charge=0; const base=lv>=1?8:6; cs.enemies.forEach((_,i)=>{ if(!cs.enemies[i]._dead) Combat.dealDamage(cs,i,base+c*3); }); } },
 
     // 史诗牌
     ar_instinct: { id:'ar_instinct', rarity:'epic', name:'猎手直觉', cost:2, type:'power', emoji:'✨', description:'永久：每回合开始时，获得 <b>1</b> 点蓄力（不超过上限）。', needsTarget:false,
       effect(cs){ cs.player.buffs.archer_instinct=(cs.player.buffs.archer_instinct||0)+1; } },
-    ar_cap_up:  { id:'ar_cap_up',  rarity:'epic',     name:'蓄力上限', cost:2, type:'power',  emoji:'✨', description:'永久：蓄力上限提升至 <b>8</b>（原为5）。立即获得 <b>3</b> 点蓄力。', needsTarget:false,
-      effect(cs){ cs.chargeMax=8; Combat.archerGainCharge(cs,3); } },
-    ar_ultimate: { id:'ar_ultimate', rarity:'epic',   name:'终极连射', cost:3, type:'attack', emoji:'🏹', description:'造成 <b>6</b> 点伤害 4 次，消耗全部蓄力，每消耗 1 点额外造成 <b>3</b> 点伤害（作用于全部 4 次）。', needsTarget:true,
-      effect(cs,ti){ const c=cs.charge||0; cs.charge=0; for(let i=0;i<4;i++) Combat.dealDamage(cs,ti,6+c*3); } }
+    ar_cap_up:  { id:'ar_cap_up',  rarity:'rare',     name:'蓄力上限', cost:2, type:'power',  emoji:'✨', description:'永久：蓄力上限提升至 <b>8</b>（原为5）。立即获得 <b>2</b> 点蓄力。', needsTarget:false,
+      effect(cs){ cs.chargeMax=8; Combat.archerGainCharge(cs,2); } },
+    ar_ultimate: { id:'ar_ultimate', rarity:'rare',   name:'终极连射', cost:3, type:'attack', emoji:'🏹', description:'造成 <b>5</b> 点伤害 4 次，消耗全部蓄力，每消耗 1 点额外造成 <b>3</b> 点伤害（作用于全部 4 次）。', needsTarget:true,
+      effect(cs,ti){ const c=cs.charge||0; cs.charge=0; for(let i=0;i<4;i++) Combat.dealDamage(cs,ti,5+c*3); } },
+
+    // ── 射手扩池 B：速攻辅助（6张）──────────────────────────────────────────────────────────────
+    ar_scatter:       { id:'ar_scatter',       rarity:'common',   name:'散射',     cost:1, type:'attack', emoji:'🏹', description:'对所有敌人造成 <b>2</b> 点伤害，获得 <b>1</b> 点蓄力。', needsTarget:false,
+      effect(cs,ti,lv=0){ const ftBonus=Combat._getFtBonus(cs); const base=[2,3,4][lv]||2; const chg=[1,1,2][lv]||1; cs.enemies.forEach((_,i)=>{ if(!cs.enemies[i]._dead) Combat.dealDamage(cs,i,base+ftBonus); }); Combat.archerGainCharge(cs,chg); } },
+    ar_weak_arrow:    { id:'ar_weak_arrow',    rarity:'common',   name:'弱化箭',   cost:1, type:'attack', emoji:'🎯', description:'造成 <b>3</b> 点伤害，施加 <b>1</b> 层虚弱，获得 <b>1</b> 点蓄力。（不消耗蓄力）', needsTarget:true,
+      effect(cs,ti,lv=0){ const ftBonus=Combat._getFtBonus(cs); const base=[3,4,5][lv]||3; const vuln=[1,1,2][lv]||1; Combat.dealDamage(cs,ti,base+ftBonus); Combat.applyDebuff(cs.enemies[ti],'weak',vuln); Combat.archerGainCharge(cs,1); } },
+    ar_dodge_counter: { id:'ar_dodge_counter', rarity:'common', name:'闪避反击', cost:1, type:'skill',  emoji:'🛡️', description:'获得 <b>5</b> 点格挡。若本场战斗受过伤，额外获得 <b>2</b> 点蓄力。', needsTarget:false,
+      effect(cs,ti,lv=0){ const blk=[5,6,8][lv]||5; Combat.gainBlock(cs,blk,true); if(cs._tookDamageThisCombat){ Combat.archerGainCharge(cs,[2,3,4][lv]||2); } } },
+    ar_hunter_rhythm: { id:'ar_hunter_rhythm', rarity:'common', name:'猎手节奏', cost:0, type:'skill',  emoji:'🎵', description:'获得 <b>2</b> 点蓄力，抽 <b>1</b> 张牌。消耗。', needsTarget:false,
+      effect(cs,ti,lv=0){ const amt=lv>=1?3:2; Combat.archerGainCharge(cs,amt); Combat.drawCards(cs,1); if(lv>=2){ return; } const oi=cs.discardPile.lastIndexOf('ar_hunter_rhythm'); if(oi!==-1) cs.discardPile.splice(oi,1); cs.exhaustPile.push('ar_hunter_rhythm'); } },
+    ar_arrow_storm:   { id:'ar_arrow_storm',   rarity:'rare',     name:'箭矢风暴', cost:3, type:'attack', emoji:'🌪️', description:'对所有敌人造成（<b>2</b>+蓄力）点伤害 <b>4</b> 次，消耗全部蓄力。', needsTarget:false,
+      effect(cs,ti,lv=0){ const c=cs.charge||0; cs.charge=0; const ftBonus=Combat._getFtBonus(cs); const base=[2,3,3][lv]||2; cs.enemies.forEach((_,i)=>{ if(!cs.enemies[i]._dead){ for(let j=0;j<4;j++) Combat.dealDamage(cs,i,base+c+ftBonus); } }); } },
+    ar_threshold:     { id:'ar_threshold',     rarity:'rare',     name:'蓄力爆发', cost:1, type:'power',  emoji:'✨', description:'永久：每回合开始时，若蓄力 ≥ <b>4</b>，获得 <b>1</b> 点额外能量。', needsTarget:false,
+      effect(cs,ti,lv=0){ cs.player.buffs.ar_threshold=(cs.player.buffs.ar_threshold||0)+1; } },
+
+    // ── 箭矢元素扩池：火系 ──────────────────────────────────────────────────────────
+    ar_fire_arrow: { id:'ar_fire_arrow', rarity:'common', name:'点火箭', cost:1, type:'attack', emoji:'🔥', description:'造成 <b>4</b> 点伤害，施加 <b>2</b> 层燃烧。消耗全部蓄力，每消耗 1 点额外造成 <b>2</b> 点伤害。', needsTarget:true,
+      effect(cs,ti,lv=0){ const c=cs.charge||0; cs.charge=0; const base=[4,5,6][lv]||4; const burn=[2,2,3][lv]||2; Combat.dealDamage(cs,ti,base+c*2); Combat.applyDebuff(cs.enemies[ti],'burn',burn); } },
+    ar_flame_arrow: { id:'ar_flame_arrow', rarity:'uncommon', name:'烈焰箭', cost:1, type:'attack', emoji:'🔥', description:'造成 <b>5</b> 点伤害，施加 <b>3</b> 层燃烧。消耗全部蓄力，每消耗 1 点额外造成 <b>2</b> 点伤害。', needsTarget:true,
+      effect(cs,ti,lv=0){ const c=cs.charge||0; cs.charge=0; const base=[5,7,9][lv]||5; const burn=[3,3,4][lv]||3; Combat.dealDamage(cs,ti,base+c*2); Combat.applyDebuff(cs.enemies[ti],'burn',burn); } },
+    ar_inferno_arrow: { id:'ar_inferno_arrow', rarity:'rare', name:'焚天箭', cost:2, type:'attack', emoji:'🔥', description:'对所有敌人造成 <b>6</b> 点伤害，施加 <b>4</b> 层燃烧。消耗全部蓄力，每消耗 1 点额外造成 <b>2</b> 点伤害（对全体）。', needsTarget:false,
+      effect(cs,ti,lv=0){ const c=cs.charge||0; cs.charge=0; const base=[6,8,8][lv]||6; const burn=[4,4,5][lv]||4; cs.enemies.forEach((_,i)=>{ if(!cs.enemies[i]._dead){ Combat.dealDamage(cs,i,base+c*2); Combat.applyDebuff(cs.enemies[i],'burn',burn); } }); } },
+
+    // ── 箭矢元素扩池：冰系 ──────────────────────────────────────────────────────────
+    ar_chill_arrow: { id:'ar_chill_arrow', rarity:'uncommon', name:'严寒箭', cost:2, type:'attack', emoji:'❄️', description:'造成 <b>5</b> 点伤害。消耗全部蓄力，每消耗 1 点额外造成 <b>2</b> 点伤害。<b>20%</b> 概率冻结敌人（跳过其本回合行动）。', needsTarget:true,
+      effect(cs,ti,lv=0){ const c=cs.charge||0; cs.charge=0; const base=[5,7,7][lv]||5; const cost=[2,2,1][lv]||2; Combat.dealDamage(cs,ti,base+c*2); if(Math.random()<0.20){ Combat.applyDebuff(cs.enemies[ti],'freeze',1); Combat._showFreezeEffect(); } } },
+    ar_freeze_arrow: { id:'ar_freeze_arrow', rarity:'rare', name:'冰封箭', cost:3, type:'attack', emoji:'❄️', description:'造成 <b>8</b> 点伤害。消耗全部蓄力，每消耗 1 点额外造成 <b>3</b> 点伤害。<b>30%</b> 概率冻结敌人（跳过其本回合行动）。', needsTarget:true,
+      effect(cs,ti,lv=0){ const c=cs.charge||0; cs.charge=0; const base=[8,12,12][lv]||8; const chance=[0.30,0.35,0.40][lv]||0.30; Combat.dealDamage(cs,ti,base+c*3); if(Math.random()<chance){ Combat.applyDebuff(cs.enemies[ti],'freeze',1); Combat._showFreezeEffect(); } } },
   },
   enemies: {
     slime: {
@@ -297,6 +370,61 @@ const Data = {
         s.actionIndex++;
       }
     },
+    liuxing1: {
+      id:'liuxing1', name:'刘行·赛场新秀', emoji:'🏎️', hp:48, maxHp:48, actions:['cruise','shift_up','sprint','brake','sprint'],
+      getIntent(s){ const a=s.actions[s.actionIndex%s.actions.length]; const g=s.gear||2;
+        if(a==='cruise') return [{type:'attack',val:8,label:'⚔️',num:'8',detail:'巡航攻击：造成 8 点伤害（2挡基准）'}];
+        if(a==='shift_up') return [{type:'buff',label:'✨',num:'升挡',detail:'升至3挡，获得 4 点格挡'}];
+        if(a==='sprint'){ if(g>=3) return [{type:'attack',val:12,label:'⚔️',num:'12+🐌',detail:'3挡冲刺：造成 12 点伤害，对你施加 1 层减速'}]; return [{type:'attack',val:8,label:'⚔️',num:'8',detail:'冲刺：造成 8 点伤害，降回2挡'}]; }
+        if(a==='brake') return [{type:'defend',val:12,label:'🛡',num:'12',detail:'刹车：降至1挡，获得 12 点格挡'}];
+        return [{type:'attack',val:8,label:'⚔️',num:'8',detail:'攻击'}]; },
+      doAction(cs,si){ const s=cs.enemies[si]; s.gear=s.gear||2; const a=s.actions[s.actionIndex%s.actions.length];
+        if(a==='cruise'){ Combat.enemyAttack(cs,si,8); }
+        else if(a==='shift_up'){ s.gear=Math.min(3,s.gear+1); s.block+=4; }
+        else if(a==='sprint'){ if(s.gear>=3){ Combat.enemyAttack(cs,si,12); Combat.applyDebuff(cs.player,'slow',1); } else { Combat.enemyAttack(cs,si,8); s.gear=2; } }
+        else if(a==='brake'){ s.gear=1; s.block+=12; }
+        s.actionIndex++; }
+    },
+    liuxing2: {
+      id:'liuxing2', name:'刘行·赛道老手', emoji:'🏎️', hp:65, maxHp:65, actions:['gear_strike','nitro','drift','pit','gear_strike','drift'],
+      getIntent(s){ const a=s.actions[s.actionIndex%s.actions.length]; const g=s.gear||2; const dmg={1:10,2:13,3:17}[g]||13;
+        if(a==='gear_strike') return [{type:'attack',val:dmg,label:'⚔️',num:String(dmg),detail:`档位打击（当前${g}挡）：造成 ${dmg} 点伤害`}];
+        if(a==='nitro') return [{type:'attack',val:10,label:'⚔️',num:'10+✨',detail:'氮气加速：造成 10 点伤害，升1挡'}];
+        if(a==='drift') return [{type:'attack',val:10,label:'⚔️',num:'10+🐌×2',detail:'甩尾攻击：造成 10 点伤害，对你施加 2 层减速'}];
+        if(a==='pit') return [{type:'defend',val:15,label:'🛡',num:'15',detail:'进站维修：降1挡，获得 15 点格挡'}];
+        return [{type:'attack',val:dmg,label:'⚔️',num:String(dmg),detail:'攻击'}]; },
+      doAction(cs,si){ const s=cs.enemies[si]; s.gear=s.gear||2; const a=s.actions[s.actionIndex%s.actions.length];
+        if(a==='gear_strike'){ Combat.enemyAttack(cs,si,{1:10,2:13,3:17}[s.gear]||13); }
+        else if(a==='nitro'){ Combat.enemyAttack(cs,si,10); s.gear=Math.min(3,s.gear+1); }
+        else if(a==='drift'){ Combat.enemyAttack(cs,si,10); Combat.applyDebuff(cs.player,'slow',2); }
+        else if(a==='pit'){ s.gear=Math.max(1,s.gear-1); s.block+=15; }
+        s.actionIndex++; }
+    },
+    liuxing3: {
+      id:'liuxing3', name:'刘行·赛道之王', emoji:'🏎️', hp:85, maxHp:85, actions:['gear_strike','full_throttle','nitro','turbo','pit','drift'],
+      getIntent(s){ const a=s.actions[s.actionIndex%s.actions.length]; const g=s.gear||2; const dmg={1:12,2:16,3:22}[g]||16;
+        const str=s.buffs?.strength||0;
+        if(a==='gear_strike') return [{type:'attack',val:dmg+str,label:'⚔️',num:String(dmg+str),detail:`档位打击（${g}挡）：造成 ${dmg+str} 点伤害`}];
+        if(a==='full_throttle') return [{type:'buff',label:'✨',num:'力量+2',detail:'全油门：永久叠加 2 层力量，升1挡'}];
+        if(a==='nitro') return [{type:'attack',val:14+str,label:'⚔️',num:`${14+str}+✨`,detail:'氮气加速：造成 '+(14+str)+' 点伤害，升1挡'}];
+        if(a==='turbo'){ const td=6*g+str; return [{type:'attack',val:td,label:'⚔️',num:`${td}+🐌`,detail:`涡轮压榨：造成 ${td} 点伤害，降2挡，施加1层减速`}]; }
+        if(a==='pit') return [{type:'defend',val:18,label:'🛡',num:'18',detail:'进站维修：降1挡，获得 18 点格挡'}];
+        if(a==='drift') return [{type:'attack',val:12+str,label:'⚔️',num:`${12+str}+🐌×3`,detail:'甩尾攻击：造成 '+(12+str)+' 点伤害，对你施加 3 层减速'}];
+        return [{type:'attack',val:dmg,label:'⚔️',num:String(dmg),detail:'攻击'}]; },
+      doAction(cs,si){ const s=cs.enemies[si]; s.gear=s.gear||2; const a=s.actions[s.actionIndex%s.actions.length]; const str=s.buffs.strength||0;
+        if(a==='gear_strike'){ Combat.enemyAttack(cs,si,{1:12,2:16,3:22}[s.gear]||16); }
+        else if(a==='full_throttle'){ Combat.applyBuff(s,'strength',2); s.gear=Math.min(3,s.gear+1); }
+        else if(a==='nitro'){ Combat.enemyAttack(cs,si,14); s.gear=Math.min(3,s.gear+1); }
+        else if(a==='turbo'){ Combat.enemyAttack(cs,si,6*s.gear); s.gear=Math.max(1,s.gear-2); Combat.applyDebuff(cs.player,'slow',1); }
+        else if(a==='pit'){ s.gear=Math.max(1,s.gear-1); s.block+=18; }
+        else if(a==='drift'){ Combat.enemyAttack(cs,si,12); Combat.applyDebuff(cs.player,'slow',3); }
+        s.actionIndex++; }
+    },
+    tutorial_boss: {
+      id:'tutorial_boss', name:'见习教官', emoji:'🎓', hp:55, maxHp:55, actions:['attack','defend','attack','attack','defend'],
+      getIntent(s){ const a=s.actions[s.actionIndex%s.actions.length]; if(a==='attack')return[{type:'attack',val:8,label:'⚔️',num:'8',detail:'对玩家造成 8 点伤害'}]; return[{type:'defend',val:8,label:'🛡',num:'8',detail:'为自身获得 8 点格挡'}]; },
+      doAction(cs,si){ const s=cs.enemies[si],a=s.actions[s.actionIndex%s.actions.length]; if(a==='attack')Combat.enemyAttack(cs,si,8); else s.block=(s.block||0)+8; s.actionIndex++; }
+    },
     guardian: {
       id:'guardian', name:'兔子', emoji:'🐰', hp:140, maxHp:140, actions:['defense','fierce','charge','defense','ultimate'],
       getIntent(s){ const a=s.actions[s.actionIndex%s.actions.length]; const str=s.buffs?.strength||0; if(a==='charge')return[{type:'buff',label:'✨',num:'力量+1',detail:'为自身叠加 1 层【力量】\n力量：每层使攻击伤害 +1（永久）'}]; if(a==='fierce')return[{type:'attack',val:14+str,label:'⚔️',num:String(14+str),detail:`对玩家造成 ${14+str} 点伤害${str>0?' (含 '+str+' 层力量加成)':''}`}]; if(a==='defense')return[{type:'defend',val:12,label:'🛡',num:'12',detail:'为自身获得 12 点格挡\n格挡：抵消等量伤害，回合结束清零'}]; return[{type:'attack',val:6+str,label:'⚔️',num:`×3(${6+str})`,detail:`对玩家造成 3×${6+str} = ${3*(6+str)} 点伤害`}]; },
@@ -308,6 +436,7 @@ const Data = {
     medium: [['slime','cultist'],['jawworm'],['louse','louse','louse']],
     hard:   [['jawworm','cultist'],['slime','slime','cultist']],
     boss:   [['guardian']],
+    boss_tutorial: [['tutorial_boss']],
     easy2:  [['louse2','louse2'],['cultist2'],['louse2','louse2','louse2']],
     medium2:[['jawworm2'],['louse2','cultist2'],['jawworm2','louse2']],
     hard2:  [['jawworm2','cultist2'],['jawworm2','jawworm2']],
@@ -396,21 +525,21 @@ const Data = {
       id: 'wenhao_scarf',
       name: '文豪的红领巾',
       icon: '👔',
-      desc: '每场战斗结束时，若本场战斗全程未受到任何伤害，永久增加 3 点生命上限。',
+      desc: '每场战斗结束时，若本场战斗全程未受到任何伤害，永久增加 5 点生命上限。',
       apply(run){ run.relics.push('wenhao_scarf'); }
     },
     {
       id: 'wenhao_feather',
       name: '文豪的羽毛',
       icon: '🪶',
-      desc: '生命首次低于最大生命值的 50% 时，立刻回满生命。（全局仅触发一次；一击致死不触发）',
+      desc: '生命首次低于最大生命值的 50% 时，立刻回复 40% 最大生命值。（全局仅触发一次；一击致死不触发）',
       apply(run){ run.relics.push('wenhao_feather'); }
     },
     {
       id: 'wenhao_script',
       name: '文豪的剧本',
       icon: '📜',
-      desc: '获取时，立刻打开牌库，选择至多 3 张卡牌删除。（人生的剧本由你自己决定）',
+      desc: '获取时，免费删除至多 2 张卡牌；之后可花费 50 金币再删 1 张。（人生的剧本由你自己决定）',
       apply(run){ run.relics.push('wenhao_script'); }
     }
   ],
@@ -420,7 +549,7 @@ const Data = {
       id: 'gaoshan_sunglasses',
       name: '高山的雪镜',
       icon: '🥽',
-      desc: '每回合开始时，有 50% 概率获得 1 点额外能量。',
+      desc: '每回合开始时，有 35% 概率获得 1 点额外能量。（期望约每3回合触发1次）',
       apply(run){ run.relics.push('gaoshan_sunglasses'); }
     },
     {
@@ -458,7 +587,7 @@ const Data = {
       id: 'wangwei_glasses',
       name: '王微的眼镜',
       icon: '👓',
-      desc: '受到伤害时，有 20% 概率完全无视本次伤害。',
+      desc: '受到伤害时，有 20% 概率减少最多 15 点伤害。',
       apply(run){ run.relics.push('wangwei_glasses'); }
     },
     {
@@ -493,8 +622,8 @@ const Data = {
       img: null,
       tier: 'common',
       source: 'battle',  // 可通过战斗掉落获得
-      actRestrict: 3,    // 仅在尬玩周（act3）掉落
-      desc: '尬玩周限定。拾取时立即获得 333 枚金币。报销成功！',
+      actRestrict: 1,    // 仅在第一层（act1）掉落，包括act1 boss
+      desc: '第一层限定。拾取时立即获得 333 枚金币。报销成功！',
       apply(run){ run.gold = (run.gold||0) + 333; }
     },
     {
@@ -522,10 +651,37 @@ const Data = {
       name: '橄榄球',
       icon: '🏈',
       tier: 'rare',
-      source: 'event',   // 仅能通过腰旗橄榄球事件获得，不在战斗掉落池中
+      source: 'event',
       img: '/manus-storage/football_icon_0390dd99.png',
       desc: '每场战斗第一回合增加 1 点能量。',
       apply(run){ run.relics.push('football'); }
+    },
+    {
+      id: 'lemon_chicken',
+      name: '莹姐的柠檬烧鸡',
+      icon: '🍗',
+      tier: 'common',
+      source: 'event',
+      desc: '莹姐食堂特制。尝过新菜并成功的纪念品。（最大HP+5已在事件中生效）',
+      apply(run){ run.relics.push('lemon_chicken'); }
+    },
+    {
+      id: 'liuxing_headband',
+      name: '刘行的头巾',
+      icon: '🧣',
+      tier: 'rare',
+      source: 'event',
+      desc: '每场战斗中，首次格挡值达到或超过 15 点时，下一回合开始额外获得 1 点能量（每场战斗仅触发一次）。',
+      apply(run){ run.relics.push('liuxing_headband'); }
+    },
+    {
+      id: 'xiaocao_sprout',
+      name: '小草的小草',
+      icon: '🌱',
+      tier: 'uncommon',
+      source: 'battle',
+      desc: '每场战斗胜利后，永久增加 1 点最大HP（无上限）。',
+      apply(run){ run.relics.push('xiaocao_sprout'); }
     },
   ],
   // source 字段说明：'battle'=战斗掉落，'event'=事件专属，'shop'=商店专属，'boss'=Boss专属
@@ -537,16 +693,20 @@ const Data = {
     racer: ['nitro_boost','collision_block','drift_charge','overtake','turbo_crush',
       'pit_repair','race_predict','pressure_test','fuel_save','corner_line',
       'quick_upshift','forced_downshift','redline','race_instinct','full_throttle',
-      'anti_skid','gear_lock','overspeed'],
+      'anti_skid','gear_lock','overspeed',
+      'speed_rush','corner_guard','inertia_strike','speed_limit_break','speed_activate'],
     // 射手专属奖励池
     archer: ['ar_shoot','ar_dodge','ar_aim','ar_sprint','ar_charge_shot','ar_vuln_arrow',
-      'ar_double_shot','ar_block_charge','ar_roll','ar_pierce','ar_swap','ar_rapid_fire','ar_wind_step',
-      'ar_arrow_rain','ar_full_charge','ar_gale','ar_pierce_all','ar_instinct','ar_cap_up','ar_ultimate'],
+      'ar_double_shot','ar_block_charge','ar_roll','ar_pierce','ar_swap','ar_rapid_fire','ar_wind_step','ar_focus_aim',
+      'ar_arrow_rain','ar_full_charge','ar_gale','ar_pierce_all','ar_instinct','ar_cap_up','ar_ultimate',
+      'ar_scatter','ar_weak_arrow','ar_dodge_counter','ar_hunter_rhythm','ar_arrow_storm','ar_threshold',
+      'ar_fire_arrow','ar_flame_arrow','ar_inferno_arrow','ar_chill_arrow','ar_freeze_arrow'],
   },
   // 问号事件列表
   questionEvents: [
     {
       id: 'flag_football',
+      relicId: 'football',
       title: '腰旗橄榄球',
       desc: '你手握橄榄球，前面有两名防守队员拦截。你的选择是……',
       options: [
@@ -583,18 +743,23 @@ const Data = {
     ,
     {
       id: 'yinjie_canteen',
+      relicId: 'lemon_chicken',
       title: '尹姐食堂',
       desc: '尹姐最近研究了一些新菜，热情地招呼你过来尝尝。听说吃了新菜有 50% 的概率永久提升 5 点生命上限，但也有 50% 的概率让你难受失去 8 点血……你的选择是？',
       options: [
         {
           label: '品尝新菜',
-          tooltip: '🎲 50% 概率：最大HP永久 +5\n⚠️ 50% 概率：HP -8',
+          tooltip: '🎲 50% 概率：最大HP永久 +5，获得「莹姐的柠檬烧鸡」\n⚠️ 50% 概率：HP -8',
           resolve(run, UI) {
             const r = Math.random();
             if (r < 0.50) {
               run.character.maxHp = (run.character.maxHp || 80) + 5;
               run.character.hp = Math.min(run.character.maxHp, run.character.hp);
-              return { type: 'good', msg: '味道绝了！最大HP永久 +5！' };
+              if(!run.relics.includes('lemon_chicken')){
+                const rel = Data.battleRelics.find(x => x.id === 'lemon_chicken');
+                if(rel) rel.apply(run);
+              }
+              return { type: 'good', msg: '味道绝了！最大HP永久 +5！获得了遗物：🍗 莹姐的柠檬烧鸡！' };
             } else {
               run.character.hp = Math.max(1, run.character.hp - 8);
               return { type: 'bad', msg: '味道有点奇怪……胃里一阵翻腾。HP -8。' };
@@ -705,7 +870,42 @@ const Data = {
           }
         }
       ]
-    }
+    },
+    {
+      id: 'liuxing_noodles',
+      relicId: 'liuxing_headband',
+      title: '面馆奇遇',
+      desc: '你走进一家热气腾腾的面馆，发现刘行正埋头大口吃面。他抬头瞄了你一眼，慢悠悠地说："要么你请我吃碗面，要么咱们外面说。"',
+      options: [
+        {
+          label: '请他吃面（75金）',
+          tooltip: '💰 花费75金币 → 100%获得遗物「刘行的头巾」\n💸 金币不足时无法选择',
+          resolve(run, UI) {
+            if((run.gold||0) < 75){
+              return { type: 'bad', msg: '你摸了摸口袋……钱不够。刘行叹了口气："没钱就算了，但我记住你了。"' };
+            }
+            run.gold -= 75;
+            if(!run.relics.includes('liuxing_headband')){
+              const rel = Data.battleRelics.find(x => x.id === 'liuxing_headband');
+              if(rel) rel.apply(run);
+            }
+            return { type: 'good', msg: '刘行满意地点头，从脖子上取下头巾递给你："算你识趣。"获得了遗物：🧣 刘行的头巾！' };
+          }
+        },
+        {
+          label: '拒绝，和他打一架',
+          tooltip: '⚔️ 与刘行战斗。打赢后100%获得「刘行的头巾」\n💀 难度随层数提升',
+          resolve(run, UI) {
+            const act = run.act||1;
+            const liuxingId = act>=3?'liuxing3':act>=2?'liuxing2':'liuxing1';
+            if(!run.relics.includes('liuxing_headband')){ run._liuxingFightReward=true; }
+            Combat.init([liuxingId]);
+            State.go('combat');
+            return null;
+          }
+        }
+      ]
+    },
  ],
 
   shopPool: [
@@ -723,24 +923,24 @@ const Data = {
     // 赛车手卡牌（根据强度定价）
     // ★★★ 高强度（130-150）：能力牌、核心强化卡
     {id:'redline', rarity:'epic',         price:150}, // 能力牌：入扁3挡免格挡惩罚+戧5挡每回合戧5张，极强
-    {id:'full_throttle', rarity:'epic',   price:130}, // 能力牌：升挡回合攻击+5，雪球效应强
-    {id:'race_instinct', rarity:'epic',   price:120}, // 能力牌：每次升挡+1势头，中期资源强
+    {id:'full_throttle', rarity:'rare',   price:105}, // 能力牌：升挡回合攻击+2，已下调
+    {id:'race_instinct', rarity:'rare',   price:100}, // 能力牌：每次升挡+1势头，势头上限3
     {id:'turbo_crush', rarity:'rare',     price:120}, // 3费3挡=18伤，高性价比爆发
     // ★★½ 中高强度（100-115）：强力功能卡
     {id:'nitro_boost', rarity:'rare',     price:110}, // 2费12伤+升挡，或3挡时16伤
-    {id:'pressure_test', rarity:'rare',   price:100}, // 2费戧5+超载层，卡牌质量高
+    {id:'pressure_test', rarity:'uncommon', price:80}, // 2费戧2+超载层（上限2），已下调
     {id:'drift_charge', rarity:'rare',    price:100}, // 2费全体攻击+速度感层叠
     // ★★ 中强度（75-95）：实用功能卡
     {id:'collision_block', rarity:'uncommon', price:90},  // 1费格挡+等量伤害，攻守兼备
-    {id:'overtake', rarity:'rare',        price:90},  // 1费3挡时免费且两段伤
-    {id:'anti_skid', rarity:'rare',       price:80},  // 能力牌：降挡时获得3格挡，防御强化
+    {id:'overtake', rarity:'uncommon',     price:75},  // 1费3挡时免费且两段4伤，已下调
+    {id:'anti_skid', rarity:'uncommon',   price:70},  // 能力牌：降挡时获得2格挡，已下调
     {id:'race_predict', rarity:'uncommon',    price:80},  // 1费看牌堆顶+排序+戧1，运营强
-    {id:'gear_lock', rarity:'uncommon',       price:80},  // 1费锁挡+挡位×3格挡
+    {id:'gear_lock', rarity:'common',          price:65},  // 1费锁挡+挡位×3格挡，已下调
     {id:'pit_repair', rarity:'uncommon',      price:75},  // 1费10格挡+低挡回血，防御实用
-    {id:'quick_upshift', rarity:'uncommon',   price:75},  // 1费升戧2挡+戧1张
+    {id:'quick_upshift', rarity:'common',      price:60},  // 1费升2挡+抽1张，已下调
     // ★ 低中强度（55-70）：辅助/条件卡
     {id:'fuel_save', rarity:'uncommon',       price:65},  // 1费降挡+本回技能费用-1
-    {id:'forced_downshift', rarity:'uncommon',price:65},  // 0费降2挡+减速×2层，消耗
+    {id:'forced_downshift', rarity:'common',  price:55},  // 0费降2挡+减速×2层，消耗，已下调
     {id:'corner_line', rarity:'common',     price:60},  // 0费条件格挡，升挡后较强
     {id:'overspeed', rarity:'common',       price:60},  // 0费3挡时13伤，消耗，条件限制
     {id:'gear_strike', rarity:'common',     price:55},  // 起始卡，商店备用
@@ -755,31 +955,54 @@ const Data = {
     {id:'ar_charge_shot', rarity:'common',    price:65},
     {id:'ar_vuln_arrow',  rarity:'common',    price:65},
     {id:'ar_double_shot', rarity:'uncommon',  price:80},
-    {id:'ar_block_charge',rarity:'uncommon',  price:75},
+    {id:'ar_block_charge',rarity:'common',    price:58},
     {id:'ar_roll',        rarity:'uncommon',  price:80},
     {id:'ar_pierce',      rarity:'uncommon',  price:90},
     {id:'ar_swap',        rarity:'uncommon',  price:70},
-    {id:'ar_rapid_fire',  rarity:'uncommon',  price:85},
+    {id:'ar_rapid_fire',  rarity:'common',    price:65},
     {id:'ar_wind_step',   rarity:'uncommon',  price:75},
-    {id:'ar_arrow_rain',  rarity:'rare',      price:110},
-    {id:'ar_full_charge', rarity:'rare',      price:120},
-    {id:'ar_gale',        rarity:'rare',      price:100},
-    {id:'ar_pierce_all',  rarity:'rare',      price:110},
+    {id:'ar_focus_aim',   rarity:'uncommon',  price:70},
+    // 赛车手速度感扩池
+    {id:'speed_rush',        rarity:'common',    price:55},
+    {id:'corner_guard',      rarity:'common',    price:55},
+    {id:'inertia_strike',    rarity:'uncommon',  price:80},
+    {id:'speed_limit_break', rarity:'uncommon',   price:75},
+    {id:'speed_activate',    rarity:'epic',      price:140},
+    // 射手速攻扩池
+    {id:'ar_scatter',        rarity:'common',    price:55},
+    {id:'ar_weak_arrow',     rarity:'common',    price:60},
+    {id:'ar_dodge_counter',  rarity:'common',    price:60},
+    {id:'ar_hunter_rhythm',  rarity:'common',    price:60},
+    {id:'ar_arrow_storm',    rarity:'rare',      price:110},
+    {id:'ar_threshold',      rarity:'rare',      price:105},
+    {id:'ar_arrow_rain',  rarity:'uncommon',  price:82},
+    {id:'ar_full_charge', rarity:'epic',      price:150},
+    {id:'ar_gale',        rarity:'uncommon',  price:78},
+    {id:'ar_pierce_all',  rarity:'uncommon',  price:82},
     {id:'ar_instinct',    rarity:'epic',      price:140},
-    {id:'ar_cap_up',      rarity:'epic',      price:130},
-    {id:'ar_ultimate',    rarity:'epic',      price:150},
+    {id:'ar_cap_up',      rarity:'rare',      price:105},
+    {id:'ar_ultimate',    rarity:'rare',      price:110},
+    {id:'ar_fire_arrow',   rarity:'common',    price:65},
+    {id:'ar_flame_arrow',  rarity:'uncommon',  price:85},
+    {id:'ar_inferno_arrow',rarity:'rare',      price:110},
+    {id:'ar_chill_arrow',  rarity:'uncommon',  price:90},
+    {id:'ar_freeze_arrow', rarity:'rare',      price:115},
   ],
-  removeCardPrice: 75,
+  removeCardPrice: 75, // 已废弃，保留作兼容占位
+  getRemovePrice(run){ return 50 + ((run.removedTotal||0) * 25); },
   getShopInventory(deck){
     // 根据当前角色过滤商店卡牌池
     const charId = State.run?.character?.id || 'default';
     const racerCards = new Set(['nitro_boost','collision_block','drift_charge','overtake','turbo_crush',
       'pit_repair','race_predict','pressure_test','fuel_save','corner_line',
       'quick_upshift','forced_downshift','redline','race_instinct','full_throttle',
-      'anti_skid','gear_lock','overspeed','gear_strike','gear_defend','gear_brake','gear_shift']);
+      'anti_skid','gear_lock','overspeed','gear_strike','gear_defend','gear_brake','gear_shift',
+      'speed_rush','corner_guard','inertia_strike','speed_limit_break','speed_activate']);
     const archerCards = new Set(['ar_shoot','ar_dodge','ar_aim','ar_sprint','ar_charge_shot','ar_vuln_arrow',
       'ar_double_shot','ar_block_charge','ar_roll','ar_pierce','ar_swap','ar_rapid_fire','ar_wind_step',
-      'ar_arrow_rain','ar_full_charge','ar_gale','ar_pierce_all','ar_instinct','ar_cap_up','ar_ultimate']);
+      'ar_arrow_rain','ar_full_charge','ar_gale','ar_pierce_all','ar_instinct','ar_cap_up','ar_ultimate',
+      'ar_scatter','ar_weak_arrow','ar_dodge_counter','ar_hunter_rhythm','ar_arrow_storm','ar_threshold','ar_focus_aim',
+      'ar_fire_arrow','ar_flame_arrow','ar_inferno_arrow','ar_chill_arrow','ar_freeze_arrow']);
     const defaultCards = new Set(['pommel','shrug','armaments','inflame','ironwave','thunderclap','zap','clash','bash','strike','defend']);
     let pool;
     if(charId === 'racer'){
@@ -789,7 +1012,7 @@ const Data = {
     } else {
       pool = Data.shopPool.filter(item => defaultCards.has(item.id));
     }
-    const weights = Data.rarityWeights.shop;
+    const weights = Data._getActWeights('shop');
     const result = [];
     const used = new Set();
     for(let attempt=0; attempt<40 && result.length<4; attempt++){
@@ -806,10 +1029,27 @@ const Data = {
     return result;
   },
   makeEnemy(id){ const t=Data.enemies[id]; return{id:t.id,name:t.name,emoji:t.emoji,hp:t.hp,maxHp:t.maxHp,block:0,actionIndex:0,actions:[...t.actions],buffs:{},debuffs:{},_dead:false,currentIntent:null}; },
-  // 品质权重配置
+  // 品质权重配置（按 Act 分层，act4+ 为未来预留）
   rarityWeights: {
-    reward: { common:45, uncommon:32, rare:17, epic:6 },
-    shop:   { common:40, uncommon:32, rare:20, epic:8 },
+    reward: [
+      null,                                          // 占位，act从1开始
+      { common:68, uncommon:27, rare:4,  epic:1  }, // Act 1
+      { common:52, uncommon:33, rare:12, epic:3  }, // Act 2
+      { common:38, uncommon:33, rare:22, epic:7  }, // Act 3
+      { common:26, uncommon:30, rare:32, epic:12 }, // Act 4+
+    ],
+    shop: [
+      null,
+      { common:60, uncommon:32, rare:7,  epic:1  }, // Act 1
+      { common:45, uncommon:34, rare:16, epic:5  }, // Act 2
+      { common:32, uncommon:33, rare:26, epic:9  }, // Act 3
+      { common:20, uncommon:30, rare:35, epic:15 }, // Act 4+
+    ],
+  },
+  _getActWeights(type){
+    const act = State.run?.act || 1;
+    const table = Data.rarityWeights[type];
+    return table[Math.min(act, table.length-1)];
   },
   _pickByRarity(pool, weights){
     // 按品质权重随机选一张
@@ -830,7 +1070,7 @@ const Data = {
   getRewardCards(deck){
     const charId = State.run?.character?.id || 'default';
     const fullPool = Data.rewardPool[charId] || Data.rewardPool.default;
-    const weights = Data.rarityWeights.reward;
+    const weights = Data._getActWeights('reward');
     const result = [];
     const used = new Set();
     // 尝试抽取3张不重复的卡
@@ -922,6 +1162,57 @@ const Data = {
         Combat.drawCards(cs, 3);
         return '用了coco的洗发水！本回合抽了 3 张牌！';
       }
+    },
+    lemon_water: {
+      id: 'lemon_water',
+      name: '阿高的柠檬水',
+      emoji: '🍋',
+      // 像素风柠檬水瓶（仿照特浓MAXX配色：黄绿瓶身+柠檬片+青柠片+金色腰封）
+      img: `data:image/svg+xml,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 32" shape-rendering="crispEdges">
+  <rect x="7" y="0" width="6" height="1" fill="#43a047"/>
+  <rect x="6" y="1" width="8" height="1" fill="#388e3c"/>
+  <rect x="5" y="2" width="10" height="2" fill="#2e7d32"/>
+  <rect x="6" y="4" width="8" height="2" fill="#c6e829"/>
+  <rect x="5" y="6" width="10" height="1" fill="#bdd918"/>
+  <rect x="4" y="7" width="12" height="1" fill="#b0cc10"/>
+  <rect x="3" y="8" width="14" height="15" fill="#cede0e"/>
+  <rect x="3" y="8" width="1" height="15" fill="#b8c80a"/>
+  <rect x="16" y="8" width="1" height="15" fill="#b8c80a"/>
+  <rect x="4" y="10" width="6" height="1" fill="#ffe500"/>
+  <rect x="3" y="11" width="7" height="5" fill="#ffe500"/>
+  <rect x="4" y="16" width="6" height="1" fill="#ffe500"/>
+  <rect x="5" y="10" width="4" height="7" fill="#ffe500"/>
+  <rect x="5" y="12" width="4" height="3" fill="#fff176"/>
+  <rect x="6" y="11" width="2" height="5" fill="#fff176"/>
+  <rect x="11" y="9" width="5" height="1" fill="#69b82a"/>
+  <rect x="10" y="10" width="7" height="5" fill="#69b82a"/>
+  <rect x="11" y="15" width="5" height="1" fill="#69b82a"/>
+  <rect x="12" y="9" width="3" height="7" fill="#69b82a"/>
+  <rect x="12" y="11" width="3" height="3" fill="#aed858"/>
+  <rect x="13" y="10" width="1" height="5" fill="#aed858"/>
+  <rect x="3" y="23" width="14" height="4" fill="#f9a825"/>
+  <rect x="5" y="24" width="10" height="1" fill="#fff8e1"/>
+  <rect x="6" y="25" width="8" height="1" fill="#fffde7"/>
+  <rect x="4" y="27" width="12" height="2" fill="#e65100"/>
+  <rect x="5" y="29" width="10" height="2" fill="#bf360c"/>
+  <rect x="6" y="31" width="8" height="1" fill="#8d2200"/>
+</svg>`)}`,
+      color: '#c6e829',
+      glowColor: 'rgba(198,232,41,0.75)',
+      tier: 'rare',
+      sellPrice: 95,
+      desc: '对所有敌人造成等同于<b>已损失HP值</b>的伤害（上限50），并恢复 <b>5</b> 点HP。血量越低，威力越强。',
+      use(run, cs) {
+        if (!cs) return '只能在战斗中使用！';
+        const lost = cs.player.maxHp - cs.player.hp;
+        const dmg = Math.min(lost, 50);
+        let hits = 0;
+        cs.enemies.forEach((e, i) => { if (!e._dead) { Combat.dealDamage(cs, i, dmg); hits++; } });
+        cs.player.hp = Math.min(cs.player.maxHp, cs.player.hp + 5);
+        run.character.hp = cs.player.hp;
+        if (dmg === 0) return '满血状态威力为零……但至少恢复了 5 HP！';
+        return `酸力爆发！对 ${hits} 个敌人各造成 ${dmg} 点伤害，并恢复了 5 HP！`;
+      }
     }
   },
 
@@ -937,17 +1228,24 @@ const Data = {
     race_predict:   { 1:{desc:'查看牌堆顶 <b>4</b> 张，自由排序，抽 1 张。', cost:1}, 2:{desc:'查看牌堆顶 <b>4</b> 张，自由排序，抽 <b>2</b> 张。', cost:1} },
     forced_downshift:{ 1:{desc:'0费。降2挡，对敌人施加减速×降幅×<b>2</b>。消耗。', cost:0}, 2:{desc:'0费。降2挡，对敌人施加减速×降幅×<b>2</b>。<b>去除消耗。</b>', cost:0} },
     quick_upshift:  { 1:{desc:'升2挡（上限3挡），抽 <b>2</b> 张牌。', cost:1}, 2:{desc:'<b>0费</b>。升2挡（上限3挡），抽 1 张牌。', cost:0} },
-    collision_block:{ 1:{desc:'获得 <b>6</b> 点格挡（含档位倍率），随后造成等同于当前格挡总量的伤害。', cost:1}, 2:{desc:'获得 <b>6</b> 点格挡（含档位倍率），随后造成等同于当前格挡总量的伤害，施加 1 层易伤。', cost:1} },
+    collision_block:{ 1:{desc:'获得 <b>6</b> 点格挡，造成 <b>9</b> 点伤害（均含档位倍率）。', cost:1}, 2:{desc:'获得 <b>7</b> 点格挡，造成 <b>10</b> 点伤害（均含档位倍率），施加 <b>1</b> 层易伤。', cost:1} },
     gear_lock:      { 1:{desc:'本回合挡位锁定，获得挡位×<b>4</b> 点格挡。', cost:1}, 2:{desc:'<b>0费</b>。本回合挡位锁定，获得挡位×3 点格挡。', cost:0} },
     nitro_boost:    { 1:{desc:'造成 <b>14</b> 点伤害并升1挡。3挡时改为造成 <b>18</b> 点伤害。', cost:2}, 2:{desc:'<b>1费</b>。造成 <b>12</b> 点伤害并升1挡。3挡时改为造成 <b>16</b> 点伤害。', cost:1} },
-    drift_charge:   { 1:{desc:'对所有敌人造成 <b>7</b> 点伤害（含档位倍率）。速度感每有 10 点，额外造成 2 点伤害。', cost:2}, 2:{desc:'对所有敌人造成 <b>7</b> 点伤害（含档位倍率）。速度感每有 <b>8</b> 点，额外造成 2 点伤害。', cost:2} },
-    overtake:       { 1:{desc:'造成 <b>6+6</b> 点伤害（两段，含档位倍率）。3挡时本牌费用变为0。', cost:1}, 2:{desc:'造成 <b>7+7</b> 点伤害（两段，含档位倍率）。3挡时本牌费用变为0，且施加 1 层减速。', cost:1} },
+    drift_charge:   { 1:{desc:'对所有敌人造成 <b>7</b> 点伤害（含档位倍率）。速度感每满 <b>20</b> 点，额外造成 <b>2</b> 点伤害（最多 +8）。', cost:2}, 2:{desc:'对所有敌人造成 <b>7</b> 点伤害（含档位倍率）。速度感每满 <b>16</b> 点，额外造成 <b>2</b> 点伤害（最多 +8）。', cost:2} },
+    overtake:       { 1:{desc:'造成 <b>5+5</b> 点伤害（两段，含档位倍率）。3挡时本牌费用变为0。', cost:1}, 2:{desc:'造成 <b>6+6</b> 点伤害（两段，含档位倍率）。3挡时本牌费用变为0，且施加 1 层减速。', cost:1} },
     turbo_crush:    { 1:{desc:'造成 <b>7×（当前档位）</b> 点伤害，随后降2挡（最低降至1挡）。', cost:3}, 2:{desc:'<b>2费</b>。造成 <b>6×（当前档位）</b> 点伤害，随后降2挡（最低降至1挡）。', cost:2} },
     anti_skid:      { 1:{desc:'能力：每次降挡时获得 <b>4</b> 点格挡。', cost:1}, 2:{desc:'能力：每次降挡时获得 <b>4</b> 点格挡，且每回合首次降挡时抽 1 张牌。', cost:1} },
     redline:        { 1:{desc:'能力：3挡时格挡不受减损。每回合开始若处于3挡，抽 <b>1</b> 张牌并获得 <b>1</b> 点能量。', cost:3}, 2:{desc:'能力：3挡时格挡不受减损。每回合开始若处于3挡，抽 <b>2</b> 张牌并获得 <b>1</b> 点能量。', cost:3} },
     race_instinct:  { 1:{desc:'能力：每次升挡获得 1 点势头（上限 <b>5</b>）。', cost:2}, 2:{desc:'能力：每次升挡获得 1 点势头（上限 <b>5</b>），且每回合首次升挡时抽 1 张牌。', cost:2} },
-    full_throttle:  { 1:{desc:'能力：攻击牌伤害 +<b>2</b>；升挡回合攻击牌改为 +<b>4</b>。', cost:2}, 2:{desc:'能力：攻击牌伤害 +<b>2</b>；升挡回合攻击牌改为 +<b>5</b>。', cost:2} },
+    full_throttle:  { 1:{desc:'能力：攻击牌伤害 +<b>1</b>；升挡回合攻击牌改为 +<b>3</b>。', cost:2}, 2:{desc:'能力：攻击牌伤害 +<b>2</b>；升挡回合攻击牌改为 +<b>4</b>。', cost:2} },
     overload:       { 1:{desc:'获得 1 层超载（受伤时+1格挡，上限 <b>4</b> 层），抽 2 张牌。', cost:2}, 2:{desc:'获得 <b>2</b> 层超载（上限 <b>4</b> 层），抽 2 张牌。', cost:2} },
+    fuel_save:      { 1:{desc:'<b>0费</b>。降 1 挡。本回合所有技能牌费用 -1（最低 0）。', cost:0}, 2:{desc:'<b>0费</b>。降 1 挡。本回合<b>所有</b>牌费用 -1（最低 0，含攻击牌）。', cost:0} },
+    corner_line:    { 1:{desc:'升过挡时获得 <b>10</b> 点格挡；否则获得 <b>6</b> 点格挡。（不受档位倍率影响）', cost:0}, 2:{desc:'升过挡时获得 <b>10</b> 点格挡并抽 <b>1</b> 张牌；否则获得 <b>6</b> 点格挡。', cost:0} },
+    speed_rush:     { 1:{desc:'造成 <b>4</b> 点伤害（含档位倍率），获得当前档位×4 点速度感。', cost:1}, 2:{desc:'造成 <b>5</b> 点伤害（含档位倍率），获得当前档位×5 点速度感。', cost:1} },
+    corner_guard:   { 1:{desc:'获得 <b>6</b> 点格挡。若本回合已升过挡，额外获得 <b>4</b> 点格挡。', cost:1}, 2:{desc:'获得 <b>7</b> 点格挡。若本回合已升过挡，额外获得 <b>5</b> 点格挡。', cost:1} },
+    inertia_strike: { 1:{desc:'造成 <b>9</b> 点伤害（含档位倍率）。速度感每满 20 点，追加 2 点伤害。', cost:1}, 2:{desc:'造成 <b>10</b> 点伤害（含档位倍率）。速度感每满 20 点，追加 2 点伤害。', cost:1} },
+    speed_limit_break:{ 1:{desc:'若速度感 ≥ <b>35</b>，本回合能量 +1。消耗。', cost:0}, 2:{desc:'若速度感 ≥ <b>35</b>，本回合能量 +1。<b>去除消耗。</b>', cost:0} },
+    speed_activate: { 1:{desc:'永久：每回合开始额外获得 <b>10</b> 点速度感（上限 80）。', cost:2}, 2:{desc:'<b>1费</b>。永久：每回合开始额外获得 <b>10</b> 点速度感（上限 80）。', cost:1} },
     // ── 射手卡牌升级 ──
     ar_shoot:       { 1:{desc:'造成 <b>5</b> 点伤害，消耗全部蓄力，每消耗 1 点额外造成 <b>3</b> 点伤害。', cost:1}, 2:{desc:'<b>0费</b>。造成 <b>3</b> 点伤害，消耗全部蓄力，每消耗 1 点额外造成 <b>3</b> 点伤害。', cost:0} },
     ar_dodge:       { 1:{desc:'获得 <b>6</b> 点格挡，获得 <b>1</b> 点蓄力。', cost:1}, 2:{desc:'获得 <b>6</b> 点格挡，获得 <b>2</b> 点蓄力。', cost:1} },
@@ -956,19 +1254,31 @@ const Data = {
     ar_charge_shot: { 1:{desc:'造成 <b>6</b> 点伤害，消耗全部蓄力，每消耗 1 点额外造成 <b>3</b> 点伤害。', cost:1}, 2:{desc:'造成 <b>6</b> 点伤害，消耗全部蓄力，每消耗 1 点额外造成 <b>4</b> 点伤害。', cost:1} },
     ar_vuln_arrow:  { 1:{desc:'造成 <b>5</b> 点伤害，施加 <b>2</b> 层易伤，消耗全部蓄力，每消耗 1 点额外造成 <b>2</b> 点伤害。', cost:1}, 2:{desc:'造成 <b>5</b> 点伤害，施加 <b>2</b> 层易伤，消耗全部蓄力，每消耗 1 点额外造成 <b>3</b> 点伤害。', cost:1} },
     ar_double_shot: { 1:{desc:'造成 <b>4</b> 点伤害 2 次，消耗全部蓄力，每消耗 1 点额外造成 <b>2</b> 点伤害（作用于 2 次）。', cost:1}, 2:{desc:'造成 <b>5</b> 点伤害 2 次，消耗全部蓄力，每消耗 1 点额外造成 <b>3</b> 点伤害（作用于 2 次）。', cost:1} },
-    ar_block_charge:{ 1:{desc:'获得等于当前蓄力×<b>3</b> 的格挡，然后获得 <b>1</b> 点蓄力。', cost:1}, 2:{desc:'获得等于当前蓄力×<b>3</b> 的格挡，然后获得 <b>2</b> 点蓄力。', cost:1} },
+    ar_block_charge:{ 1:{desc:'获得 <b>7</b> 点格挡，然后获得 <b>1</b> 点蓄力。', cost:1}, 2:{desc:'获得 <b>7</b> 点格挡，然后获得 <b>2</b> 点蓄力。', cost:1} },
     ar_roll:        { 1:{desc:'获得 <b>13</b> 点格挡，获得 <b>2</b> 点蓄力。', cost:2}, 2:{desc:'<b>1费</b>。获得 <b>10</b> 点格挡，获得 <b>2</b> 点蓄力。', cost:1} },
     ar_pierce:      { 1:{desc:'造成 <b>10</b> 点伤害，无视目标格挡，消耗全部蓄力，每消耗 1 点额外造成 <b>3</b> 点伤害。', cost:2}, 2:{desc:'造成 <b>10</b> 点伤害，无视目标格挡，消耗全部蓄力，每消耗 1 点额外造成 <b>4</b> 点伤害。', cost:2} },
     ar_swap:        { 1:{desc:'丢弃手牌中任意 1 张牌，抽 <b>2</b> 张牌，获得 <b>2</b> 点蓄力。', cost:0}, 2:{desc:'丢弃手牌中任意 1 张牌，抽 <b>3</b> 张牌，获得 <b>2</b> 点蓄力。', cost:0} },
-    ar_rapid_fire:  { 1:{desc:'造成 <b>5</b> 点伤害 3 次，消耗全部蓄力，每消耗 1 点额外造成 <b>2</b> 点伤害（作用于全部 3 次）。', cost:2}, 2:{desc:'<b>1费</b>。造成 <b>4</b> 点伤害 3 次，消耗全部蓄力，每消耗 1 点额外造成 <b>2</b> 点伤害（作用于全部 3 次）。', cost:1} },
+    ar_rapid_fire:  { 1:{desc:'造成 <b>5</b> 点伤害 2 次，消耗全部蓄力，每消耗 1 点额外造成 <b>2</b> 点伤害（作用于全部 2 次）。', cost:2}, 2:{desc:'<b>1费</b>。造成 <b>5</b> 点伤害 2 次，消耗全部蓄力，每消耗 1 点额外造成 <b>2</b> 点伤害（作用于全部 2 次）。', cost:1} },
     ar_wind_step:   { 1:{desc:'获得 <b>6</b> 点格挡，获得 <b>1</b> 点蓄力。本回合下一张攻击牌费用 -1。', cost:1}, 2:{desc:'获得 <b>6</b> 点格挡，获得 <b>2</b> 点蓄力。本回合下一张攻击牌费用 -1。', cost:1} },
-    ar_arrow_rain:  { 1:{desc:'对所有敌人造成 <b>4</b> 点伤害 <b>2</b> 次，消耗全部蓄力，每消耗 1 点额外造成 <b>2</b> 点伤害（作用于全体每次）。', cost:2}, 2:{desc:'对所有敌人造成 <b>5</b> 点伤害 <b>2</b> 次，消耗全部蓄力，每消耗 1 点额外造成 <b>2</b> 点伤害（作用于全体每次）。', cost:2} },
-    ar_full_charge: { 1:{desc:'<b>仅当蓄力满（≥上限）时可打出。</b>消耗全部蓄力，造成 <b>60</b> 点伤害。', cost:1}, 2:{desc:'<b>仅当蓄力 ≥ 4 时可打出。</b>消耗全部蓄力，造成 <b>60</b> 点伤害。', cost:1} },
-    ar_gale:        { 1:{desc:'获得 <b>8</b> 点格挡，获得 <b>2</b> 点蓄力，抽 <b>1</b> 张牌。消耗。', cost:1}, 2:{desc:'获得 <b>8</b> 点格挡，获得 <b>3</b> 点蓄力，抽 <b>2</b> 张牌。消耗。', cost:1} },
-    ar_pierce_all:  { 1:{desc:'对所有敌人造成 <b>10</b> 点伤害，消耗全部蓄力，每消耗 1 点额外造成 <b>3</b> 点伤害（作用于所有敌人）。', cost:2}, 2:{desc:'<b>1费</b>。对所有敌人造成 <b>8</b> 点伤害，消耗全部蓄力，每消耗 1 点额外造成 <b>3</b> 点伤害（作用于所有敌人）。', cost:1} },
+    ar_arrow_rain:  { 1:{desc:'对所有敌人造成 <b>3</b> 点伤害 <b>2</b> 次，消耗全部蓄力，每消耗 1 点额外造成 <b>2</b> 点伤害（作用于全体每次）。', cost:2}, 2:{desc:'对所有敌人造成 <b>4</b> 点伤害 <b>2</b> 次，消耗全部蓄力，每消耗 1 点额外造成 <b>2</b> 点伤害（作用于全体每次）。', cost:2} },
+    ar_full_charge: { 1:{desc:'<b>仅当蓄力满（≥上限）时可打出。</b>消耗全部蓄力，造成 <b>38</b> 点伤害。', cost:2}, 2:{desc:'<b>仅当蓄力 ≥ 4 时可打出。</b>消耗全部蓄力，造成 <b>38</b> 点伤害。', cost:2} },
+    ar_gale:        { 1:{desc:'获得 <b>7</b> 点格挡，获得 <b>2</b> 点蓄力，抽 <b>1</b> 张牌。消耗。', cost:1}, 2:{desc:'获得 <b>7</b> 点格挡，获得 <b>3</b> 点蓄力，抽 <b>2</b> 张牌。消耗。', cost:1} },
+    ar_pierce_all:  { 1:{desc:'对所有敌人造成 <b>8</b> 点伤害，消耗全部蓄力，每消耗 1 点额外造成 <b>3</b> 点伤害（作用于所有敌人）。', cost:2}, 2:{desc:'<b>1费</b>。对所有敌人造成 <b>8</b> 点伤害，消耗全部蓄力，每消耗 1 点额外造成 <b>3</b> 点伤害（作用于所有敌人）。', cost:1} },
     ar_instinct:    { 1:{desc:'永久：每回合开始时，获得 <b>2</b> 点蓄力（不超过上限）。', cost:2}, 2:{desc:'<b>1费</b>。永久：每回合开始时，获得 <b>2</b> 点蓄力（不超过上限）。', cost:1} },
-    ar_cap_up:      { 1:{desc:'永久：蓄力上限提升至 <b>8</b>（原为5）。立即获得 <b>4</b> 点蓄力。', cost:2}, 2:{desc:'<b>1费</b>。永久：蓄力上限提升至 <b>8</b>（原为5）。立即获得 <b>4</b> 点蓄力。', cost:1} },
-    ar_ultimate:    { 1:{desc:'造成 <b>7</b> 点伤害 4 次，消耗全部蓄力，每消耗 1 点额外造成 <b>3</b> 点伤害（作用于全部 4 次）。', cost:3}, 2:{desc:'<b>2费</b>。造成 <b>6</b> 点伤害 4 次，消耗全部蓄力，每消耗 1 点额外造成 <b>3</b> 点伤害（作用于全部 4 次）。', cost:2} },
+    ar_cap_up:      { 1:{desc:'永久：蓄力上限提升至 <b>8</b>（原为5）。立即获得 <b>3</b> 点蓄力。', cost:2}, 2:{desc:'<b>1费</b>。永久：蓄力上限提升至 <b>8</b>（原为5）。立即获得 <b>3</b> 点蓄力。', cost:1} },
+    ar_ultimate:    { 1:{desc:'造成 <b>6</b> 点伤害 4 次，消耗全部蓄力，每消耗 1 点额外造成 <b>3</b> 点伤害（作用于全部 4 次）。', cost:3}, 2:{desc:'<b>2费</b>。造成 <b>6</b> 点伤害 4 次，消耗全部蓄力，每消耗 1 点额外造成 <b>3</b> 点伤害（作用于全部 4 次）。', cost:2} },
+    ar_focus_aim:   { 1:{desc:'获得 <b>4</b> 点蓄力。消耗。', cost:0}, 2:{desc:'获得 <b>4</b> 点蓄力。<b>去除消耗。</b>', cost:0} },
+    ar_scatter:     { 1:{desc:'对所有敌人造成 <b>3</b> 点伤害，获得 <b>1</b> 点蓄力。', cost:1}, 2:{desc:'对所有敌人造成 <b>4</b> 点伤害，获得 <b>2</b> 点蓄力。', cost:1} },
+    ar_weak_arrow:  { 1:{desc:'造成 <b>4</b> 点伤害，施加 <b>1</b> 层虚弱，获得 <b>1</b> 点蓄力。', cost:1}, 2:{desc:'造成 <b>5</b> 点伤害，施加 <b>2</b> 层虚弱，获得 <b>1</b> 点蓄力。', cost:1} },
+    ar_dodge_counter:{ 1:{desc:'获得 <b>6</b> 点格挡。若本场战斗受过伤，额外获得 <b>3</b> 点蓄力。', cost:1}, 2:{desc:'获得 <b>8</b> 点格挡。若本场战斗受过伤，额外获得 <b>4</b> 点蓄力。', cost:1} },
+    ar_hunter_rhythm:{ 1:{desc:'获得 <b>3</b> 点蓄力，抽 <b>1</b> 张牌。消耗。', cost:0}, 2:{desc:'获得 <b>3</b> 点蓄力，抽 <b>1</b> 张牌。<b>去除消耗。</b>', cost:0} },
+    ar_arrow_storm: { 1:{desc:'对所有敌人造成（<b>3</b>+蓄力）点伤害 <b>4</b> 次，消耗全部蓄力。', cost:3}, 2:{desc:'<b>2费</b>。对所有敌人造成（<b>3</b>+蓄力）点伤害 <b>4</b> 次，消耗全部蓄力。', cost:2} },
+    ar_threshold:   { 1:{desc:'永久：每回合开始时，若蓄力 ≥ <b>2</b>，获得 <b>1</b> 点额外能量。', cost:1}, 2:{desc:'<b>0费</b>。永久：每回合开始时，若蓄力 ≥ <b>2</b>，获得 <b>1</b> 点额外能量。', cost:0} },
+    ar_fire_arrow:    { 1:{desc:'造成 <b>5</b> 点伤害，施加 <b>2</b> 层燃烧。消耗全部蓄力，每消耗 1 点额外造成 <b>2</b> 点伤害。', cost:1}, 2:{desc:'造成 <b>6</b> 点伤害，施加 <b>3</b> 层燃烧。消耗全部蓄力，每消耗 1 点额外造成 <b>2</b> 点伤害。', cost:1} },
+    ar_flame_arrow:   { 1:{desc:'造成 <b>7</b> 点伤害，施加 <b>3</b> 层燃烧。消耗全部蓄力，每消耗 1 点额外造成 <b>2</b> 点伤害。', cost:1}, 2:{desc:'造成 <b>9</b> 点伤害，施加 <b>4</b> 层燃烧。消耗全部蓄力，每消耗 1 点额外造成 <b>2</b> 点伤害。', cost:1} },
+    ar_inferno_arrow: { 1:{desc:'对所有敌人造成 <b>8</b> 点伤害，施加 <b>4</b> 层燃烧。消耗全部蓄力，每消耗 1 点额外造成 <b>2</b> 点伤害（对全体）。', cost:2}, 2:{desc:'对所有敌人造成 <b>8</b> 点伤害，施加 <b>5</b> 层燃烧。消耗全部蓄力，每消耗 1 点额外造成 <b>2</b> 点伤害（对全体）。', cost:2} },
+    ar_chill_arrow:   { 1:{desc:'造成 <b>7</b> 点伤害。消耗全部蓄力，每消耗 1 点额外造成 <b>2</b> 点伤害。<b>20%</b> 概率冻结敌人。', cost:2}, 2:{desc:'<b>1费</b>。造成 <b>7</b> 点伤害。消耗全部蓄力，每消耗 1 点额外造成 <b>2</b> 点伤害。<b>20%</b> 概率冻结敌人。', cost:1} },
+    ar_freeze_arrow:  { 1:{desc:'造成 <b>12</b> 点伤害。消耗全部蓄力，每消耗 1 点额外造成 <b>3</b> 点伤害。<b>35%</b> 概率冻结敌人。', cost:3}, 2:{desc:'<b>2费</b>。造成 <b>12</b> 点伤害。消耗全部蓄力，每消耗 1 点额外造成 <b>3</b> 点伤害。<b>40%</b> 概率冻结敌人。', cost:2} },
     // ── Brute 卡牌升级 ──
     strike:       { 1:{desc:'造成 <b>9</b> 点伤害。', cost:1}, 2:{desc:'造成 <b>12</b> 点伤害。', cost:1} },
     defend:       { 1:{desc:'获得 <b>8</b> 点格挡。', cost:1}, 2:{desc:'获得 <b>11</b> 点格挡。', cost:1} },
@@ -1343,93 +1653,113 @@ const Audio = {
     if (this._customBgmMap) { this._playCustomBgm(this._customBgmMap); return; }
     const ctx = this._getCtx();
     this._bgmPlaying = true;
+    this._bgmNodes = [];
 
-    // 层1：轻快和弦底音（C大调）
-    const bassFreqs = [130.8, 196, 261.6]; // C3 G3 C4
-    const bassOscs = bassFreqs.map((f, idx) => {
-      const o = this._osc(ctx, 'triangle', f);
-      const g = this._gain(ctx, 0.05);
-      const lfo = this._osc(ctx, 'sine', 0.4 + idx * 0.15);
-      const lg = this._gain(ctx, 1.2);
-      lfo.connect(lg); lg.connect(g.gain);
-      o.connect(g); g.connect(this._bgmGain);
-      o.start(); lfo.start();
-      return [o, lfo];
-    });
+    // ── C大调，轻快欢乐战斗风格，全程三角波+正弦波，绝无刺耳声 ──
+    const N = {
+      C3:130.8, E3:164.8, F3:174.6, G3:196,   A3:220,
+      C4:261.6, D4:293.7, E4:329.6, F4:349.2, G4:392, A4:440, B4:493.9,
+      C5:523.3, D5:587.3, E5:659.3, F5:698.5, G5:784, A5:880,
+      R:0
+    };
 
-    // 层2：明亮和声垫（C大调三和弦）
-    const padFreqs = [261.6, 329.6, 392, 523.3]; // C4 E4 G4 C5
-    const padOscs = padFreqs.map(f => {
-      const o = this._osc(ctx, 'sine', f);
-      const g = this._gain(ctx, 0.025);
-      const lfo = this._osc(ctx, 'sine', 0.6 + Math.random() * 0.3);
-      const lg = this._gain(ctx, 0.8);
-      lfo.connect(lg); lg.connect(g.gain);
-      o.connect(g); g.connect(this._bgmGain);
-      o.start(); lfo.start();
-      return [o, lfo];
-    });
+    const bpm = 148;
+    const stepMs = (60 / bpm / 2) * 1000; // ~202ms，8分音符步进
+    let tick = 0;
+    let melStep = 0;
 
-    this._bgmNodes = [...bassOscs.flat(), ...padOscs.flat()];
+    // ── 48步主旋律，约9.7秒循环，C大调三段 ──
+    const melody = [
+      // ■ 段A：跳跃开场，欢快上行
+      N.C5, N.E5, N.G5, N.E5,  N.D5, N.C5, N.A4, N.G4,
+      N.E4, N.G4, N.A4, N.C5,  N.E5, N.C5, N.G4, N.R,
+      // ■ 段B：小转折，F和弦色彩
+      N.F4, N.A4, N.C5, N.A4,  N.G4, N.F4, N.E4, N.D4,
+      N.E4, N.G4, N.C5, N.E5,  N.D5, N.C5, N.B4, N.R,
+      // ■ 段C：高潮展开，G→C收尾
+      N.G4, N.A4, N.C5, N.E5,  N.G5, N.E5, N.D5, N.C5,
+      N.A4, N.C5, N.E5, N.C5,  N.G4, N.A4, N.C5, N.R,
+    ];
 
-    // 层3：跳跃旋律（C大调，活泼节奏）
-    const scale = [261.6, 293.7, 329.6, 349.2, 392, 440, 493.9, 523.3]; // C大调
-    const melodyPattern = [4, 7, 6, 4, 2, 4, 5, 7, 4, 2, 0, 2, 4, 5, 4, 2]; // 跳跃旋律
-    const bassPattern  = [0, 0, 3, 3, 4, 4, 2, 2]; // 伴奏低音
-    let melodyStep = 0, bassStep = 0;
+    // 低音根音，每8步一次（三角波，柔和）
+    const bassRoots = [
+      N.C3, N.G3, N.F3, N.G3,  // C→G→F→G
+      N.F3, N.C3, N.G3, N.C3,  // F→C→G→C
+      N.G3, N.F3, N.C3, N.G3,  // G→F→C→G
+    ];
+
+    // 和弦琶音（正弦波，每8步一组）
+    const arpGroups = [
+      [N.C4,N.E4,N.G4,N.C5], [N.G4,N.B4,N.D5,N.G5],
+      [N.F4,N.A4,N.C5,N.F5], [N.G4,N.B4,N.D5,N.G5],
+      [N.F4,N.A4,N.C5,N.F5], [N.C4,N.E4,N.G4,N.C5],
+    ];
 
     this._bgmInterval = setInterval(() => {
       if (!this._bgmPlaying) return;
       const ctx2 = this._getCtx(), t = ctx2.currentTime;
+      tick++;
+      const isDown = tick % 2 === 1;
+      const beat4  = Math.ceil(tick / 2) % 4;
 
-      // 旋律音符（方波+低通，轻快感）
-      const noteFreq = scale[melodyPattern[melodyStep % melodyPattern.length]];
-      melodyStep++;
-      const osc = this._osc(ctx2, 'square', noteFreq);
-      const filt = this._filter(ctx2, 'lowpass', 2000);
-      const g = this._gain(ctx2, 0);
-      g.gain.linearRampToValueAtTime(0.05, t + 0.02);
-      g.gain.setValueAtTime(0.05, t + 0.1);
-      g.gain.exponentialRampToValueAtTime(0.001, t + 0.25);
-      osc.connect(filt); filt.connect(g); g.connect(this._bgmGain);
-      osc.start(t); osc.stop(t + 0.28);
-
-      // 每两拍一个伴奏低音
-      if (melodyStep % 2 === 0) {
-        const bf = scale[bassPattern[bassStep % bassPattern.length]] / 2;
-        bassStep++;
-        const bo = this._osc(ctx2, 'triangle', bf);
-        const bg = this._gain(ctx2, 0);
-        bg.gain.linearRampToValueAtTime(0.08, t + 0.03);
-        bg.gain.exponentialRampToValueAtTime(0.001, t + 0.45);
-        bo.connect(bg); bg.connect(this._bgmGain);
-        bo.start(t); bo.stop(t + 0.5);
+      // ── 踢鼓：1、3拍（纯正弦，柔和厚实）──
+      if (isDown && (beat4 === 1 || beat4 === 3)) {
+        const k = this._osc(ctx2, 'sine', 150);
+        const kg = ctx2.createGain();
+        kg.gain.setValueAtTime(0.30, t); kg.gain.exponentialRampToValueAtTime(0.001, t + 0.14);
+        k.frequency.setValueAtTime(150, t); k.frequency.exponentialRampToValueAtTime(38, t + 0.11);
+        k.connect(kg); kg.connect(this._bgmGain); k.start(t); k.stop(t + 0.15);
       }
 
-      // 每四拍加一个高音装饰
-      if (melodyStep % 4 === 0) {
-        const hiFreq = scale[4] * 2; // G5
-        const hi = this._osc(ctx2, 'sine', hiFreq);
-        const hg = this._gain(ctx2, 0);
-        hg.gain.linearRampToValueAtTime(0.028, t + 0.01);
-        hg.gain.exponentialRampToValueAtTime(0.001, t + 0.12);
-        hi.connect(hg); hg.connect(this._bgmGain);
-        hi.start(t); hi.stop(t + 0.14);
+      // ── 拍手/小鼓：2、4拍（噪声+低通，不刺耳）──
+      if (isDown && (beat4 === 2 || beat4 === 0)) {
+        const sb = ctx2.createBuffer(1, ctx2.sampleRate * 0.10, ctx2.sampleRate);
+        const sd = sb.getChannelData(0);
+        for (let i = 0; i < sd.length; i++) sd[i] = (Math.random()*2-1) * Math.exp(-i/(ctx2.sampleRate*0.030));
+        const ss = ctx2.createBufferSource(); ss.buffer = sb;
+        const sf = this._filter(ctx2, 'lowpass', 3500); // 低通而非带通，无刺耳峰值
+        const sg = ctx2.createGain(); sg.gain.value = 0.18;
+        ss.connect(sf); sf.connect(sg); sg.connect(this._bgmGain); ss.start(t);
       }
 
-      // 每八拍加一个轻鼓点（噪声冲击）
-      if (melodyStep % 8 === 0) {
-        const buf = ctx2.createBuffer(1, ctx2.sampleRate * 0.08, ctx2.sampleRate);
-        const data = buf.getChannelData(0);
-        for (let i = 0; i < data.length; i++) data[i] = (Math.random() * 2 - 1) * (1 - i / data.length);
-        const src = ctx2.createBufferSource();
-        src.buffer = buf;
-        const ng = ctx2.createGain(); ng.gain.value = 0.06;
-        const nf = this._filter(ctx2, 'bandpass', 200);
-        src.connect(nf); nf.connect(ng); ng.connect(this._bgmGain);
-        src.start(t);
+      // ── 主旋律：三角波+低通（温暖，完全不刺耳）──
+      const freq = melody[melStep % melody.length];
+      melStep++;
+      if (freq > 0) {
+        const mo = this._osc(ctx2, 'triangle', freq);
+        const mf = this._filter(ctx2, 'lowpass', 4000);
+        const mg = ctx2.createGain();
+        mg.gain.setValueAtTime(0, t);
+        mg.gain.linearRampToValueAtTime(0.072, t + 0.014);
+        mg.gain.setValueAtTime(0.065, t + stepMs/1000*0.4);
+        mg.gain.exponentialRampToValueAtTime(0.001, t + stepMs/1000*1.45);
+        mo.connect(mf); mf.connect(mg); mg.connect(this._bgmGain);
+        mo.start(t); mo.stop(t + stepMs/1000*1.5);
       }
-    }, 280); // 280ms节拍，约107BPM，轻快活泼
+
+      // ── 正弦波琶音（流动欢快感）──
+      const ag = arpGroups[Math.floor((melStep-1)/8) % arpGroups.length];
+      const an = ag[(tick-1) % 4];
+      const ao = this._osc(ctx2, 'sine', an);
+      const ago = ctx2.createGain();
+      ago.gain.setValueAtTime(0,t); ago.gain.linearRampToValueAtTime(0.022, t+0.012);
+      ago.gain.exponentialRampToValueAtTime(0.001, t+stepMs/1000*1.8);
+      ao.connect(ago); ago.connect(this._bgmGain); ao.start(t); ao.stop(t+stepMs/1000*1.9);
+
+      // ── 低音根音：每8步（三角波+低通，温暖饱满）──
+      if (tick % 8 === 1) {
+        const bn = bassRoots[Math.floor((tick-1)/8) % bassRoots.length];
+        const bo = this._osc(ctx2, 'triangle', bn);
+        const bf = this._filter(ctx2, 'lowpass', 500);
+        const bg2 = ctx2.createGain();
+        bg2.gain.setValueAtTime(0,t); bg2.gain.linearRampToValueAtTime(0.15, t+0.020);
+        bg2.gain.setValueAtTime(0.13, t+stepMs/1000*5); bg2.gain.exponentialRampToValueAtTime(0.001, t+stepMs/1000*8.2);
+        bo.connect(bf); bf.connect(bg2); bg2.connect(this._bgmGain);
+        bo.start(t); bo.stop(t+stepMs/1000*8.5);
+      }
+
+      tick = tick % 10000;
+    }, stepMs);
   },
 
   startBgmCombat() {
@@ -1438,111 +1768,134 @@ const Audio = {
     if (this._customBgmCombat) { this._playCustomBgm(this._customBgmCombat); return; }
     const ctx = this._getCtx();
     this._bgmPlaying = true;
+    this._bgmNodes = [];
 
-    // 层1：低频持续底音（A1）
-    const bass = this._osc(ctx, 'sawtooth', 55);
-    const bf = this._filter(ctx, 'lowpass', 150);
-    const bg = this._gain(ctx, 0.12);
-    const blfo = this._osc(ctx, 'sine', 0.5);
-    const blg = this._gain(ctx, 4);
-    blfo.connect(blg); blg.connect(bass.frequency);
-    bass.connect(bf); bf.connect(bg); bg.connect(this._bgmGain);
-    bass.start(); blfo.start();
+    // ── G大调冒险探索风格：温暖、流动、与战斗音乐形成鲜明对比 ──
+    // 乐器：三角波旋律（温暖）+ 正弦琶音（清澈）+ 三角波低音（柔和）+ 轻柔打击（无军鼓）
+    const N = {
+      G2:98,   B2:123.5, C3:130.8, D3:146.8, E3:164.8, G3:196,
+      A3:220,  B3:246.9, C4:261.6, D4:293.7, E4:329.6, G4:392,
+      A4:440,  B4:493.9, C5:523.3, D5:587.3, E5:659.3, G5:784,
+      A5:880,  R:0
+    };
 
-    // 层2：紧张弦乐垫（A2, E3, C3）
-    const strFreqs = [110, 164.8, 130.8];
-    const strOscs = strFreqs.map((f, i) => {
-      const o = this._osc(ctx, 'sawtooth', f);
-      const filt = this._filter(ctx, 'bandpass', f * 2, 1.5);
-      const g = this._gain(ctx, 0.035);
-      const lfo = this._osc(ctx, 'sine', 5 + i);
-      const lg = this._gain(ctx, 1.5);
-      lfo.connect(lg); lg.connect(o.frequency);
-      o.connect(filt); filt.connect(g); g.connect(this._bgmGain);
-      o.start(); lfo.start();
-      return [o, lfo];
-    });
-
-    this._bgmNodes = [bass, bf, blfo, ...strOscs.flat()];
-
-    // 层3：鼓点节奏 + 旋律
-    const bpm = 130;
-    const beatMs = (60 / bpm) * 1000;
-    let beat = 0;
-    // 战斗旋律（小调五声）
-    const combatScale = [220, 246.9, 261.6, 293.7, 329.6, 349.2, 392, 440];
-    const combatMelody = [0, 0, 2, 4, 3, 1, 0, 5, 4, 2, 0, 1, 3, 2, 0, 4];
+    // 128 BPM，四分音符步进 ≈ 234ms，轻快但不急促
+    const bpm = 128;
+    const stepMs = (60 / bpm) * 1000;        // 四分音符：~469ms
+    const halfMs = stepMs / 2;                // 八分音符：~234ms
+    let tick = 0;
     let melStep = 0;
+
+    // ── 48步主旋律（约11.2秒循环），G大调三段式 ──
+    const melody = [
+      // ■ A段：上行开场，明朗冒险感
+      N.G4, N.B4, N.D5, N.G5,  N.E5, N.D5, N.B4, N.G4,
+      N.A4, N.B4, N.D5, N.B4,  N.G4, N.A4, N.B4, N.R,
+      // ■ B段：温柔流动，Em色彩
+      N.E5, N.D5, N.B4, N.A4,  N.G4, N.A4, N.B4, N.D5,
+      N.E5, N.G5, N.E5, N.D5,  N.B4, N.A4, N.G4, N.R,
+      // ■ C段：高潮展开，G→C→D走向
+      N.D5, N.E5, N.G5, N.E5,  N.D5, N.B4, N.G4, N.B4,
+      N.C5, N.B4, N.A4, N.G4,  N.A4, N.B4, N.D5, N.R,
+    ];
+
+    // ── 低音根音，每4步一次（三角波，温柔不压迫）──
+    const bassNotes = [
+      N.G2, N.G2, N.D3, N.D3,  // G→D
+      N.E3, N.E3, N.C3, N.C3,  // Em→C
+      N.G2, N.G2, N.C3, N.D3,  // G→C→D
+    ];
+
+    // ── 正弦琶音和弦组（每8步换一组）──
+    const arpGroups = [
+      [N.G4, N.B4, N.D5, N.G5],   // G
+      [N.D4, N.G4, N.B4, N.D5],   // D
+      [N.E4, N.G4, N.B4, N.E5],   // Em
+      [N.C4, N.E4, N.G4, N.C5],   // C
+      [N.G4, N.B4, N.D5, N.G5],   // G
+      [N.C4, N.E4, N.G4, N.C5],   // C
+    ];
 
     this._bgmInterval = setInterval(() => {
       if (!this._bgmPlaying) return;
       const ctx2 = this._getCtx(), t = ctx2.currentTime;
-      beat++;
+      tick++;
+      const isDown = tick % 2 === 1;
+      const beat4  = Math.ceil(tick / 2) % 4;
 
-      // 低音鼓（第1、3拍）
-      if (beat % 4 === 1 || beat % 4 === 3) {
-        const { src: ns, out: nf } = this._noise(ctx2, 0.18, 180);
-        const ng = this._gain(ctx2, 0);
-        ng.gain.setValueAtTime(0.35, t); ng.gain.exponentialRampToValueAtTime(0.001, t + 0.18);
-        const kick = this._osc(ctx2, 'sine', 80);
-        const kg = this._gain(ctx2, 0.3);
-        kg.gain.setValueAtTime(0.3, t); kg.gain.exponentialRampToValueAtTime(0.001, t + 0.15);
-        kick.frequency.setValueAtTime(120, t); kick.frequency.exponentialRampToValueAtTime(40, t + 0.1);
-        nf.connect(ng); ng.connect(this._bgmGain);
-        kick.connect(kg); kg.connect(this._bgmGain);
-        ns.start(t); ns.stop(t + 0.18);
-        kick.start(t); kick.stop(t + 0.15);
+      // ── 轻柔底鼓（仅第1拍，音调柔和）──
+      if (isDown && beat4 === 1) {
+        const kTone = this._osc(ctx2, 'sine', 120);
+        const ktG = ctx2.createGain();
+        ktG.gain.setValueAtTime(0.15, t); ktG.gain.exponentialRampToValueAtTime(0.001, t + 0.16);
+        kTone.frequency.setValueAtTime(120, t); kTone.frequency.exponentialRampToValueAtTime(42, t + 0.13);
+        kTone.connect(ktG); ktG.connect(this._bgmGain); kTone.start(t); kTone.stop(t + 0.17);
       }
 
-      // 军鼓（第2、4拍）
-      if (beat % 4 === 2 || beat % 4 === 0) {
-        const { src: ns, out: nf } = this._noise(ctx2, 0.12, 4000);
-        const ng = this._gain(ctx2, 0);
-        ng.gain.setValueAtTime(0.22, t); ng.gain.exponentialRampToValueAtTime(0.001, t + 0.12);
-        const snare = this._osc(ctx2, 'triangle', 200);
-        const sg = this._gain(ctx2, 0.1);
-        sg.gain.setValueAtTime(0.1, t); sg.gain.exponentialRampToValueAtTime(0.001, t + 0.08);
-        nf.connect(ng); ng.connect(this._bgmGain);
-        snare.connect(sg); sg.connect(this._bgmGain);
-        ns.start(t); ns.stop(t + 0.12);
-        snare.start(t); snare.stop(t + 0.08);
+      // ── 轻拍木鱼感（第2、4拍，低频木块敲击）──
+      if (isDown && (beat4 === 2 || beat4 === 0)) {
+        const wTone = this._osc(ctx2, 'sine', 660);
+        const wG = ctx2.createGain();
+        wG.gain.setValueAtTime(0.05, t); wG.gain.exponentialRampToValueAtTime(0.001, t + 0.055);
+        wTone.connect(wG); wG.connect(this._bgmGain); wTone.start(t); wTone.stop(t + 0.06);
       }
 
-      // 高帽（每拍）
-      const { src: hs, out: hf } = this._noise(ctx2, 0.04, null);
-      const hfilt = this._filter(ctx2, 'highpass', 8000);
-      const hg = this._gain(ctx2, beat % 2 === 0 ? 0.06 : 0.03);
-      hg.gain.exponentialRampToValueAtTime(0.001, t + 0.04);
-      hs.connect(hfilt); hfilt.connect(hg); hg.connect(this._bgmGain);
-      hs.start(t); hs.stop(t + 0.04);
+      // ── 轻柔高帽（八分音符，正拍偏亮）──
+      const hhBuf = ctx2.createBuffer(1, ctx2.sampleRate * 0.016, ctx2.sampleRate);
+      const hhD = hhBuf.getChannelData(0);
+      for (let i = 0; i < hhD.length; i++) hhD[i] = (Math.random()*2-1) * Math.exp(-i/(ctx2.sampleRate*0.004));
+      const hhSrc = ctx2.createBufferSource(); hhSrc.buffer = hhBuf;
+      const hhF = this._filter(ctx2, 'highpass', 11000);
+      const hhG = ctx2.createGain(); hhG.gain.value = isDown ? 0.028 : 0.013;
+      hhSrc.connect(hhF); hhF.connect(hhG); hhG.connect(this._bgmGain); hhSrc.start(t);
 
-      // 战斗旋律（每2拍出一个音）
-      if (beat % 2 === 1) {
-        const noteFreq = combatScale[combatMelody[melStep % combatMelody.length]];
-        melStep++;
-        const mo = this._osc(ctx2, 'square', noteFreq);
-        const mf = this._filter(ctx2, 'lowpass', 1200);
-        const mg = this._gain(ctx2, 0);
-        mg.gain.linearRampToValueAtTime(0.06, t + 0.02);
-        mg.gain.setValueAtTime(0.06, t + beatMs / 1000 * 0.6);
-        mg.gain.exponentialRampToValueAtTime(0.001, t + beatMs / 1000 * 1.8);
+      // ── 主旋律（三角波+低通，温暖如木管）──
+      const freq = melody[melStep % melody.length];
+      melStep++;
+      if (freq > 0) {
+        const mo = this._osc(ctx2, 'triangle', freq);
+        const mf = this._filter(ctx2, 'lowpass', 5500);
+        const mg = ctx2.createGain();
+        mg.gain.setValueAtTime(0, t);
+        mg.gain.linearRampToValueAtTime(0.070, t + 0.016);
+        mg.gain.setValueAtTime(0.062, t + halfMs/1000*0.5);
+        mg.gain.exponentialRampToValueAtTime(0.001, t + halfMs/1000*1.55);
         mo.connect(mf); mf.connect(mg); mg.connect(this._bgmGain);
-        mo.start(t); mo.stop(t + beatMs / 1000 * 1.8);
+        mo.start(t); mo.stop(t + halfMs/1000*1.60);
+        // 高八度泛音（钟铃感）
+        const mo2 = this._osc(ctx2, 'sine', freq * 2);
+        const mg2 = ctx2.createGain();
+        mg2.gain.setValueAtTime(0, t); mg2.gain.linearRampToValueAtTime(0.015, t + 0.011);
+        mg2.gain.exponentialRampToValueAtTime(0.001, t + halfMs/1000*1.0);
+        mo2.connect(mg2); mg2.connect(this._bgmGain);
+        mo2.start(t); mo2.stop(t + halfMs/1000*1.05);
       }
 
-      // 低音线（每4拍）
-      if (beat % 4 === 1) {
-        const bassNote = combatScale[0] / 2;
-        const bo = this._osc(ctx2, 'sawtooth', bassNote);
-        const bfilt = this._filter(ctx2, 'lowpass', 300);
-        const bgg = this._gain(ctx2, 0);
-        bgg.gain.linearRampToValueAtTime(0.15, t + 0.02);
-        bgg.gain.setValueAtTime(0.15, t + beatMs / 1000 * 1.5);
-        bgg.gain.exponentialRampToValueAtTime(0.001, t + beatMs / 1000 * 3.5);
-        bo.connect(bfilt); bfilt.connect(bgg); bgg.connect(this._bgmGain);
-        bo.start(t); bo.stop(t + beatMs / 1000 * 3.5);
+      // ── 正弦波琶音（每步换音，流动清澈）──
+      const arpG  = arpGroups[Math.floor((melStep - 1) / 8) % arpGroups.length];
+      const arpNote = arpG[(tick - 1) % 4];
+      const ao = this._osc(ctx2, 'sine', arpNote);
+      const ag = ctx2.createGain();
+      ag.gain.setValueAtTime(0, t); ag.gain.linearRampToValueAtTime(0.018, t + 0.012);
+      ag.gain.exponentialRampToValueAtTime(0.001, t + halfMs/1000*2.0);
+      ao.connect(ag); ag.connect(this._bgmGain); ao.start(t); ao.stop(t + halfMs/1000*2.1);
+
+      // ── 低音（三角波，每4步换根音，柔和饱满）──
+      if (tick % 4 === 1) {
+        const bNote = bassNotes[Math.floor((tick-1)/4) % bassNotes.length];
+        const bo = this._osc(ctx2, 'triangle', bNote);
+        const bf = this._filter(ctx2, 'lowpass', 480);
+        const bg = ctx2.createGain();
+        bg.gain.setValueAtTime(0, t);
+        bg.gain.linearRampToValueAtTime(0.13, t + 0.022);
+        bg.gain.setValueAtTime(0.11, t + halfMs/1000*5.0);
+        bg.gain.exponentialRampToValueAtTime(0.001, t + halfMs/1000*8.2);
+        bo.connect(bf); bf.connect(bg); bg.connect(this._bgmGain);
+        bo.start(t); bo.stop(t + halfMs/1000*8.5);
       }
-    }, beatMs / 2);
+
+      tick = tick % 10000;
+    }, halfMs);
   },
 
   _stopBgm() {
@@ -1724,7 +2077,7 @@ const State = {
     const char=Data.characters.find(c=>c.id===characterId);
     this.current.run={
       character:{id:char.id,name:char.name,emoji:char.emoji,color:char.color,hp:char.hp,maxHp:char.maxHp,block:0,buffs:{},debuffs:{}},
-      floor:0,act:1,gold:99,deck:[...char.startingDeck],relics:[],pendingRelic:null,potions:[null,null,null],map:MapGen.generate(1),currentNodeId:null,combat:null
+      floor:0,act:1,gold:({archer:75,racer:85,brute:99}[characterId]??99),deck:[...char.startingDeck],relics:[],pendingRelic:null,potions:[null,null,null],map:MapGen.generate(1),currentNodeId:null,combat:null
     };
     const startNode=this.current.run.map.nodes.find(n=>n.floor===0);
     if(startNode)this.current.run.currentNodeId=startNode.id;
@@ -1828,7 +2181,8 @@ const MapGen = {
     // 生成 6 层中间节点，每层 2-3 个，列数更分散
     const COLS=5; // 使用 0-4 五列
     for(let f=1;f<=6;f++){
-      const count=f===3||f===5?2:(rng()<0.5?3:2);
+      // floor1固定3节点（起点能连出3条路）；floor6固定3节点（保证3条路通Boss）
+      const count=(f===1||f===6)?3:(f===3?2:(rng()<0.55?3:2));
       // 均匀选列，避免相邻层节点完全重叠
       const availCols=[0,1,2,3,4];
       const selectedCols=[];
@@ -1849,12 +2203,15 @@ const MapGen = {
     // 生成路径：每个节点至少连接一条路，尽量形成多条不同路线
     for(let f=0;f<7;f++){
       const from=floorNodes[f],to=floorNodes[f+1];
-      // 每个 from 节点连接最近的 to 节点
       from.forEach(n=>{
-        const sorted=[...to].sort((a,b)=>Math.abs(a.col-n.col)-Math.abs(b.col-n.col));
-        paths.push({from:n.id,to:sorted[0].id});
-        // 30% 概率额外连接第二近的节点，增加路线分叉
-        if(sorted.length>1&&rng()<0.35)paths.push({from:n.id,to:sorted[1].id});
+        if(f===0){
+          // 起点强制连接全部floor1节点（保证3条出发路线）
+          to.forEach(t=>paths.push({from:n.id,to:t.id}));
+        } else {
+          const sorted=[...to].sort((a,b)=>Math.abs(a.col-n.col)-Math.abs(b.col-n.col));
+          paths.push({from:n.id,to:sorted[0].id});
+          if(sorted.length>1&&rng()<0.35)paths.push({from:n.id,to:sorted[1].id});
+        }
       });
       // 确保每个 to 节点至少有一条入边
       to.forEach(tn=>{
@@ -1869,6 +2226,18 @@ const MapGen = {
     const uniquePaths=paths.filter(p=>{
       const k=`${p.from}-${p.to}`;if(seen.has(k))return false;seen.add(k);return true;
     });
+    // 确保通向Boss的路径不少于3条
+    const bossId=boss.id;
+    const bossPaths=uniquePaths.filter(p=>p.to===bossId);
+    if(bossPaths.length<3){
+      const preBossFloor=floorNodes[6];
+      preBossFloor.forEach(n=>{
+        if(uniquePaths.filter(p=>p.to===bossId).length>=3)return;
+        if(!uniquePaths.some(p=>p.from===n.id&&p.to===bossId)){
+          uniquePaths.push({from:n.id,to:bossId});
+        }
+      });
+    }
     return{nodes,paths:uniquePaths,floorNodes:floorNodes.map(f=>f.map(n=>n.id))};
   },
   _pickType(floor,rng){
@@ -1916,43 +2285,56 @@ const MapGen = {
     return'shop';
   },
   _emoji(type){ return{combat:'⚔️',elite:'💀',rest:'🏘️',shop:'🛒',boss:'🐰',question:'❓',start:'🚪'}[type]||'❓'; },
+  generateTutorial(){
+    // 固定线性教程地图：起点→小怪→问号→篝火→商店→Boss
+    const types=['start','combat','question','rest','shop','boss'];
+    const emojis=['🚪','⚔️','❓','🏘️','🛒','👑'];
+    const nodes=types.map((t,i)=>({id:i,type:t,floor:i,col:2,emoji:emojis[i],done:false}));
+    const paths=nodes.slice(0,-1).map((_,i)=>({from:i,to:i+1}));
+    const floorNodes=nodes.map(n=>[n.id]);
+    return{nodes,paths,floorNodes};
+  },
   getReachableNodes(map,currentNodeId){ return map.paths.filter(p=>p.from===currentNodeId).map(p=>p.to); },
   render(container,map,currentNodeId,onNodeClick,act=1){
     container.innerHTML='';
+    // 清除上次残留的绘图工具栏
+    document.getElementById('map-draw-toolbar')?.remove();
     const W=container.clientWidth||window.innerWidth;
-    const H=container.clientHeight||(window.innerHeight-50);
-    container.style.cssText='position:relative;width:100%;height:100%;overflow:hidden;';
-
-    // ── 节点坐标计算 ──
-    // 水平：5列均匀分布，加小幅随机抖动
-    // 垂直：8层（0-7）均匀分布，加小幅随机抖动
+    const viewH=container.clientHeight||(window.innerHeight-50);
+    // 每层至少 110px，层数多时地图可垂直滚动
+    const MIN_FLOOR_H=110;
     const COLS=5;
-    // 缩小水平范围使路线更紧凑（使用屏幕中间 60% 宽度）
-    const mapWidth=Math.min(W*0.6, 520);
+    const mapWidth=Math.min(W*0.60, 600);
     const padX=(W-mapWidth)/2;
-    const padY=56;
+    const padY=72;
+    const totalFloors=map.totalFloors||7;
     const usableW=mapWidth;
+    const minMapH=totalFloors*MIN_FLOOR_H+padY*2;
+    const H=Math.max(viewH, minMapH); // 地图实际高度，可超出视口
     const usableH=H-padY*2;
-    const colW=usableW/(COLS-1); // 列间距
-    const totalFloors = map.totalFloors || 7;
-    const floorH=usableH/totalFloors;      // 层间距
+    const colW=usableW/(COLS-1);
+    const floorH=usableH/totalFloors;
+    // 容器：超出时纵向滚动
+    container.style.cssText='position:relative;width:100%;height:100%;overflow-x:hidden;overflow-y:auto;';
+    // 用一个撑高div让滚动条正确出现
+    const _sizer=document.createElement('div');
+    _sizer.style.cssText=`position:absolute;left:0;top:0;width:1px;height:${H}px;pointer-events:none;`;
+    container.appendChild(_sizer);
     const nodePos={};
     map.nodes.forEach(n=>{
-      // 固定抖动：用节点 id 生成确定性偏移
       const s1=Math.imul((n.id*2654435761)>>>0,0x45d9f3b)>>>0;
       const s2=Math.imul((n.id*1234567891)>>>0,0x45d9f3b)>>>0;
-      // x 抖动：±colW*0.28，避免节点重叠但保持列感
-      const jx=((s1%1000)/1000-0.5)*colW*0.56;
-      // y 抖动：±floorH*0.22
-      const jy=((s2%1000)/1000-0.5)*floorH*0.44;
-      const x=Math.max(padX+10,Math.min(W-padX-10, padX+n.col*colW+jx));
-      const y=Math.max(padY+10,Math.min(H-padY-10, padY+usableH*(1-n.floor/totalFloors)+jy));
+      const jx=((s1%1000)/1000-0.5)*colW*0.36;
+      const jy=((s2%1000)/1000-0.5)*floorH*0.36;
+      const x=Math.max(padX+36,Math.min(W-padX-36, padX+n.col*colW+jx));
+      const y=Math.max(padY+36,Math.min(H-padY-36, padY+usableH*(1-n.floor/totalFloors)+jy));
       nodePos[n.id]={x,y};
     });
 
     // ── SVG 路线 ──
     const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');
     svg.setAttribute('class','map-svg');
+    svg.style.cssText=`position:absolute;left:0;top:0;width:${W}px;height:${H}px;pointer-events:none;`;
     svg.setAttribute('viewBox',`0 0 ${W} ${H}`);
     svg.setAttribute('preserveAspectRatio','xMidYMid meet');
     // 星空背景粒子（装饰用小圆点）
@@ -1982,7 +2364,8 @@ const MapGen = {
     // 绘制路径
     map.paths.forEach(p=>{
       const a=nodePos[p.from],b=nodePos[p.to];if(!a||!b)return;
-      const ir=reachable.has(String(p.to));
+      // 只有从当前节点出发且目标可达才高亮
+      const ir=String(p.from)===String(currentNodeId)&&reachable.has(String(p.to));
       const isDone=doneNodes.has(String(p.from))&&doneNodes.has(String(p.to));
       // 贝塞尔控制点：垂直方向各 1/3 处，水平方向加入与节点位置相关的自然偏移
       // 关键改进：控制点 x 坐标向节点本身的 x 方向偏移，使曲线更「流向」节点
@@ -1994,12 +2377,24 @@ const MapGen = {
       const cx2=midX+bend*0.4;
       const cy2=a.y+(b.y-a.y)*0.7;
       const d=`M${a.x.toFixed(1)},${a.y.toFixed(1)} C${cx1.toFixed(1)},${cy1.toFixed(1)} ${cx2.toFixed(1)},${cy2.toFixed(1)} ${b.x.toFixed(1)},${b.y.toFixed(1)}`;
-      // 所有路径统一显示为淡虚线
       const line=document.createElementNS('http://www.w3.org/2000/svg','path');
       line.setAttribute('d',d);
-      line.setAttribute('stroke', isDone ? (act===2?'rgba(180,80,20,0.35)':'rgba(241,196,15,0.30)') : (act===2?'rgba(220,150,40,0.30)':'rgba(255,255,255,0.18)'));
-      line.setAttribute('stroke-width','1.2');line.setAttribute('fill','none');line.setAttribute('stroke-linecap','round');
-      line.setAttribute('stroke-dasharray','5,7');
+      line.setAttribute('fill','none');
+      line.setAttribute('stroke-linecap','round');
+      if(isDone){
+        // 已走过：实线，金色/暖色
+        line.setAttribute('stroke', act===2?'rgba(210,130,30,0.85)':'rgba(241,196,15,0.75)');
+        line.setAttribute('stroke-width','2.5');
+      } else if(ir){
+        // 可到达：亮白实线，稍宽
+        line.setAttribute('stroke', act===2?'rgba(255,225,130,0.95)':'rgba(255,255,255,0.9)');
+        line.setAttribute('stroke-width','2.2');
+      } else {
+        // 未解锁：极淡虚线
+        line.setAttribute('stroke', act===2?'rgba(200,150,60,0.18)':'rgba(255,255,255,0.1)');
+        line.setAttribute('stroke-width','1');
+        line.setAttribute('stroke-dasharray','4,9');
+      }
       svg.appendChild(line);
     });
     container.appendChild(svg);
@@ -2025,6 +2420,80 @@ const MapGen = {
       if(ir&&!n.done&&onNodeClick)el.onclick=()=>onNodeClick(n);
       container.appendChild(el);
     });
+
+    // ── 绘图工具层（笔 + 橡皮）──
+    const canvasWrap=document.createElement('div');
+    canvasWrap.id='map-draw-layer';
+    canvasWrap.style.cssText=`position:absolute;left:0;top:0;width:${W}px;height:${H}px;pointer-events:none;z-index:10;`;
+    const drawCanvas=document.createElement('canvas');
+    drawCanvas.width=W; drawCanvas.height=H;
+    drawCanvas.style.cssText=`position:absolute;left:0;top:0;width:${W}px;height:${H}px;touch-action:none;`;
+    canvasWrap.appendChild(drawCanvas);
+    container.appendChild(canvasWrap);
+
+    // 工具栏固定在视口底部（不随地图滚动）
+    const toolbar=document.createElement('div');
+    toolbar.id='map-draw-toolbar';
+    toolbar.style.cssText='position:fixed;bottom:18px;left:50%;transform:translateX(-50%);display:flex;gap:8px;z-index:200;background:rgba(10,10,26,0.82);border:1px solid rgba(255,255,255,0.14);border-radius:24px;padding:6px 16px;pointer-events:all;backdrop-filter:blur(6px);';
+    const mkTb=(text,title)=>{const b=document.createElement('button');b.textContent=text;b.title=title;b.style.cssText='font-family:var(--font);font-size:0.92rem;padding:4px 12px;border-radius:14px;border:1.5px solid rgba(255,255,255,0.22);background:rgba(255,255,255,0.07);color:#e8e8f0;cursor:pointer;transition:all 0.12s;white-space:nowrap;';return b;};
+    const penBtn=mkTb('✏️ 画笔','自由画线');
+    const eraserBtn=mkTb('🧹 橡皮','擦除');
+    const clearBtn=mkTb('🗑️ 清除','清除全部注记');
+    toolbar.appendChild(penBtn); toolbar.appendChild(eraserBtn); toolbar.appendChild(clearBtn);
+    document.body.appendChild(toolbar); // 挂到body，固定定位不随地图滚动
+    // 离开地图屏幕时自动销毁工具栏
+    const _tbScreenWatch = ({screen}) => { if(screen !== 'map'){ toolbar.remove(); State.off('screenChange', _tbScreenWatch); } };
+    State.on('screenChange', _tbScreenWatch);
+
+    let drawMode=null; // null=关闭 'pen'=画笔 'eraser'=橡皮
+    let isDrawing=false,lastX=0,lastY=0;
+    const dctx=drawCanvas.getContext('2d');
+
+    // 恢复已保存的绘图
+    const run=State.run;
+    if(run?.mapDrawingData){
+      const img=new Image();img.onload=()=>dctx.drawImage(img,0,0);img.src=run.mapDrawingData;
+    }
+
+    const setMode=(mode)=>{
+      drawMode=mode;
+      canvasWrap.style.pointerEvents=mode?'all':'none';
+      drawCanvas.style.cursor=mode==='pen'?'crosshair':mode==='eraser'?'cell':'default';
+      penBtn.style.background=mode==='pen'?'rgba(255,255,255,0.22)':'rgba(255,255,255,0.07)';
+      penBtn.style.borderColor=mode==='pen'?'rgba(255,255,255,0.7)':'rgba(255,255,255,0.22)';
+      eraserBtn.style.background=mode==='eraser'?'rgba(255,255,255,0.22)':'rgba(255,255,255,0.07)';
+      eraserBtn.style.borderColor=mode==='eraser'?'rgba(255,255,255,0.7)':'rgba(255,255,255,0.22)';
+    };
+
+    penBtn.onclick=(e)=>{ e.stopPropagation(); setMode(drawMode==='pen'?null:'pen'); };
+    eraserBtn.onclick=(e)=>{ e.stopPropagation(); setMode(drawMode==='eraser'?null:'eraser'); };
+    clearBtn.onclick=(e)=>{ e.stopPropagation(); dctx.clearRect(0,0,W,H); if(run) run.mapDrawingData=null; };
+
+    const getPos=(e)=>{
+      const rect=drawCanvas.getBoundingClientRect();
+      const src=e.touches?.[0]||e;
+      return{x:(src.clientX-rect.left)*(W/rect.width),y:(src.clientY-rect.top)*(H/rect.height)};
+    };
+    const onStart=(e)=>{ if(!drawMode)return; e.stopPropagation(); const p=getPos(e);isDrawing=true;lastX=p.x;lastY=p.y; };
+    const onMove=(e)=>{
+      if(!isDrawing||!drawMode)return; e.stopPropagation(); e.preventDefault();
+      const p=getPos(e);
+      dctx.save();
+      if(drawMode==='eraser'){ dctx.globalCompositeOperation='destination-out';dctx.strokeStyle='rgba(0,0,0,1)';dctx.lineWidth=20; }
+      else { dctx.globalCompositeOperation='source-over';dctx.strokeStyle='rgba(255,220,80,0.8)';dctx.lineWidth=3; }
+      dctx.lineCap='round';dctx.lineJoin='round';
+      dctx.beginPath();dctx.moveTo(lastX,lastY);dctx.lineTo(p.x,p.y);dctx.stroke();
+      dctx.restore();
+      lastX=p.x;lastY=p.y;
+    };
+    const onEnd=()=>{ if(isDrawing&&run) run.mapDrawingData=drawCanvas.toDataURL(); isDrawing=false; };
+    drawCanvas.addEventListener('mousedown',onStart);
+    drawCanvas.addEventListener('mousemove',onMove);
+    drawCanvas.addEventListener('mouseup',onEnd);
+    drawCanvas.addEventListener('mouseleave',onEnd);
+    drawCanvas.addEventListener('touchstart',onStart,{passive:true});
+    drawCanvas.addEventListener('touchmove',onMove,{passive:false});
+    drawCanvas.addEventListener('touchend',onEnd);
   }
 };
 
@@ -2034,7 +2503,7 @@ const Combat = {
     const run=State.run,char=run.character;char.block=0;
     const cs={player:{hp:char.hp,maxHp:char.maxHp,block:0,buffs:{...(char.buffs||{})},debuffs:{...(char.debuffs||{})}},enemies:enemyIds.map(id=>Data.makeEnemy(id)),energy:3,maxEnergy:3,hand:[],drawPile:[],discardPile:[],exhaustPile:[],turn:1,phase:'player',pendingReward:false,susuEyemaskUsed:false};
     // 赛车手：初始化档位为2（中立挡）
-    if(State.run?.character?.id==='racer'){ cs.gear=2; cs._shiftedUpThisTurn=false; cs._gearLocked=false; cs._fuelSaveActive=false; cs.speed=0; cs.momentum=0; cs._gearShiftCount={}; }
+    if(State.run?.character?.id==='racer'){ cs.gear=2; cs._shiftedUpThisTurn=false; cs._gearLocked=false; cs._fuelSaveActive=false; cs._fuelSaveAllActive=false; cs.speed=0; cs.momentum=0; cs._gearShiftCount={}; }
     // 射手：初始化蓄力系统
     if(State.run?.character?.id==='archer'){ cs.charge=0; cs.chargeMax=5; cs._archerNextAttackDiscount=0; }
     // ── 升级映射：将 deck 索引升级数据转换为 {cardId: [level, level, ...]} ──
@@ -2061,9 +2530,12 @@ const Combat = {
     if(run.relics && run.relics.includes('gaoshan_sunglasses')){
       cs.energy = cs.energy + 1;
     }
-    run.combat=cs;    Combat.drawCards(cs, 5);
+    run.combat=cs;    Combat.drawCards(cs, run.character.id==='archer' ? 6 : 5);
     // 高山的冲锋衣：战斗开始时重置翻倍标记（新效果：第一次获得格挡时翻倍）
     cs._jacketUsed = false;
+    // 刘行的头巾：每场战斗重置触发标记
+    cs._liuxingTriggered = false;
+    cs._liuxingPendingEnergy = 0;
     // 王微的手绳：第一回合也触发（后续回合在 endTurn 中触发）
     if(run.relics?.includes('wangwei_bracelet')){
       cs.player.block = (cs.player.block||0) + 3;
@@ -2164,8 +2636,9 @@ const Combat = {
     let effectiveCost = isMagnifierCard ? 0 : (isLaozaoCard ? cs.laozaoCosts[laozaoKey] : _baseCost);
     // 赛车手超车外线：3挡时免费
     if(cardId==='overtake' && (cs.gear||2)>=3) effectiveCost=0;
-    // 赛车手节油行驶：本回合技能牌费用-1（最低0）
-    if(cs._fuelSaveActive && def.type==='skill' && effectiveCost>0) effectiveCost=Math.max(0,effectiveCost-1);
+    // 赛车手节油行驶：本回合技能牌费用-1（最低0）；+2升级时所有牌费用-1
+    if(cs._fuelSaveAllActive && effectiveCost>0) effectiveCost=Math.max(0,effectiveCost-1);
+    else if(cs._fuelSaveActive && def.type==='skill' && effectiveCost>0) effectiveCost=Math.max(0,effectiveCost-1);
     if(cs.energy<effectiveCost)return false;
     if(def.needsTarget){const t=cs.enemies[targetEnemyIndex];if(t===undefined||t.hp<=0)return false;}
     cs.energy-=effectiveCost;
@@ -2296,9 +2769,21 @@ const Combat = {
     // 怪物执行行动：攻击/buff行动在此执行（对玩家造成伤害）
     cs.enemies.forEach((e,i)=>{
       if(!e._dead){
-        const actionName = e.actions[e.actionIndex % e.actions.length];
-        if(!Combat._isDefenseAction(e.id, actionName)){
-          Data.enemies[e.id].doAction(cs,i);
+        // 冻结：跳过本回合行动，不推进 actionIndex
+        if((e.debuffs.freeze||0)>0){
+          e.debuffs.freeze=Math.max(0,e.debuffs.freeze-1);
+        } else {
+          const actionName = e.actions[e.actionIndex % e.actions.length];
+          if(!Combat._isDefenseAction(e.id, actionName)){
+            Data.enemies[e.id].doAction(cs,i);
+          }
+        }
+        // 燃烧：造成等于层数的伤害后层数 -1
+        const burnStacks = e.debuffs.burn||0;
+        if(burnStacks>0){
+          e.hp=Math.max(0,e.hp-burnStacks);
+          e.debuffs.burn=burnStacks-1;
+          if(e.hp<=0) e._dead=true;
         }
         Combat._tickDebuffs(e);
       }
@@ -2319,6 +2804,10 @@ const Combat = {
       }
     }
     cs.turn++;cs.phase='player';cs.energy=cs.maxEnergy;
+    // 刘行的头巾：上一回合触发后，本回合+1能量
+    if((cs._liuxingPendingEnergy||0)>0){ cs.energy+=cs._liuxingPendingEnergy; cs._liuxingPendingEnergy=0;
+      const _leTip=document.createElement('div');_leTip.style.cssText='position:fixed;top:44%;left:50%;transform:translate(-50%,-50%);background:rgba(20,20,40,0.95);color:#f5c518;font-size:1rem;font-weight:800;padding:8px 20px;border-radius:10px;border:1.5px solid #f5c518;z-index:9999;pointer-events:none;';_leTip.textContent='🧣 头巾能量！本回合+1能量！';document.body.appendChild(_leTip);setTimeout(()=>_leTip.remove(),1200);
+    }
     // 王微的手绳：回合开始时，先将格挡截断为最多3点（携带上限），再加3，静默触发
     if(State.run?.relics?.includes('wangwei_bracelet')){
       cs.player.block = Math.min(cs.player.block||0, 3) + 3;
@@ -2328,7 +2817,6 @@ const Combat = {
     }
     cs._sunglassesUsedThisTurn = false; // 大头墨镜回合级标记重置
     cs._speedDrawnThisTurn = false; // 速度感升挡抽牌回合级标记重置
-    cs._glassesBlockedThisTurn = false; // 王微眼镜回合级标记重置
     // ── 赛车手档位系统回合重置 ──
     if(State.run?.character?.id==='racer'){
       // 速度感积累：1挡+3，2挡+6，3挡+9
@@ -2370,6 +2858,8 @@ const Combat = {
           },100);
         }
       });
+      // 速度感激活：每回合开始额外+速度感（上限80）; +1/+2升级后+10
+      if((cs.player.buffs.speed_activate||0)>0){ const _saLv=Combat._getCardUpgradeLevel(cs,'speed_activate'); const _saAmt=_saLv>=1?10:8; cs.speed=Math.min((cs.speed||0)+_saAmt,80); }
       // 速度感>=20：每回合开始自动获得1点格挡
       if(_newSpeed >= 20){ cs.player.block=(cs.player.block||0)+1; }
       // 赛车直觉：动量可用作额外费用（下回合开始时添加到能量）
@@ -2386,6 +2876,7 @@ const Combat = {
       }
       // 节油行驶：回合结束时重置技能费用减免
       cs._fuelSaveActive=false;
+      cs._fuelSaveAllActive=false;
       // 重置升挡标记
       cs._shiftedUpThisTurn=false;
       // 重置 race_instinct 首次升挡标记
@@ -2397,8 +2888,8 @@ const Combat = {
       // 重置换挡时机使用次数
       cs._gearShiftCount={};
     }
-    // 高山的雪镜：每回合开始 50% 概率获得 1 点额外能量
-    if(State.run?.relics?.includes('gaoshan_sunglasses') && Math.random()<0.50){
+    // 高山的雪镜：每回合开始 35% 概率获得 1 点额外能量
+    if(State.run?.relics?.includes('gaoshan_sunglasses') && Math.random()<0.35){
       cs.energy += 1;
       const _snowTip=document.createElement('div');_snowTip.style.cssText='position:fixed;top:46%;left:50%;transform:translate(-50%,-50%);background:rgba(20,20,40,0.92);color:#a8e6ff;font-size:1rem;font-weight:800;padding:8px 20px;border-radius:10px;border:1.5px solid #a8e6ff;z-index:9999;pointer-events:none;';_snowTip.textContent='🥽 雪镜触发！+1 能量！';document.body.appendChild(_snowTip);setTimeout(()=>_snowTip.remove(),1200);
     }
@@ -2406,12 +2897,15 @@ const Combat = {
     if(State.run?.character?.id==='archer'){
       // 猜手直觉：每回合开始获得 1 点蓄力
       if((cs.player.buffs.archer_instinct||0)>0){ Combat.archerGainCharge(cs,1); }
+      // 蓄力爆发：每回合开始若蓄力≥阈值，+1能量; +1/+2升级后阈值降为2
+      if((cs.player.buffs.ar_threshold||0)>0){ const _atLv=Combat._getCardUpgradeLevel(cs,'ar_threshold'); const _atThreshold=_atLv>=1?2:4; if((cs.charge||0)>=_atThreshold){ cs.energy+=1; } }
       // 重置攻击牌费用折扣
       cs._archerNextAttackDiscount=0;
     }
     // 小九的六弦琴：每回合额外多抄 1 张牌
     const guitarDraw = (State.run.relics && State.run.relics.includes('xiaojiu_guitar')) ? 1 : 0;
-    Combat.drawCards(cs, 5 + guitarDraw);
+    const baseDrawCount = State.run.character.id==='archer' ? 6 : 5;
+    Combat.drawCards(cs, baseDrawCount + guitarDraw);
     State.run.character.hp=cs.player.hp;
     // 玩家回合开始时，怪物执行防御行动（格挡即时生效，玩家当回合可打破）
     cs.enemies.forEach((e,i)=>{
@@ -2428,25 +2922,23 @@ const Combat = {
   },
   dealDamage(cs,targetIndex,amount){ const enemy=cs.enemies[targetIndex];if(!enemy||enemy._dead)return 0; let dmg=amount+(cs.player.buffs.strength||0);
     // 速度感攻击加成：40-79=+1，>=80=+3
-    if(State.run?.character?.id==='racer'){ const _spd=cs.speed||0; if(_spd>=80) dmg+=3; else if(_spd>=40) dmg+=1; } if((enemy.debuffs.vulnerable||0)>0)dmg=Math.floor(dmg*1.5); if((cs.player.debuffs.weak||0)>0)dmg=Math.floor(dmg*0.75); const absorbed=Math.min(enemy.block,dmg);enemy.block=Math.max(0,enemy.block-absorbed);const actualDmg=dmg-absorbed;enemy.hp-=actualDmg;
+    if(State.run?.character?.id==='racer'){ const _spd=cs.speed||0; if(_spd>=80) dmg+=3; else if(_spd>=40) dmg+=1; } if((enemy.debuffs.vulnerable||0)>0)dmg=Math.floor(dmg*1.5); if((cs.player.debuffs.weak||0)>0)dmg=Math.floor(dmg*0.75); if((cs.player.debuffs.slow||0)>0)dmg=Math.floor(dmg*0.75); const absorbed=Math.min(enemy.block,dmg);enemy.block=Math.max(0,enemy.block-absorbed);const actualDmg=dmg-absorbed;enemy.hp-=actualDmg;
     // 大头的西班牙语书：记录本回合是否对敌人造成过实际伤害
     if(actualDmg > 0) cs.dealtDamageThisTurn = true;
     return actualDmg; },
-  enemyAttack(cs,enemyIndex,amount){ const enemy=cs.enemies[enemyIndex];if(!enemy||enemy._dead)return 0; let dmg=amount+(enemy.buffs.strength||0); if((enemy.debuffs.weak||0)>0)dmg=Math.floor(dmg*0.75); if((cs.player.debuffs.vulnerable||0)>0)dmg=Math.floor(dmg*1.5);
+  enemyAttack(cs,enemyIndex,amount){ const enemy=cs.enemies[enemyIndex];if(!enemy||enemy._dead)return 0; let dmg=amount+(enemy.buffs.strength||0); if((enemy.debuffs.weak||0)>0)dmg=Math.floor(dmg*0.75); if((enemy.debuffs.slow||0)>0)dmg=Math.floor(dmg*0.75); if((cs.player.debuffs.vulnerable||0)>0)dmg=Math.floor(dmg*1.5);
     // 王微的眼镜：20%概率完全无视本次伤害（多段攻击中触发后，本轮后续攻击也全部跳过）
     const run=State.run;
-    if(run?.relics?.includes('wangwei_glasses') && (cs._glassesBlockedThisTurn || Math.random()<0.20)){
-      if(!cs._glassesBlockedThisTurn){
-        cs._glassesBlockedThisTurn=true;
-        setTimeout(()=>{
-          const tip=document.createElement('div');
-          tip.style.cssText='position:fixed;top:30%;left:50%;transform:translate(-50%,-50%);background:rgba(20,40,80,0.95);color:#a8d8ff;font-size:1.2rem;font-weight:900;padding:12px 28px;border-radius:14px;border:2px solid #60a8ff;z-index:9999;pointer-events:none;text-shadow:0 0 8px rgba(96,168,255,0.8)';
-          tip.textContent='👓 王微的眼镜！伤害被完全无视！';
-          document.body.appendChild(tip);
-          setTimeout(()=>tip.remove(),1800);
-        },50);
-      }
-      return 0;
+    if(run?.relics?.includes('wangwei_glasses') && Math.random()<0.20){
+      const reduction=Math.min(dmg,15);
+      dmg=Math.max(0,dmg-reduction);
+      setTimeout(()=>{
+        const tip=document.createElement('div');
+        tip.style.cssText='position:fixed;top:30%;left:50%;transform:translate(-50%,-50%);background:rgba(20,40,80,0.95);color:#a8d8ff;font-size:1.2rem;font-weight:900;padding:12px 28px;border-radius:14px;border:2px solid #60a8ff;z-index:9999;pointer-events:none;text-shadow:0 0 8px rgba(96,168,255,0.8)';
+        tip.textContent=`👓 王微的眼镜！减少 ${reduction} 点伤害！`;
+        document.body.appendChild(tip);
+        setTimeout(()=>tip.remove(),1800);
+      },50);
     }
     const absorbed=Math.min(cs.player.block,dmg);cs.player.block=Math.max(0,cs.player.block-absorbed);const actualPlayerDmg=dmg-absorbed;cs.player.hp-=actualPlayerDmg;
     if(actualPlayerDmg>0){
@@ -2459,12 +2951,13 @@ const Combat = {
       if(run?.relics?.includes('wenhao_feather') && !run._featherUsed &&
          cs.player.hp > 0 && cs.player.hp < cs.player.maxHp * 0.5){
         run._featherUsed = true;
-        cs.player.hp = cs.player.maxHp;
-        run.character.hp = cs.player.maxHp;
+        const featherHeal = Math.floor(cs.player.maxHp * 0.4);
+        cs.player.hp = Math.min(cs.player.maxHp, cs.player.hp + featherHeal);
+        run.character.hp = cs.player.hp;
         setTimeout(()=>{
           const tip=document.createElement('div');
           tip.style.cssText='position:fixed;top:30%;left:50%;transform:translate(-50%,-50%);background:rgba(10,30,10,0.95);color:#a0ffb0;font-size:1.2rem;font-weight:900;padding:12px 28px;border-radius:14px;border:2px solid #50e070;z-index:9999;pointer-events:none;box-shadow:0 0 16px rgba(80,224,112,0.6)';
-          tip.textContent='🪶 文豪的羽毛！生命值回满！';
+          tip.textContent=`🪶 文豪的羽毛！回复 ${featherHeal} 点生命！`;
           document.body.appendChild(tip);
           setTimeout(()=>tip.remove(),2200);
         },80);
@@ -2487,7 +2980,18 @@ const Combat = {
       document.body.appendChild(tip);
       setTimeout(()=>tip.remove(), 1500);
     }
-    cs.player.block = (cs.player.block||0) + finalAmount;
+    const _prevBlock = cs.player.block||0;
+    cs.player.block = _prevBlock + finalAmount;
+    // 刘行的头巾：首次格挡达到15触发，下回合+1能量
+    if(run?.relics?.includes('liuxing_headband') && !cs._liuxingTriggered && _prevBlock < 15 && cs.player.block >= 15){
+      cs._liuxingTriggered = true;
+      cs._liuxingPendingEnergy = (cs._liuxingPendingEnergy||0) + 1;
+      const _lTip=document.createElement('div');
+      _lTip.style.cssText='position:fixed;top:44%;left:50%;transform:translate(-50%,-50%);background:rgba(20,20,40,0.95);color:#f5c518;font-size:1rem;font-weight:800;padding:8px 20px;border-radius:10px;border:1.5px solid #f5c518;z-index:9999;pointer-events:none;';
+      _lTip.textContent='🧣 刘行的头巾触发！下回合+1能量！';
+      document.body.appendChild(_lTip);
+      setTimeout(()=>_lTip.remove(),1400);
+    }
   },
   applyBuff(target,name,amount){ target.buffs=target.buffs||{};target.buffs[name]=(target.buffs[name]||0)+amount; },
   applyDebuff(target,name,amount){
@@ -2507,7 +3011,7 @@ const Combat = {
     }
     target.debuffs=target.debuffs||{};target.debuffs[name]=(target.debuffs[name]||0)+amount;
   },
-  _tickDebuffs(entity){ Object.keys(entity.debuffs||{}).forEach(k=>{entity.debuffs[k]=Math.max(0,entity.debuffs[k]-1);}); },
+  _tickDebuffs(entity){ const manual=new Set(['burn','freeze']); Object.keys(entity.debuffs||{}).forEach(k=>{ if(!manual.has(k)) entity.debuffs[k]=Math.max(0,entity.debuffs[k]-1); }); },
   _onVictory(){ Audio.playVictory(); const run=State.run;run.character.hp=run.combat.player.hp;run.character.block=0;const node=run.map.nodes.find(n=>n.id===run.currentNodeId);if(node)node.done=true;
     // 金币奖励：普通10-18金，精英22-32金，Boss50金
     if(node){
@@ -2521,14 +3025,14 @@ const Combat = {
         goldReward+=bonus;
       }
       run.gold=(run.gold||0)+goldReward;
-      // 文豪的红领巾：战斗全程未受任何伤害，永久+3最大HP
+      // 文豪的红领巾：战斗全程未受任何伤害，永久+5最大HP
       if(run.relics?.includes('wenhao_scarf') && !run.combat?._tookDamageThisCombat){
-        run.character.maxHp += 3;
-        run.character.hp = Math.min(run.character.hp + 3, run.character.maxHp);
+        run.character.maxHp += 5;
+        run.character.hp = Math.min(run.character.hp + 5, run.character.maxHp);
         if(run.combat) run.combat.player.hp = run.character.hp;
         const tip = document.createElement('div');
         tip.style.cssText = 'position:fixed;top:35%;left:50%;transform:translate(-50%,-50%);background:rgba(20,40,10,0.95);color:#e8ff80;font-size:1.1rem;font-weight:900;padding:10px 24px;border-radius:12px;border:2px solid #c8e060;z-index:9999;pointer-events:none;box-shadow:0 0 14px rgba(200,224,96,0.5)';
-        tip.textContent = '👔 文豪的红领巾！最大HP +3！';
+        tip.textContent = '👔 文豪的红领巾！最大HP +5！';
         document.body.appendChild(tip);
         setTimeout(()=>tip.remove(), 2200);
       }
@@ -2536,6 +3040,16 @@ const Combat = {
       if(run.relics?.includes('wangwei_bowl')){
         run.character.hp=Math.min(run.character.hp+5,run.character.maxHp);
         if(run.combat)run.combat.player.hp=run.character.hp;
+      }
+      // 小草的小草：每场战斗胜利后永久+1最大HP
+      if(run.relics?.includes('xiaocao_sprout')){
+        run.character.maxHp += 1;
+        if(run.combat) run.combat.player.maxHp = run.character.maxHp;
+        const tip = document.createElement('div');
+        tip.style.cssText = 'position:fixed;top:42%;left:50%;transform:translate(-50%,-50%);background:rgba(10,35,10,0.95);color:#a8f080;font-size:1.05rem;font-weight:900;padding:10px 22px;border-radius:12px;border:2px solid #6cc040;z-index:9999;pointer-events:none;box-shadow:0 0 12px rgba(108,192,64,0.45)';
+        tip.textContent = '🌱 小草的小草！最大HP +1！';
+        document.body.appendChild(tip);
+        setTimeout(()=>tip.remove(), 2200);
       }
       // 播放金币音效并展示动画
       setTimeout(()=>Anim.showGoldReward(goldReward), 150);
@@ -2546,23 +3060,26 @@ const Combat = {
       if(Math.random() < potionDropRate){
         const emptySlot = run.potions.findIndex(p=>p===null);
         if(emptySlot !== -1){
-          // 按稀有度抽取：普通60% / 稀有30% / 罕见10%
-          // 普通：乌龙茶  稀有：醪糟水  罕见：（暂无）
+          // 按稀有度抽取：普通60% / 稀有35% / 罕见5%
+          // 普通：乌龙茶/面包/coco洗发水
+          // 稀有：醪糟水 / 阿高的柠檬水（各半）
+          // 罕见：（暂无，不掉落）
           const tierRoll = Math.random();
           let droppedPotion = null;
           if(tierRoll < 0.60){
             // 普通60%：乌龙茶、面包、coco洗发水三选一
             const commonRoll = Math.random();
             droppedPotion = commonRoll < 0.333 ? 'oolong' : commonRoll < 0.667 ? 'bread' : 'coco_shampoo';
-          } else if(tierRoll < 0.90){
-            droppedPotion = 'laozao'; // 稀有30%
+          } else if(tierRoll < 0.95){
+            // 稀有35%：醪糟水 50% / 阿高柠檬水 50%
+            droppedPotion = Math.random() < 0.5 ? 'laozao' : 'lemon_water';
           } else {
-            droppedPotion = null; // 罕见10%（暂无，不掉落）
+            droppedPotion = null; // 罕见5%（暂无，不掉落）
           }
           if(droppedPotion){
             run.potions[emptySlot] = droppedPotion;
             const pData = Data.potions[droppedPotion];
-            const borderColor = droppedPotion === 'laozao' ? 'rgba(127,90,240,0.6)' : 'rgba(210,160,50,0.6)';
+            const borderColor = droppedPotion === 'lemon_water' ? 'rgba(198,232,41,0.75)' : droppedPotion === 'laozao' ? 'rgba(127,90,240,0.6)' : 'rgba(210,160,50,0.6)';
             const toast = document.createElement('div');
             toast.style.cssText = `position:fixed;top:80px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.88);color:#fff;padding:10px 22px;border-radius:12px;font-size:1.1rem;z-index:9999;pointer-events:none;border:1px solid ${borderColor};animation:bounceIn 0.4s ease`;
             toast.textContent = `获得了 ${pData.emoji} ${pData.name}！`;
@@ -2572,7 +3089,13 @@ const Combat = {
         }
       }
     }
-    // 战斗后遗物掉落：小怪10% / 精英25% / Boss90%
+    // 刘行事件战斗：打赢后100%给头巾，跳过随机掉落
+    if(run._liuxingFightReward){
+      run._liuxingFightReward = false;
+      if(!run.relics.includes('liuxing_headband')){ run.pendingRelic = 'liuxing_headband'; }
+    }
+    // 战斗后遗物掉落：小怪10% / 精英25% / Boss90%（刘行战斗已处理，跳过）
+    if(!run.pendingRelic){
     {
       const dropRate = node ? (node.type==='boss' ? 0.90 : node.type==='elite' ? 0.25 : 0.10) : 0;
       if(Math.random() < dropRate){
@@ -2593,11 +3116,14 @@ const Combat = {
         }
       }
     }
+    } // end if(!run.pendingRelic)
     State.saveRun(0);
     if(node&&node.type==='boss'){
       const run=State.run;
-      // 记录 boss 胜利后应跳转的目标，奖励流程结束后再跳转
-      if(run.act===1){
+      if(run.isTutorial){
+        // 教程Boss：奖励结束后不跳act过渡，由Tutorial._doCardReward接管
+        run.pendingNextState = 'card-reward-tutorial-end';
+      } else if(run.act===1){
         run.pendingNextState = 'act2-transition';
       } else if(run.act===2){
         run.pendingNextState = 'act3-transition';
@@ -2662,9 +3188,9 @@ const Combat = {
   _getFtBonus(cs){
     if((cs.player.buffs.full_throttle||0) <= 0) return 0;
     const lv = Combat._getCardUpgradeLevel(cs, 'full_throttle');
-    if(lv >= 2) return cs._shiftedUpThisTurn ? 5 : 2;
-    if(lv >= 1) return cs._shiftedUpThisTurn ? 4 : 2;
-    return cs._shiftedUpThisTurn ? 3 : 1;
+    if(lv >= 2) return cs._shiftedUpThisTurn ? 4 : 2;
+    if(lv >= 1) return cs._shiftedUpThisTurn ? 3 : 1;
+    return cs._shiftedUpThisTurn ? 2 : 1;
   },
 
   // 获取某张牌在当前战斗中的升级等级（从 cs.powerUpgrades 中查找）
@@ -2695,7 +3221,7 @@ const Combat = {
       // 赛车直觉：升挡时获得动量（+1升级后上限5，+2时首次升挡额外抽1牌）
       if((cs.player.buffs.race_instinct||0)>0){
         const _raceLv = Combat._getCardUpgradeLevel(cs, 'race_instinct');
-        const momentumCap = _raceLv >= 1 ? 5 : 4;
+        const momentumCap = _raceLv >= 1 ? 5 : 3;
         cs.momentum = Math.min((cs.momentum||0)+1, momentumCap);
         const tip=document.createElement('div');
         tip.style.cssText='position:fixed;top:38%;left:50%;transform:translate(-50%,-50%);background:rgba(20,20,40,0.92);color:#ffd700;font-size:1rem;font-weight:800;padding:7px 18px;border-radius:10px;border:1.5px solid #ffd700;z-index:9999;pointer-events:none;';
@@ -2713,7 +3239,7 @@ const Combat = {
       // 防侧滑系统：降挡时获得格挡（升级后+4格挡，+2时首次降挡额外抽1牌）
       if((cs.player.buffs.anti_skid||0)>0){
         const _antiSkidLv = Combat._getCardUpgradeLevel(cs, 'anti_skid');
-        const blkPerStack = _antiSkidLv >= 1 ? 4 : 3;
+        const blkPerStack = _antiSkidLv >= 1 ? 4 : 2;
         const blkAmt = blkPerStack * (cs.player.buffs.anti_skid||0);
         cs.player.block = (cs.player.block||0) + blkAmt;
         const tip=document.createElement('div');
@@ -2817,6 +3343,57 @@ const Combat = {
     };
     overlay.appendChild(confirmBtn);
     document.body.appendChild(overlay);
+  },
+
+  _showFreezeEffect(){
+    // 屏幕边缘蓝光 + 冰冻字样
+    const overlay = document.createElement('div');
+    overlay.style.cssText = 'position:fixed;inset:0;pointer-events:none;z-index:9990;box-shadow:inset 0 0 80px 30px rgba(80,180,255,0.55);transition:opacity 0.6s ease;';
+    const label = document.createElement('div');
+    label.style.cssText = 'position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:#7ee8ff;font-size:2.8rem;font-weight:900;letter-spacing:0.2em;text-shadow:0 0 24px rgba(100,210,255,0.9),0 0 60px rgba(80,180,255,0.5);font-family:inherit;';
+    label.textContent = '冰冻';
+    overlay.appendChild(label);
+    document.body.appendChild(overlay);
+    setTimeout(()=>{ overlay.style.opacity='0'; setTimeout(()=>overlay.remove(),650); },900);
+  },
+
+  _arSwapInteractive(cs, lv=0){
+    const drawAmt = lv>=2 ? 3 : 2;
+    const chargeAmt = lv>=1 ? 2 : 1;
+    // 手牌为空时直接抽牌+蓄力
+    if(cs.hand.length === 0){
+      Combat.drawCards(cs, drawAmt);
+      Combat.archerGainCharge(cs, chargeAmt);
+      return;
+    }
+    const overlay = document.createElement('div');
+    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.65);z-index:8000;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;';
+    const title = document.createElement('div');
+    title.style.cssText = 'color:#ffe082;font-size:1.15rem;font-weight:800;';
+    title.textContent = '🔄 换箭：选择一张牌弃置';
+    overlay.appendChild(title);
+    const cardRow = document.createElement('div');
+    cardRow.style.cssText = 'display:flex;flex-wrap:wrap;gap:12px;justify-content:center;max-width:90vw;';
+    // 快照当前手牌（ar_swap 本身已被移出手牌，不会出现在列表里）
+    const snapshot = [...cs.hand];
+    snapshot.forEach((cid, idx) => {
+      const el = UI.renderCard(cid);
+      el.style.cssText += 'cursor:pointer;opacity:0.92;transform:scale(0.88);transition:transform 0.1s,box-shadow 0.1s;';
+      el.onmouseenter = () => { el.style.transform = 'scale(0.94)'; el.style.boxShadow = '0 0 16px rgba(255,224,130,0.6)'; };
+      el.onmouseleave = () => { el.style.transform = 'scale(0.88)'; el.style.boxShadow = ''; };
+      el.onclick = () => {
+        overlay.remove();
+        // 从当前手牌中移除（用 indexOf 找实际位置，以防手牌顺序变化）
+        const realIdx = cs.hand.indexOf(cid);
+        if(realIdx !== -1) cs.discardPile.push(cs.hand.splice(realIdx, 1)[0]);
+        Combat.drawCards(cs, drawAmt);
+        Combat.archerGainCharge(cs, chargeAmt);
+        UI._renderCombat && UI._renderCombat();
+      };
+      cardRow.appendChild(el);
+    });
+    overlay.appendChild(cardRow);
+    document.body.appendChild(overlay);
   }
 };
 
@@ -2863,6 +3440,210 @@ const Anim = {
   }
 };
 
+// ── tutorial.js ──────────────────────────────────────────────────────────────
+const Tutorial = {
+  isActive(){ try{ return !!State.run?.isTutorial; }catch(e){ return false; } },
+
+  clearHint(){ document.getElementById('tut-live-hint')?.remove(); },
+
+  showHint({ title, body, pos='center', onGotIt, noSkip=false }){
+    this.clearHint();
+    // inject keyframe once
+    if(!document.getElementById('tut-style')){
+      const s=document.createElement('style');s.id='tut-style';
+      s.textContent=`
+        @keyframes tutIn{from{opacity:0;transform:translateY(12px) translateX(-50%)}to{opacity:1;transform:translateY(0) translateX(-50%)}}
+        @keyframes tutInC{from{opacity:0;transform:translateY(12px) translate(-50%,-50%)}to{opacity:1;transform:translateY(0) translate(-50%,-50%)}}
+        @keyframes tutInR{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+        @keyframes tutPulse{0%,100%{box-shadow:0 0 0 0 rgba(80,200,255,0.6)}50%{box-shadow:0 0 0 8px rgba(80,200,255,0)}}
+        .tut-glow{animation:tutPulse 1.5s infinite!important;outline:2.5px solid rgba(80,200,255,0.8)!important;}
+      `;
+      document.head.appendChild(s);
+    }
+    const posMap={
+      center:`top:50%;left:50%;transform:translate(-50%,-50%);animation:tutInC .3s ease`,
+      top:`top:72px;left:50%;transform:translateX(-50%);animation:tutIn .3s ease`,
+      bottom:`bottom:175px;left:50%;transform:translateX(-50%);animation:tutIn .3s ease`,
+      'top-right':`top:72px;right:16px;left:auto;transform:none;animation:tutInR .3s ease`,
+    };
+    const hint=document.createElement('div');
+    hint.id='tut-live-hint';
+    hint.style.cssText=`position:fixed;${posMap[pos]||posMap.center};z-index:9800;max-width:330px;width:91%;background:linear-gradient(150deg,#0a1828 0%,#14273d 100%);border:2px solid rgba(80,200,255,0.55);border-radius:14px;padding:18px 20px 14px;box-shadow:0 4px 32px rgba(0,0,0,0.8),0 0 24px rgba(80,200,255,0.12);pointer-events:auto`;
+    hint.innerHTML=`
+      <div style="font-size:1.0rem;font-weight:900;color:#90d8ff;margin-bottom:8px;line-height:1.3">${title}</div>
+      <div style="font-size:0.88rem;color:rgba(255,255,255,0.88);line-height:1.65;margin-bottom:14px">${body}</div>
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
+        ${noSkip?'<span></span>':'<button id="tut-skip" style="background:none;border:none;color:rgba(255,255,255,0.28);font-size:0.78rem;cursor:pointer;padding:2px 0">跳过教程</button>'}
+        <button id="tut-ok" style="background:rgba(80,200,255,0.22);border:1.5px solid rgba(80,200,255,0.5);border-radius:8px;color:#90d8ff;font-size:0.9rem;font-weight:700;cursor:pointer;padding:6px 18px">我知道了 →</button>
+      </div>`;
+    document.body.appendChild(hint);
+    hint.querySelector('#tut-ok').onclick=()=>{ this.clearHint(); onGotIt?.(); };
+    hint.querySelector('#tut-skip')?.onclick=()=>{ this.end(); State.go('menu'); };
+  },
+
+  end(){
+    this.clearHint();
+    document.querySelectorAll('.tut-glow').forEach(e=>e.classList.remove('tut-glow'));
+    try{ State.run.isTutorial=false; }catch(e){}
+  },
+
+  handleScreen(screen){
+    if(!this.isActive()) return;
+    const run=State.run;
+    setTimeout(()=>{
+      if(screen==='map')        this._doMap(run);
+      else if(screen==='combat') this._doCombat(run);
+      else if(screen==='card-reward') this._doCardReward(run);
+      else if(screen==='question') this._doQuestion(run);
+      else if(screen==='rest')  this._doRest(run);
+      else if(screen==='shop')  this._doShop(run);
+    }, 480);
+  },
+
+  // ── MAP ──────────────────────────────────────────────────────────────────────
+  _doMap(run){
+    const ph=run.tutorialPhase||'init';
+    if(ph==='init'){
+      run.tutorialPhase='pre-combat';
+      this.showHint({
+        title:'🗺️ 这是冒险地图！',
+        body:'顶部栏显示你的 ❤️ HP、💰 金币，以及拾取的遗物图标（悬停查看效果）。<br><br>地图上<b>高亮发光的节点</b>才能点击前进，其余节点不可选。<br>教程路线固定：<b>⚔️小怪 → ❓事件 → 🏘️篝火 → 🛒商店 → 👑Boss</b>',
+        pos:'center',
+        onGotIt:()=>{
+          this.showHint({
+            title:'⚔️ 出发！点击小怪节点',
+            body:'点击地图上高亮的 <b>⚔️</b> 节点，进入第一场战斗。教程会手把手教你战斗操作。',
+            pos:'bottom',
+            onGotIt:null
+          });
+          setTimeout(()=>this._glowReachable(),100);
+        }
+      });
+    } else if(ph==='back-from-combat'){
+      run.tutorialPhase='pre-question';
+      this._glowReachable();
+      this.showHint({title:'✅ 战斗完成！',body:'下一步：点击 <b>❓</b> 节点，体验随机问号事件。',pos:'bottom',onGotIt:null});
+    } else if(ph==='back-from-question'){
+      run.tutorialPhase='pre-rest';
+      this._glowReachable();
+      this.showHint({title:'❓ 事件完成！',body:'接下来去 <b>🏘️ 篝火</b> 休息——可以回血或升级一张牌。',pos:'bottom',onGotIt:null});
+    } else if(ph==='back-from-rest'){
+      run.tutorialPhase='pre-shop';
+      this._glowReachable();
+      this.showHint({title:'🔥 休息完毕！',body:'前往 <b>🛒 商店</b>，花费金币购买卡牌、遗物或药水。',pos:'bottom',onGotIt:null});
+    } else if(ph==='back-from-shop'){
+      run.tutorialPhase='pre-boss';
+      this._glowReachable();
+      this.showHint({title:'🛒 购物完成！',body:'最后一步：挑战教程 <b>👑 Boss</b>！击败它即完成新手教程，祝你好运！',pos:'bottom',onGotIt:null});
+    }
+  },
+
+  _glowReachable(){
+    document.querySelectorAll('.tut-glow').forEach(e=>e.classList.remove('tut-glow'));
+    document.querySelectorAll('.map-node.reachable').forEach(el=>el.classList.add('tut-glow'));
+  },
+
+  // ── COMBAT ───────────────────────────────────────────────────────────────────
+  _doCombat(run){
+    const ph=run.tutorialPhase||'';
+    if(ph==='pre-combat'||ph==='init'){
+      run.tutorialPhase='first-combat';
+      this._combatStep(1);
+    } else if(ph==='pre-boss'){
+      run.tutorialPhase='boss-combat';
+      this.showHint({
+        title:'👑 教程Boss！',
+        body:'这是新手教程的最后一战。综合运用所学：<br>• 管理好每回合的能量<br>• 攻防兼顾，不要只攻不守<br>• 注意敌人的行动意图<br><br>击败它即完成教程！加油！',
+        pos:'top',onGotIt:null
+      });
+    }
+  },
+
+  _combatStep(step){
+    const steps=[
+      { title:'⚔️ 战斗界面总览',
+        body:'屏幕<b>上方</b>是敌人区域——显示敌人HP、格挡值，以及头顶的<b>行动意图图标</b>（⚔️=下回合攻击 / 🛡=下回合防御）。<br>屏幕<b>下方</b>是你的HP和格挡。' },
+      { title:'🃏 手牌 & 能量',
+        body:'底部排列的是你的<b>手牌</b>（每回合开始抽5张）。每张牌左上角是<b>费用数字</b>。<br>右下角的 <b>⚡ 能量槽</b> 每回合开始时有3点，打牌会消耗能量。' },
+      { title:'💡 怎么打牌？',
+        body:'🔴 <b>攻击牌</b>：点击选中（卡片高亮）→ 再点击目标敌人，造成伤害。<br>🟢 <b>技能牌</b>：直接点击生效（格挡/抽牌等），无需选择目标。<br><br>🛡 <b>格挡</b>（蓝色数字）优先抵消伤害，每回合开始<b>清零</b>，所以当回合要用完！' },
+      { title:'▶️ 现在动手！',
+        body:'试着打出几张手牌——攻击敌人，或者获取格挡都行。<br>能量用完或觉得可以了，点右下角 <b>「结束回合」</b>，让敌人行动，然后继续下一回合。<br><br>把敌人HP归零即可获胜 💪',
+        onGotIt:null },  // 最后一步不自动跳下一步，让玩家自由操作
+    ];
+    const s=steps[step-1];
+    if(!s) return;
+    this.showHint({
+      pos: step<=2?'top':'bottom',
+      ...s,
+      onGotIt: s.onGotIt!==undefined ? s.onGotIt : ()=>this._combatStep(step+1)
+    });
+  },
+
+  // ── CARD REWARD ──────────────────────────────────────────────────────────────
+  _doCardReward(run){
+    const ph=run.tutorialPhase||'';
+    if(ph==='first-combat'){
+      run.tutorialPhase='back-from-combat';
+      this.showHint({
+        title:'🎁 选择一张新牌',
+        body:'每场战斗后可以从3张候选牌里选1张加入牌组，或者点<b>「跳过」</b>不拿。<br><br>💡 牌组越精简越好——弱牌太多会拖慢节奏。有时跳过反而更聪明。',
+        pos:'top', onGotIt:null
+      });
+    }
+    // boss-combat 阶段：_complete() 由 'card-reward-tutorial-end' 屏幕路由直接触发
+  },
+
+  // ── QUESTION ─────────────────────────────────────────────────────────────────
+  _doQuestion(run){
+    run.tutorialPhase='back-from-question';
+    this.showHint({
+      title:'❓ 随机问号事件',
+      body:'每个选项旁边有<b>详细说明</b>，告诉你大概的风险和收益。仔细阅读后做出选择。<br><br>事件结果可能是：获得遗物、金币、HP变动，或者无事发生。有时候甚至全是好事！',
+      pos:'center', onGotIt:null
+    });
+  },
+
+  // ── REST ─────────────────────────────────────────────────────────────────────
+  _doRest(run){
+    run.tutorialPhase='back-from-rest';
+    this.showHint({
+      title:'🏘️ 篝火休息点',
+      body:'你有两个选择：<br>🩹 <b>休息</b>：恢复 30% 最大HP（HP偏低时优先选）<br>⚒️ <b>升级</b>：选一张牌升级，效果永久增强<br><br>HP充足时可以升级关键牌。记住：每次只能二选一。',
+      pos:'center', onGotIt:null
+    });
+  },
+
+  // ── SHOP ─────────────────────────────────────────────────────────────────────
+  _doShop(run){
+    run.tutorialPhase='back-from-shop';
+    this.showHint({
+      title:'🛒 商店',
+      body:'用 💰 金币购买：<br>🃏 <b>卡牌</b>——加入牌组强化战力<br>💎 <b>遗物</b>——永久被动效果，价值极高<br>🧪 <b>药水</b>——一次性消耗品，关键时刻救命<br>🗑️ <b>删牌</b>——移除弱牌，让牌组更精锐（强烈推荐）<br><br>将鼠标悬停在遗物上可查看效果说明。',
+      pos:'center', onGotIt:null
+    });
+  },
+
+  // ── COMPLETE ─────────────────────────────────────────────────────────────────
+  _complete(){
+    this.clearHint();
+    const ov=document.createElement('div');
+    ov.style.cssText='position:fixed;inset:0;z-index:9900;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.87)';
+    ov.innerHTML=`
+      <div style="background:linear-gradient(160deg,#0d1b2a,#1a3040);border:2.5px solid rgba(255,210,80,0.65);border-radius:20px;padding:36px 30px;max-width:400px;width:91%;text-align:center;box-shadow:0 8px 48px rgba(0,0,0,0.9)">
+        <div style="font-size:3.2rem;margin-bottom:10px">🎓</div>
+        <div style="font-size:1.4rem;font-weight:900;color:#ffd060;margin-bottom:12px">新手教程完成！</div>
+        <div style="color:rgba(255,255,255,0.82);font-size:0.93rem;line-height:1.72;margin-bottom:24px">
+          恭喜你完成了完整的新手教程！<br>你已学会：战斗操作、问号事件、篝火休息和商店购物。<br><br>
+          <span style="color:#90d8ff;font-weight:700">现在选择一个角色，开始真正的冒险吧！</span>
+        </div>
+        <button id="tut-finish" style="background:rgba(255,210,80,0.18);border:2px solid rgba(255,210,80,0.65);border-radius:12px;color:#ffd060;font-size:1.05rem;font-weight:800;cursor:pointer;padding:13px 0;width:100%;letter-spacing:0.04em">⚔️ 开始正式冒险 →</button>
+      </div>`;
+    document.body.appendChild(ov);
+    ov.querySelector('#tut-finish').onclick=()=>{ ov.remove(); this.end(); State.go('char-select'); };
+  },
+};
+
 // ── ui.js ─────────────────────────────────────────────────────────────────────
 const DAYAN_IMG_SRC = '/manus-storage/img_03_574k_632f1438.png';
 const WANGWEI_IMG_SRC = '/manus-storage/wangwei_sprite_nobg_90111a38.png';
@@ -2870,7 +3651,7 @@ const IRON_STOMACH_IMG_SRC = '/manus-storage/img_00_572k_79c2d105.png';
 const UI = {
   _selectedCard:null, _drag:null,
   app(){ return document.getElementById('app'); },
-  renderCard(cardId, overrideCost, upgradeLevel){
+  renderCard(cardId, overrideCost, upgradeLevel, inCombatHand=false){
     const def=Data.cards[cardId];if(!def)return document.createElement('div');
     const el=document.createElement('div');el.className='card';el.dataset.cardId=cardId;el.dataset.type=def.type;
     // 升级后可能改变费用
@@ -2889,7 +3670,7 @@ const UI = {
     }
     const cs = State.run?.combat;
     const isRacer = State.run?.character?.id === 'racer';
-    if(cs && isRacer){
+    if(cs && isRacer && inCombatHand){
       const g = cs.gear || 2;
       const atkMul = [0, 0.8, 1.0, 1.3][g];
       const blkMul = [0, 1.3, 1.0, 0.7][g];
@@ -2902,19 +3683,25 @@ const UI = {
         gear_defend: ()=>{ const d=Math.floor(5*blkMul); const rl=(cs.player?.buffs?.redline||0)>0; return `获得 <b>${rl&&g===3?5:d}</b> 点格挡。<br><span style="font-size:0.78em;opacity:0.8">${gearLabel}</span>`; },
         gear_brake:  ()=>{ const d=Math.floor(8*atkMul)+ftBonus; const extra=g>=3?' <span style="color:#f9ca24">并施加 2 层「减速」</span>':''; return `造成 <b>${d}</b> 点伤害。${extra}<br><span style="font-size:0.78em;opacity:0.8">${gearLabel}</span>`; },
         nitro_boost: ()=>{ const d=g>=3?16:Math.floor(12*atkMul)+ftBonus; const note=g>=3?'<span style="color:#f9ca24">已处于最高挡，改为直接造成 16 伤</span>':'<span style="opacity:0.8">升至 3 挡</span>'; return `造成 <b>${d}</b> 点伤害。${note}<br><span style="font-size:0.78em;opacity:0.8">${gearLabel}</span>`; },
-        collision_block: ()=>{ const blk=Math.floor(4*blkMul); return `获得 <b>${blk}</b> 点格挡，随后造成等同于当前格挡总量的伤害。<br><span style="font-size:0.78em;opacity:0.8">${gearLabel}</span>`; },
-        drift_charge: ()=>{ const base=Math.floor(5*atkMul)+ftBonus; const extra=Math.floor(spd/10)*2; return `对所有敌人造成 <b>${base}</b> 点伤害。<br>速度感 ${spd} 点，额外 <b>+${extra}</b> 伤。<br><span style="font-size:0.78em;opacity:0.8">${gearLabel}</span>`; },
+        collision_block: ()=>{ const lv=upgradeLevel||0; const blkBase=[5,6,7][lv]||5; const dmgBase=[7,9,10][lv]||7; const blk=Math.floor(blkBase*blkMul); const dmg=Math.floor(dmgBase*atkMul)+ftBonus; return `获得 <b>${blk}</b> 点格挡，造成 <b>${dmg}</b> 点伤害${lv>=2?' 并施加 1 层易伤':''}。<br><span style="font-size:0.78em;opacity:0.8">${gearLabel}</span>`; },
+        drift_charge: ()=>{ const lv=upgradeLevel||0; const base2=[6,7,7][lv]||6; const step2=[20,20,16][lv]||20; const base=Math.floor(base2*atkMul)+ftBonus; const extra=Math.min(Math.floor(spd/step2)*2,8); return `对所有敌人造成 <b>${base}</b> 点伤害，速度感加成 <b>+${extra}</b>（每满${step2}点+2，上限+8）。<br><span style="font-size:0.78em;opacity:0.8">${gearLabel}</span>`; },
         overtake:    ()=>{ const d=Math.floor(5*atkMul)+ftBonus; const free=g>=3?'<span style="color:#7dff7d">【免费】</span>':''; return `造成 <b>${d}+${d}</b> 点伤害（两段）。${free}<br><span style="font-size:0.78em;opacity:0.8">${gearLabel}</span>`; },
         turbo_crush: ()=>{ const d=6*g; const note=g>=3?'<span style="color:#f9ca24">降至 1 挡</span>':'<span style="color:#f9ca24">降 2 挡</span>'; return `造成 <b>${d}</b> 点伤害。${note}<br><span style="font-size:0.78em;opacity:0.8">${gearLabel}</span>`; },
         pit_repair:  ()=>{ const d=Math.floor(10*blkMul); const heal=g<=2?'<span style="color:#7dff7d">额外回血 4 HP</span>':''; return `获得 <b>${d}</b> 点格挡。${heal}<br><span style="font-size:0.78em;opacity:0.8">${gearLabel}</span>`; },
         gear_lock:   ()=>{ const d=(cs.gear||2)*3; return `本回合挡位锁定。获得 <b>${d}</b> 点格挡。<br><span style="font-size:0.78em;opacity:0.8">${gearLabel}</span>`; },
         overspeed:   ()=>{ const d=g>=3?Math.floor(10*1.3)+ftBonus:0; return g>=3?`造成 <b>${d}</b> 点伤害并降 1 挡。消耗。<br><span style="font-size:0.78em;opacity:0.8">${gearLabel}</span>`:`<span style="color:#888">当前不在 3 挡，此牌无效果。</span>`; },
+        speed_rush:  ()=>{ const lv=upgradeLevel||0; const base=[3,4,5][lv]||3; const spMult=[3,4,5][lv]||3; const d=Math.floor(base*atkMul)+ftBonus; const sp=g*spMult; return `造成 <b>${d}</b> 点伤害，获得 <b>${sp}</b> 点速度感（当前${spd}）。<br><span style="font-size:0.78em;opacity:0.8">${gearLabel}</span>`; },
+        corner_guard:()=>{ const lv=upgradeLevel||0; const base=[5,6,7][lv]||5; const extra=cs._shiftedUpThisTurn?([3,4,5][lv]||3):0; return `获得 <b>${base+extra}</b> 点格挡${cs._shiftedUpThisTurn?'（已升挡加成）':''}。<br><span style="font-size:0.78em;opacity:0.8">${gearLabel}</span>`; },
+        inertia_strike:()=>{ const lv=upgradeLevel||0; const base=[8,9,10][lv]||8; const spBonus=Math.floor((spd||0)/20)*2; const d=Math.floor((base+spBonus)*atkMul)+ftBonus; return `造成 <b>${d}</b> 点伤害（基础${base}+速度感加成${spBonus}，×档位倍率）。<br><span style="font-size:0.78em;opacity:0.8">${gearLabel} · 速度感每满20点+2</span>`; },
+        speed_limit_break:()=>{ const lv=upgradeLevel||0; const thr=lv>=1?30:40; const ok=(spd||0)>=thr; return ok?`<span style="color:#7dff7d">✅ 速度感 ${spd} ≥ ${thr}，本回合 +1 能量。</span>`:`<span style="color:#ff7d7d">❌ 速度感 ${spd} 未达 ${thr}，无效果。</span>`; },
+        corner_line: ()=>{ const lv=upgradeLevel||0; const baseUp=lv>=1?10:8; const baseNo=lv>=1?6:5; const extra=lv>=2&&cs._shiftedUpThisTurn?' +抽1张':''; const blk=cs._shiftedUpThisTurn?baseUp:baseNo; return `获得 <b>${blk}</b> 点格挡${extra}（${cs._shiftedUpThisTurn?'已升挡':'未升挡'}）。`; },
+        fuel_save:   ()=>{ const lv=upgradeLevel||0; const scope=lv>=2?'所有牌':'技能牌'; return `降1挡。本回合${scope}费用 -1（最低0）。<br><span style="font-size:0.78em;opacity:0.8">${gearLabel}</span>`; },
       };
       if(RACER_CARDS[cardId]) desc = RACER_CARDS[cardId]();
     }
     // ── 射手：根据当前蓄力值实时计算并显示实际伤害 ──
     const isArcher = State.run?.character?.id === 'archer';
-    if(cs && isArcher){
+    if(cs && isArcher && inCombatHand){
       const charge = cs.charge || 0;
       const chargeMax = cs.chargeMax || 5;
       const chargeBar = `<span style="font-size:0.72em;opacity:0.75">蓄力 ${charge}/${chargeMax}</span>`;
@@ -2966,7 +3753,7 @@ const UI = {
         },
         ar_full_charge: ()=>{
           const threshold = lv>=2?4:chargeMax;
-          const dmg = lv>=1?60:50;
+          const dmg = lv>=1?38:30;
           const canFire = charge >= threshold;
           if(canFire) return `消耗全部蓄力，造成 <b>${dmg}</b> 点伤害。<br><span style="color:#f9ca24">✅ 蓄力已满足（${charge}/${threshold}）</span>`;
           return `<span style="color:#ff7d7d">❌ 需要蓄力 ≥ ${threshold}（当前 ${charge}）</span>，造成 <b>${dmg}</b> 点伤害。<br>${chargeBar}`;
@@ -3004,25 +3791,75 @@ const UI = {
           const blk = lv>=1?5:3;
           return `获得 <b>${blk}</b> 点格挡，获得 <b>1</b> 点蓄力，抽 <b>1</b> 张牌。<br>${chargeBar}`;
         },
+        ar_focus_aim: ()=>{
+          const amt = lv>=1?4:3;
+          const exhaust = lv>=2?'':'消耗。';
+          return `获得 <b>${amt}</b> 点蓄力。${exhaust}<br>${chargeBar}`;
+        },
+        ar_scatter: ()=>{
+          const base = [2,3,4][lv]||2;
+          const chgGain = [1,1,2][lv]||1;
+          const enemyCount = (cs.enemies||[]).filter(e=>!e._dead).length || 1;
+          const total = base * enemyCount;
+          return `对所有敌人造成 <b>${base}</b> 点伤害（共<b>${total}</b>点，${enemyCount}个目标），获得 <b>${chgGain}</b> 点蓄力。<br>${chargeBar}`;
+        },
+        ar_weak_arrow: ()=>{
+          const base = [3,4,5][lv]||3;
+          const vulnAmt = [1,1,2][lv]||1;
+          return `造成 <b>${base}</b> 点伤害，施加 <b>${vulnAmt}</b> 层虚弱，获得 <b>1</b> 点蓄力。<br>${chargeBar}`;
+        },
+        ar_dodge_counter: ()=>{
+          const blk = [5,6,8][lv]||5;
+          const chgGain = lv>=2?4:3;
+          const cond = cs._tookDamageThisCombat?`<span style="color:#7dff7d">✅ 已受伤，额外+${chgGain}蓄力</span>`:'<span style="opacity:0.7">（未受伤则无额外蓄力）</span>';
+          return `获得 <b>${blk}</b> 点格挡。${cond}<br>${chargeBar}`;
+        },
+        ar_hunter_rhythm: ()=>{
+          const amt = lv>=1?3:2;
+          const exhaust = lv>=2?'':'消耗。';
+          return `获得 <b>${amt}</b> 点蓄力，抽 <b>1</b> 张牌。${exhaust}<br>${chargeBar}`;
+        },
+        ar_arrow_storm: ()=>{
+          const c = charge;
+          const base = [2,3,3][lv]||2;
+          const single = base + c;
+          const enemyCount = (cs.enemies||[]).filter(e=>!e._dead).length || 1;
+          const total = single * 4 * enemyCount;
+          return `对所有敌人造成 <b>${single}</b> 点伤害 4 次（共 <b>${total}</b> 点，${enemyCount}个目标）。消耗全部蓄力。<br>${chargeBar}`;
+        },
       };
       if(ARCHER_CARDS[cardId]) desc = ARCHER_CARDS[cardId]();
     }
         // 品质颜色边框和标签
     const RARITY_STYLE = {
-      common:   { border:'rgba(180,180,180,0.35)', glow:'none',                          label:'',   labelColor:'' },
+      common:   { border:'rgba(200,200,200,0.55)', glow:'none',                          label:'',   labelColor:'' },
       uncommon: { border:'#4caf50',               glow:'0 0 8px rgba(76,175,80,0.5)',   label:'精良', labelColor:'#4caf50' },
       rare:     { border:'#2196f3',               glow:'0 0 10px rgba(33,150,243,0.6)', label:'稀有', labelColor:'#64b5f6' },
       epic:     { border:'#9c27b0',               glow:'0 0 14px rgba(156,39,176,0.7)', label:'史诗', labelColor:'#ce93d8' },
     };
     const rarity = def.rarity || 'common';
     const rs = RARITY_STYLE[rarity] || RARITY_STYLE.common;
-    if(rarity !== 'common'){
-      el.style.border = `2px solid ${rs.border}`;
-      el.style.boxShadow = rs.glow;
-    }
+    el.style.border = `2px solid ${rs.border}`;
+    if(rs.glow !== 'none') el.style.boxShadow = rs.glow;
     el.style.position = 'relative';
+    // \u628a\u5b8c\u6574\u63cf\u8ff0\u5b58\u5230 data \u5c5e\u6027\uff0c\u4f9b\u60ac\u6d6e tooltip \u4f7f\u7528
+    el.dataset.fullDesc = desc;
+    el.dataset.cardName = def.name;
+    el.dataset.cardEmoji = def.emoji || '';
     const rarityTag = rs.label ? `<div style="position:absolute;top:3px;left:6px;font-size:0.62rem;font-weight:800;color:${rs.labelColor};letter-spacing:0.5px;text-shadow:0 0 6px ${rs.border};pointer-events:none">${rs.label}</div>` : '';
-el.innerHTML=`<div class="card-type-bar"></div>${rarityTag}<div class="card-cost${overrideCost===0?' cost-zero':''}">${ displayCost===99?'X':displayCost}</div><div class="card-art">${def.emoji||'\ud83c\udccf'}</div><div class="card-name">${def.name}</div><div class="card-desc">${desc}</div>`;
+    // \u5361\u9762\u7cbe\u7b80\u63cf\u8ff0\uff1a\u53bb\u6389<br>\u53ca\u4e4b\u540e\u5185\u5bb9\u3001\u53bb\u6389span\u3001\u53bb\u6389\u957f\u62ec\u53f7\u8bf4\u660e\uff0c\u907f\u514d\u8d85\u51fa\u5361\u6846
+    const faceDesc = (() => {
+      let d = desc
+        .replace(/<br[^>]*>[\s\S]*/i, '')              // \u5220\u9664<br>\u53ca\u4e4b\u540e\u5168\u90e8
+        .replace(/<span[^>]*>[\s\S]*?<\/span>/g, '')   // \u5220\u9664span
+        .replace(/\uff08[^\uff09]{6,}\uff09/g, '')                  // \u5220\u9664\u957f\u62ec\u53f7\u8bf4\u660e
+        .replace(/\s{2,}/g, ' ').trim();
+      // \u53ea\u53d6\u7b2c\u4e00\u53e5\uff08\u7b2c\u4e00\u4e2a\u53e5\u53f7\u4e3a\u6b62\uff09\uff0c\u591a\u4f59\u5185\u5bb9\u653e\u5230\u53cc\u51fb\u8be6\u60c5
+      const dot = d.indexOf('\u3002');
+      if (dot !== -1 && dot < d.length - 1) d = d.slice(0, dot + 1);
+      return d;
+    })();
+el.innerHTML=`<div class="card-type-bar"></div>${rarityTag}<div class="card-cost${overrideCost===0?' cost-zero':''}">${ displayCost===99?'X':displayCost}</div><div class="card-art">${def.emoji||'\ud83c\udccf'}</div><div class="card-name">${def.name}</div><div class="card-desc">${faceDesc}</div>`;
     return el;
   },
   // ── 药水槽位渲染 ───────────────────────────────────────────────────────
@@ -3041,14 +3878,14 @@ el.innerHTML=`<div class="card-type-bar"></div>${rarityTag}<div class="card-cost
       susu_eyemask:   { name: 'Susu的眼罩', icon: null, img: '/manus-storage/img_01_3443k_f8fb25b0.png', desc: '每场战斗中，第一次受到负面状态效果时免疫（弱化/易伤/中毒等），仅触发一次。' },
       xiaojiu_guitar: { name: '小九的六弦琴', icon: null, img: '/manus-storage/xiaojiu_guitar_e444f0fa.png', desc: '从第二回合开始，每个回合额外多抽 1 张牌。' },
       wangwei_bracelet: { name: '王微的手绳', icon: '📿', desc: '每回合开始时，获得 3 点格挡（不会消失，可累计）。' },
-      wangwei_glasses:  { name: '王微的眼镜', icon: '👓', desc: '受到伤害时，有 20% 概率完全无视本次伤害。' },
+      wangwei_glasses:  { name: '王微的眼镜', icon: '👓', desc: '受到伤害时，有 20% 概率减少最多 15 点伤害。' },
       wangwei_bowl:     { name: '王微的碗',   icon: '🍜', desc: '每场战斗结束后，回复 5 点 HP。' },
       wangwei_wallet:   { name: '王微的钱包', icon: '👛', desc: '每场战斗结束后，金币奖励额外 +25%。' },
       wangwei_optimism: { name: '王微的乐观', icon: '🌟', desc: '每场战斗开始时，随机回复 1~10 点 HP。' },
       // 文豪遗物
-      wenhao_scarf:       { name: '文豪的红领巾', icon: '👔', desc: '每场战斗结束时，若全程未受任何伤害，永久+3最大HP。' },
-      wenhao_feather:     { name: '文豪的羽毛', icon: '🪶', desc: '生命首次低于最大生命值50%时，立刻回满。（全局仅一次；一击致死不触发）' },
-      wenhao_script:      { name: '文豪的剧本', icon: '📜', desc: '获取时，立刻打开牌库，选择至多3张卡牌删除。' },
+      wenhao_scarf:       { name: '文豪的红领巾', icon: '👔', desc: '每场战斗结束时，若全程未受任何伤害，永久+5最大HP。' },
+      wenhao_feather:     { name: '文豪的羽毛', icon: '🪶', desc: '生命首次低于最大生命值50%时，回复40%最大生命值。（全局仅一次；一击致死不触发）' },
+      wenhao_script:      { name: '文豪的剧本', icon: '📜', desc: '获取时，免费删除至多2张卡牌；之后可花费50金币再删1张。' },
       // 大头遗物
       datou_spanish_book: { name: '大头的西班牙语书', icon: '📖', desc: '回合结束时，若本回合造成过伤害，回复 2 点 HP。' },
       datou_sunglasses:   { name: '大头的墨镜',       icon: '🕶️', desc: '每次抽牌时，25% 概率额外再抽一张（每回合最多触发一次）。' },
@@ -3056,10 +3893,15 @@ el.innerHTML=`<div class="card-type-bar"></div>${rarityTag}<div class="card-cost
       datou_hat:          { name: '大头的帽子',       icon: '🧢', desc: '永久增加 20 点生命上限，并立即回复 20 点 HP。' },
       datou_whistle:      { name: '大头的哨子',       icon: '🎺', desc: '回合结束时，若本回合未打出过防御牌，获得 10 点格挡。' },
       // 高山遗物
-      gaoshan_sunglasses: { name: '高山的雪镜',   icon: '🥽', desc: '每回合开始时，有 50% 概率获得 1 点额外能量。' },
+      gaoshan_sunglasses: { name: '高山的雪镜',   icon: '🥽', desc: '每回合开始时，有 35% 概率获得 1 点额外能量。' },
       gaoshan_jacket:     { name: '高山的冲锋衣', icon: '🧥', desc: '每场战斗中，第一次获得格挡时，格挡值翻倍。' },
       gaoshan_compass:    { name: '高山的指南针', icon: '🧭', desc: '激活后，第三层地图变为一条直路，难度大幅降低。' },
-      gaoshan_braid:      { name: '高山的麻花辫', icon: '💇', desc: '每场战斗开始时，随机回复 3~8 点 HP。' }
+      gaoshan_braid:      { name: '高山的麻花辫', icon: '💇', desc: '每场战斗开始时，随机回复 3~8 点 HP。' },
+      // 事件专属遗物
+      football:           { name: '橄榄球',           icon: '🏈', desc: '每场战斗第一回合增加 1 点能量。' },
+      lemon_chicken:      { name: '莹姐的柠檬烧鸡',   icon: '🍗', desc: '尹姐食堂尝新菜成功的纪念品。（最大HP+5已在事件中生效）' },
+      liuxing_headband:   { name: '刘行的头巾',       icon: '🧣', desc: '每场战斗中，首次格挡值达到或超过 15 点时，下一回合开始额外获得 1 点能量（每场战斗仅触发一次）。' },
+      xiaocao_sprout:     { name: '小草的小草',         icon: '🌱', desc: '每场战斗胜利后，永久增加 1 点最大HP（无上限）。' },
     };
     // 确保全局遗物 tooltip 元素存在
     let relicTip = document.getElementById('global-relic-tooltip');
@@ -3273,7 +4115,9 @@ el.innerHTML=`<div class="card-type-bar"></div>${rarityTag}<div class="card-cost
     vulnerable: { name: '易伤', icon: '💔', desc: '受到的伤害增加 50%，持续到回合结束时减 1 层' },
     weak: { name: '虚弱', icon: '😵', desc: '造成的伤害减少 25%，持续到回合结束时减 1 层' },
     frail: { name: '脆弱', icon: '🦴', desc: '获得的格挡减少 25%，持续到回合结束时减 1 层' },
-
+    slow:    { name: '减速', icon: '🐢', desc: '攻击伤害减少 25%，每回合结束减 1 层' },
+    burn:    { name: '燃烧', icon: '🔥', desc: '每回合结束受到等于层数的伤害，随后层数 -1' },
+    freeze:  { name: '冻结', icon: '❄️', desc: '本回合跳过行动，回合结束层数 -1' },
   },
 
   renderBuffs(entity){
@@ -3308,6 +4152,87 @@ el.innerHTML=`<div class="card-type-bar"></div>${rarityTag}<div class="card-cost
     });
   },
 
+
+  showCharacterGuide(charId){
+    if(document.getElementById('char-guide-overlay')) return;
+    if(!document.getElementById('charGuideStyle')){
+      const s=document.createElement('style');s.id='charGuideStyle';
+      s.textContent='@keyframes charGuideIn{from{opacity:0;transform:scale(0.93)}to{opacity:1;transform:scale(1)}}';
+      document.head.appendChild(s);
+    }
+    const overlay=document.createElement('div');
+    overlay.id='char-guide-overlay';
+    overlay.style.cssText='position:fixed;inset:0;z-index:10200;background:rgba(0,0,0,0.72);display:flex;align-items:center;justify-content:center';
+
+    const guides={
+      racer:{
+        emoji:'🏎️', name:'赛车手',
+        color:'#ff7d7d', accent:'rgba(255,125,125,0.15)',
+        sections:[
+          { title:'⚙️ 档位系统', color:'#ff7d7d', rows:[
+            { icon:'↓', label:'1 挡 · 防御档', desc:'格挡效果 ×<b>1.3</b>，攻击伤害 ×<b>0.8</b><br><span style="opacity:0.65;font-size:0.82em">适合积累格挡、苟住血量</span>' },
+            { icon:'•', label:'2 挡 · 中立档', desc:'格挡效果 ×<b>1.0</b>，攻击伤害 ×<b>1.0</b><br><span style="opacity:0.65;font-size:0.82em">起手默认档位，均衡状态</span>' },
+            { icon:'↑', label:'3 挡 · 攻击档', desc:'格挡效果 ×<b>0.7</b>，攻击伤害 ×<b>1.3</b><br><span style="opacity:0.65;font-size:0.82em">全力进攻，格挡会大幅降低</span>' },
+          ]},
+          { title:'⚡ 速度感', color:'#f9ca24', rows:[
+            { icon:'🛡', label:'≥ 20 · 稳定行驶', desc:'每回合开始自动获得 <b>1</b> 点格挡' },
+            { icon:'⚡', label:'≥ 40 · 加速中',   desc:'攻击牌造成的伤害 <b>+1</b>' },
+            { icon:'🏎️', label:'≥ 60 · 高速行驶', desc:'每次升挡额外抽 <b>1</b> 张牌（每回合限 1 次）' },
+            { icon:'🔥', label:'≥ 80 · 极速状态', desc:'攻击牌伤害提升至 <b>+3</b>（与上方叠加）' },
+          ]},
+        ]
+      },
+      archer:{
+        emoji:'🏹', name:'弓箭手',
+        color:'#74d7ff', accent:'rgba(116,215,255,0.15)',
+        sections:[
+          { title:'⚡ 蓄力系统', color:'#74d7ff', rows:[
+            { icon:'➕', label:'如何积累蓄力', desc:'使用弓箭手专属牌时，多数牌会额外获得 <b>1</b> 点蓄力<br><span style="opacity:0.65;font-size:0.82em">蓄力最多累积至 <b>5</b> 点（满蓄）</span>' },
+            { icon:'🎯', label:'满蓄（5点）', desc:'达到满蓄后，下次触发蓄力消耗时效果大幅增强<br><span style="opacity:0.65;font-size:0.82em">满蓄状态会在屏幕上显示「🎯 满蓄！」提示</span>' },
+            { icon:'💥', label:'消耗蓄力', desc:'部分牌会消耗全部蓄力来造成额外伤害或获得效果<br><span style="opacity:0.65;font-size:0.82em">蓄力越高，消耗时的爆发越强</span>' },
+          ]},
+          { title:'🏹 核心机制', color:'#f9ca24', rows:[
+            { icon:'🔵', label:'蓄力条（左下角）', desc:'蓝色 → 黄色 → 红色，满蓄时变为红色并显示「满蓄！」' },
+            { icon:'🎲', label:'蓄力阈值牌', desc:'部分牌在特定蓄力值以上才触发额外效果<br><span style="opacity:0.65;font-size:0.82em">如「飞矢连发」在满蓄时多射 1 箭</span>' },
+            { icon:'⚖️', label:'策略核心', desc:'在累积蓄力与消耗爆发之间找到最佳时机<br><span style="opacity:0.65;font-size:0.82em">不必每次都等满蓄再打出</span>' },
+          ]},
+        ]
+      }
+    };
+
+    const g=guides[charId];
+    if(!g){ overlay.remove(); return; }
+
+    let html=`<div style="background:rgba(12,12,28,0.98);border:1.5px solid ${g.color}55;border-radius:18px;padding:24px 28px;max-width:420px;width:90vw;max-height:85vh;overflow-y:auto;box-shadow:0 8px 40px rgba(0,0,0,0.7);position:relative;animation:charGuideIn 0.18s ease both">`;
+    html+=`<div style="display:flex;align-items:center;gap:10px;margin-bottom:18px">
+      <span style="font-size:2rem">${g.emoji}</span>
+      <div>
+        <div style="font-size:1.2rem;font-weight:900;color:${g.color}">${g.name} · 角色说明</div>
+        <div style="font-size:0.8rem;color:rgba(255,255,255,0.4);margin-top:2px">点击空白处关闭</div>
+      </div>
+    </div>`;
+
+    g.sections.forEach(sec=>{
+      html+=`<div style="margin-bottom:16px">`;
+      html+=`<div style="font-size:0.95rem;font-weight:800;color:${sec.color};margin-bottom:8px;border-bottom:1px solid ${sec.color}33;padding-bottom:4px">${sec.title}</div>`;
+      sec.rows.forEach(row=>{
+        html+=`<div style="display:flex;gap:10px;align-items:flex-start;margin-bottom:8px;padding:8px 10px;background:rgba(255,255,255,0.04);border-radius:8px;border-left:3px solid ${sec.color}66">
+          <span style="font-size:1.1rem;min-width:22px;text-align:center;margin-top:1px">${row.icon}</span>
+          <div>
+            <div style="font-size:0.88rem;font-weight:700;color:#e8e8f0;margin-bottom:2px">${row.label}</div>
+            <div style="font-size:0.82rem;color:rgba(255,255,255,0.6);line-height:1.45">${row.desc}</div>
+          </div>
+        </div>`;
+      });
+      html+=`</div>`;
+    });
+
+    html+=`<button onclick="document.getElementById('char-guide-overlay')?.remove()" style="width:100%;margin-top:6px;padding:9px 0;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.2);border-radius:10px;color:#fff;font-size:0.95rem;cursor:pointer;font-weight:600">关闭</button>`;
+    html+=`</div>`;
+    overlay.innerHTML=html;
+    overlay.addEventListener('click',e=>{ if(e.target===overlay) overlay.remove(); });
+    document.body.appendChild(overlay);
+  },
 
   toggleSpeedPanel(spd){
     const existing=document.getElementById('speed-panel');
@@ -3358,10 +4283,115 @@ el.innerHTML=`<div class="card-type-bar"></div>${rarityTag}<div class="card-cost
   },
   menu(){
     const saves=Save.list();const hasSave=saves.some(s=>s.run!==null);
-    UI.app().innerHTML=`<div class="menu-screen slide-up"><div class="menu-title">Slay the<br>Curiosity</div><div class="menu-subtitle">一场好奇心的冒险</div><div style="display:flex;flex-direction:column;gap:12px;align-items:center;margin-top:16px"><button class="btn primary" id="btn-new">✨ 新游戏</button>${hasSave?'<button class="btn" id="btn-continue">📂 继续游戏</button>':''}<button class="btn" id="btn-saves">💾 存档管理</button></div><div style="font-size:0.85rem;color:var(--ink-light);margin-top:32px">Slay the Curiosity v0.1 demo</div></div>`;
+    UI.app().innerHTML=`<div class="menu-screen slide-up"><div class="menu-title">Slay the<br>Curiosity</div><div class="menu-subtitle">一场好奇心的冒险</div><div style="display:flex;flex-direction:column;gap:12px;align-items:center;margin-top:16px"><button class="btn primary" id="btn-new">✨ 新游戏</button>${hasSave?'<button class="btn" id="btn-continue">📂 继续游戏</button>':''}<button class="btn" id="btn-saves">💾 存档管理</button><button class="btn" id="btn-tutorial" style="background:rgba(80,160,255,0.12);border-color:rgba(80,160,255,0.4);color:#90c8ff">📖 新手教程</button></div><div style="font-size:0.85rem;color:var(--ink-light);margin-top:32px">Slay the Curiosity v0.1 demo</div></div>`;
     document.getElementById('btn-new').onclick=()=>State.go('char-select');
     if(hasSave)document.getElementById('btn-continue').onclick=()=>UI.showSaveSlots('load');
     document.getElementById('btn-saves').onclick=()=>UI.showSaveSlots('manage');
+    document.getElementById('btn-tutorial').onclick=()=>UI.tutorial();
+  },
+
+  tutorial(){
+    const pages=[
+      {
+        icon:'🎮',title:'欢迎来到 Slay the Curiosity！',
+        body:`这是一个<b>卡牌 Roguelike</b> 游戏。每次冒险都是全新旅程——选择角色、收集卡牌、获取遗物，挑战一层又一层的敌人，直到击败最终 Boss。<br><br>死亡即重来，每局随机不同，但经验和策略会越来越强。`
+      },
+      {
+        icon:'🗺️',title:'地图与行进',
+        body:`每一层都是一张分叉路线图。<b>点击高亮节点</b>即可前进。<br><br>节点类型：<br>
+<span style="color:#ff9090">⚔️ 普通战斗</span> — 风险低，奖励少<br>
+<span style="color:#ffb060">⭐ 精英战斗</span> — 更难，但遗物掉落率高<br>
+<span style="color:#e056fd">👑 Boss</span> — 每层终点，必须击败才能继续<br>
+<span style="color:#90e0ff">❓ 问号事件</span> — 随机好事坏事，充满惊喜<br>
+<span style="color:#ffd060">🏪 商店</span> — 花金币买牌/遗物/药水<br>
+<span style="color:#80ff80">🔥 篝火</span> — 回血或升级一张牌`
+      },
+      {
+        icon:'⚔️',title:'战斗基础',
+        body:`每回合你会获得 <b>3点能量</b> 并抽取 <b>5张手牌</b>。<br><br>
+① <b>打出手牌</b>：消耗左上角数字对应的能量。攻击牌需先点击选中，再点击目标敌人；技能牌直接点击生效。<br><br>
+② <b>结束回合</b>：点右下角"结束回合"，剩余手牌丢弃，敌人行动，然后开始下一回合。<br><br>
+③ <b>胜利</b>：把所有敌人HP打到0即可。`
+      },
+      {
+        icon:'🛡️',title:'格挡 & 伤害',
+        body:`<b>格挡</b>（角色下方蓝色数字）会在受到攻击时优先抵消伤害。超出格挡的伤害才扣HP。<br><br>
+⚠️ <b>格挡不会延续到下一回合</b>，每回合开始时清零，所以要在当回合内把格挡用在刀刃上。<br><br>
+HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
+      },
+      {
+        icon:'💎',title:'遗物',
+        body:`遗物是<b>全局被动道具</b>，拾取后在每场战斗中持续生效，无需手动激活。<br><br>
+获取途径：战斗掉落（小怪10%、精英25%、Boss90%）、事件奖励、商店购买。<br><br>
+<b>💡 小技巧</b>：将鼠标悬停在遗物图标上可查看效果说明。遗物的叠加搭配往往比单张强力牌更稳定。`
+      },
+      {
+        icon:'🧪',title:'药水',
+        body:`药水是<b>一次性消耗品</b>，最多同时携带 3 瓶（三个槽位）。<br><br>
+战斗中和战斗外均可点击使用。将鼠标悬停在药水图标上可查看效果。<br><br>
+<b>💡 小技巧</b>：不要囤着不用，关键的 Boss 战前确保药水槽满载，增加容错空间。`
+      },
+      {
+        icon:'👆',title:'双击查看详情',
+        body:`游戏多个地方支持<b>双击</b>来查看更详细的说明：<br><br>
+🧑‍🤝‍🧑 <b>角色选择界面</b>：双击角色卡片 → 查看打法介绍、起始金币、核心机制<br><br>
+🃏 <b>战斗中的手牌</b>：双击卡牌 → 查看完整效果文字（包括升级后效果）<br><br>
+💎 <b>战斗中的遗物</b>：悬停/双击图标 → 查看遗物效果说明`
+      },
+      {
+        icon:'💡',title:'新手建议',
+        body:`① <b>精简牌组</b>：在商店或篝火删除初始弱牌（打击/防御），让牌组更流畅。<br><br>
+② <b>优先打精英</b>：遗物掉落率高，强力遗物是胜负关键。<br><br>
+③ <b>看敌人意图</b>：敌人头顶图标显示下一步行动，提前决定是攻击还是格挡。<br><br>
+④ <b>善用事件</b>：问号事件有高收益选项，风险可控时大胆选。<br><br>
+⑤ <b>多局练习</b>：每个角色打法差异大，多试几局找到手感！`
+      },
+    ];
+    let cur=0;
+    const overlay=document.createElement('div');
+    overlay.style.cssText='position:fixed;inset:0;z-index:9500;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.82);backdrop-filter:blur(4px)';
+    const render=()=>{
+      const p=pages[cur];
+      const dots=pages.map((_,i)=>`<span style="display:inline-block;width:${i===cur?18:8}px;height:8px;border-radius:4px;background:${i===cur?'#90c8ff':'rgba(255,255,255,0.2)'};transition:all 0.25s;margin:0 3px"></span>`).join('');
+      overlay.innerHTML=`
+        <div style="background:linear-gradient(160deg,#0d1b2a 0%,#1a2740 100%);border:1.5px solid rgba(80,160,255,0.3);border-radius:20px;padding:32px 30px 24px;max-width:480px;width:92%;position:relative;box-shadow:0 8px 40px rgba(0,0,0,0.7)">
+          <button id="tut-close" style="position:absolute;top:14px;right:18px;background:none;border:none;color:rgba(255,255,255,0.4);font-size:1.3rem;cursor:pointer">✕</button>
+          <div style="text-align:center;font-size:3.2rem;margin-bottom:12px">${p.icon}</div>
+          <div style="text-align:center;font-size:1.25rem;font-weight:900;color:#e8f0ff;margin-bottom:16px">${p.title}</div>
+          <div style="color:rgba(255,255,255,0.82);font-size:0.93rem;line-height:1.75;min-height:160px">${p.body}</div>
+          <div style="text-align:center;margin:20px 0 16px">${dots}</div>
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:10px">
+            <button id="tut-prev" style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.18);border-radius:10px;color:rgba(255,255,255,0.6);padding:8px 18px;cursor:pointer;font-size:0.9rem;${cur===0?'opacity:0.2;pointer-events:none':''}">&larr; 上一步</button>
+            <span style="font-size:0.8rem;color:rgba(255,255,255,0.3)">${cur+1} / ${pages.length}</span>
+            <button id="tut-next" style="background:${cur===pages.length-1?'rgba(80,160,255,0.25)':'rgba(80,160,255,0.18)'};border:1px solid rgba(80,160,255,0.4);border-radius:10px;color:#90c8ff;padding:8px 18px;cursor:pointer;font-size:0.9rem;font-weight:700">${cur===pages.length-1?'开始游戏！':'下一步 &rarr;'}</button>
+          </div>
+        </div>`;
+      overlay.querySelector('#tut-close').onclick=()=>overlay.remove();
+      overlay.querySelector('#tut-prev').onclick=()=>{ if(cur>0){cur--;render();} };
+      overlay.querySelector('#tut-next').onclick=()=>{
+        if(cur<pages.length-1){cur++;render();}
+        else{ overlay.remove(); UI.startTutorialRun(); }
+      };
+    };
+    render();
+    document.body.appendChild(overlay);
+    overlay.addEventListener('click',e=>{ if(e.target===overlay) overlay.remove(); });
+  },
+
+  startTutorialRun(){
+    // 使用 Brute 角色（最简单的机制）进行教程关卡
+    const char = Data.characters.find(c=>c.id==='brute');
+    State.current.run = {
+      character:{id:char.id,name:char.name,emoji:char.emoji,color:char.color,hp:char.hp,maxHp:char.maxHp,block:0,buffs:{},debuffs:{}},
+      floor:0, act:1, gold:99,
+      deck:[...char.startingDeck],
+      relics:[], pendingRelic:null, potions:[null,null,null],
+      map: MapGen.generateTutorial(),
+      currentNodeId: 0, combat: null,
+      isTutorial: true, tutorialPhase: 'init',
+    };
+    State.current.screen = 'map';
+    State.emit('screenChange',{screen:'map'});
   },
 
   showSaveSlots(mode){
@@ -3386,9 +4416,53 @@ el.innerHTML=`<div class="card-type-bar"></div>${rarityTag}<div class="card-cost
     document.body.appendChild(overlay);
   },
 
+  _showCharDetail(char){
+    const d = char.detail || {};
+    const counts={};char.startingDeck.forEach(id=>counts[id]=(counts[id]||0)+1);
+    const deckNames=Object.entries(counts).map(([id,n])=>`${Data.cards[id]?.name||id}×${n}`).join(' · ');
+    const mechHtml=(d.mechanics||[]).map(m=>`
+      <div style="margin-bottom:10px">
+        <div style="font-weight:700;color:#e8e8f0;font-size:0.98rem;margin-bottom:3px">${m.name}</div>
+        <div style="color:rgba(255,255,255,0.78);font-size:0.9rem;line-height:1.55">${m.desc}</div>
+      </div>`).join('');
+    const overlay=document.createElement('div');
+    overlay.style.cssText='position:fixed;inset:0;z-index:8000;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.75);backdrop-filter:blur(3px)';
+    overlay.innerHTML=`
+      <div style="background:linear-gradient(160deg,#1a1a2e 0%,#16213e 100%);border:2px solid ${char.color}66;border-radius:18px;padding:28px 32px;max-width:520px;width:92%;max-height:88vh;overflow-y:auto;position:relative;box-shadow:0 8px 40px rgba(0,0,0,0.7),0 0 30px ${char.color}22">
+        <button id="charDetailClose" style="position:absolute;top:14px;right:18px;background:none;border:none;color:rgba(255,255,255,0.5);font-size:1.4rem;cursor:pointer;line-height:1">✕</button>
+        <div style="display:flex;align-items:center;gap:14px;margin-bottom:18px">
+          <div style="background:${char.color}22;border:2px solid ${char.color}55;border-radius:14px;padding:10px 16px;font-size:3rem">${char.emoji}</div>
+          <div>
+            <div style="font-size:1.5rem;font-weight:900;color:#fff">${char.name}</div>
+            <div style="font-size:0.9rem;color:rgba(255,255,255,0.5);margin-top:3px">双击选中并查看详情</div>
+          </div>
+        </div>
+        <div style="display:flex;gap:10px;margin-bottom:18px;flex-wrap:wrap">
+          <span style="background:rgba(255,100,100,0.15);border:1px solid rgba(255,100,100,0.4);border-radius:8px;padding:5px 12px;font-size:0.9rem;color:#ff9090">❤️ ${char.maxHp} HP</span>
+          <span style="background:rgba(255,200,50,0.12);border:1px solid rgba(255,200,50,0.35);border-radius:8px;padding:5px 12px;font-size:0.9rem;color:#ffd060">💰 ${d.gold ?? '—'} 起始金币</span>
+          <span style="background:rgba(100,180,255,0.1);border:1px solid rgba(100,180,255,0.3);border-radius:8px;padding:5px 12px;font-size:0.9rem;color:#90d0ff">🃏 ${char.startingDeck.length} 张起始牌</span>
+        </div>
+        <div style="margin-bottom:18px">
+          <div style="font-size:0.75rem;letter-spacing:0.12em;color:${char.color};font-weight:700;margin-bottom:6px;text-transform:uppercase">打法简介</div>
+          <div style="color:rgba(255,255,255,0.85);font-size:0.95rem;line-height:1.65">${d.playstyle||char.description}</div>
+        </div>
+        <div style="margin-bottom:18px">
+          <div style="font-size:0.75rem;letter-spacing:0.12em;color:${char.color};font-weight:700;margin-bottom:10px;text-transform:uppercase">核心机制</div>
+          ${mechHtml}
+        </div>
+        <div>
+          <div style="font-size:0.75rem;letter-spacing:0.12em;color:${char.color};font-weight:700;margin-bottom:8px;text-transform:uppercase">起始牌组</div>
+          <div style="color:rgba(255,255,255,0.7);font-size:0.88rem;line-height:1.8">${deckNames}</div>
+        </div>
+      </div>`;
+    document.body.appendChild(overlay);
+    overlay.querySelector('#charDetailClose').onclick=()=>overlay.remove();
+    overlay.addEventListener('click',e=>{ if(e.target===overlay) overlay.remove(); });
+  },
+
   characterSelect(){
     let selected=null;
-    UI.app().innerHTML=`<div class="char-select-screen slide-up"><h2 class="screen-title">选择角色</h2><div class="char-grid" id="char-grid"></div><div id="char-detail" style="font-size:0.9rem;color:var(--ink-light);min-height:20px"></div><div style="display:flex;gap:12px;margin-top:4px"><button class="btn" id="btn-back">← 返回</button><button class="btn primary" id="btn-start" disabled>开始冒险 →</button></div></div>`;
+    UI.app().innerHTML=`<div class="char-select-screen slide-up"><h2 class="screen-title">选择角色</h2><p style="text-align:center;color:rgba(255,255,255,0.45);font-size:0.85rem;margin:-8px 0 10px">双击角色卡片查看详细介绍</p><div class="char-grid" id="char-grid"></div><div id="char-detail" style="font-size:0.9rem;color:var(--ink-light);min-height:20px"></div><div style="display:flex;gap:12px;margin-top:4px"><button class="btn" id="btn-back">← 返回</button><button class="btn primary" id="btn-start" disabled>开始冒险 →</button></div></div>`;
     const grid=document.getElementById('char-grid');
     Data.characters.forEach(char=>{
       const card=document.createElement('div');card.className='char-card panel';card.dataset.id=char.id;
@@ -3399,6 +4473,7 @@ el.innerHTML=`<div class="card-type-bar"></div>${rarityTag}<div class="card-cost
         const names=Object.entries(counts).map(([id,n])=>`${Data.cards[id]?.name||id}×${n}`).join(' · ');
         document.getElementById('char-detail').innerHTML=`<span style="font-size:1.05rem;color:rgba(255,255,255,0.85)">起始牌组：<b style="color:#e8e8f0">${names}</b></span>`;
       };
+      card.ondblclick=e=>{ e.preventDefault(); UI._showCharDetail(char); };
       grid.appendChild(card);
     });
     document.getElementById('btn-back').onclick=()=>State.go('menu');
@@ -3547,6 +4622,8 @@ el.innerHTML=`<div class="card-type-bar"></div>${rarityTag}<div class="card-cost
     const run=State.run;run.currentNodeId=node.id;run.floor=node.floor;State.saveRun(0);
     if(node.type==='boss'){
       const run=State.run;
+      // 教程模式使用专属简单Boss
+      if(run.isTutorial){ Combat.init(Data.encounters.boss_tutorial[0]); State.go('combat'); return; }
       // act3使用act2的boss（班布），act1使用兔子，其他同样
       const bossEnc=run.act===3?Data.encounters.boss3[0]:(run.act===2?Data.encounters.boss2[0]:Data.encounters.boss[0]);
       Combat.init(bossEnc);State.go('combat');
@@ -3611,7 +4688,7 @@ el.innerHTML=`<div class="card-type-bar"></div>${rarityTag}<div class="card-cost
     };
   },
 
-  combat(){ Audio.startBgmCombat(); UI._selectedCard=null;UI._renderCombat(); },
+  combat(){ UI._selectedCard=null;UI._renderCombat(); },
 
   _renderCombat(){
     const run=State.run,cs=run.combat;if(!cs)return;const app=UI.app();app.innerHTML='';
@@ -3635,7 +4712,7 @@ el.innerHTML=`<div class="card-type-bar"></div>${rarityTag}<div class="card-cost
 </div>
 <div class="combat-field">
   <div class="player-area" id="player-area">
-    <div class="player-figure" id="player-figure">${run.character.emoji}</div>
+    <div class="player-figure" id="player-figure" title="点击查看角色说明" style="cursor:pointer;transition:transform 0.15s" onmouseenter="this.style.transform='scale(1.18)'" onmouseleave="this.style.transform='scale(1)'">${run.character.emoji}</div>
     <div style="width:130px">${UI.renderHpBar(cs.player.hp,cs.player.maxHp,'130px',cs.player.block)}</div>
     <div style="font-size:1rem;color:#e8e8f0;font-weight:600;text-align:center">${cs.player.hp}/${cs.player.maxHp} HP${cs.player.block>0?` · <span style='color:#5dade2'>🛡${cs.player.block}</span>`:''}</div>
     <div style="display:flex;gap:3px;flex-wrap:wrap;justify-content:center">${UI.renderBuffs(cs.player)}</div>
@@ -3732,6 +4809,8 @@ el.innerHTML=`<div class="card-type-bar"></div>${rarityTag}<div class="card-cost
         setTimeout(()=>{ tip.remove(); el._hintShown=false; },1500);
       }
     });
+    // 点击人物头像显示角色说明
+    document.getElementById('player-figure')?.addEventListener('click',()=>UI.showCharacterGuide(run.character.id));
     // 渲染战斗药水槽位
     const combatPotionBar = document.getElementById('combat-potion-bar');
     if(combatPotionBar){ UI.renderPotionSlots(combatPotionBar, run.potions||[null,null,null], true); }
@@ -3749,9 +4828,16 @@ el.innerHTML=`<div class="card-type-bar"></div>${rarityTag}<div class="card-cost
       const visibleIntentArr=intentArr.filter(it=>it.type!=='defend');
       // 若所有意图均为防御则留空，不显示问号
       const _hasGlasses=State.run?.relics?.includes('wangwei_glasses');
+      const _hasSlow=(enemy.debuffs?.slow||0)>0;
       const intentHtml=visibleIntentArr.map(it=>{
-        const glassesTag=(_hasGlasses&&it.type==='attack')?`<span style="font-size:0.7em;margin-left:2px;opacity:0.85;vertical-align:middle" title="👓 王微的眼镜：20% 概率完全无视此次伤害">👓</span>`:'';
-        return `<span class="intent-badge ${it.type||'unknown'}">${it.label}<span style="font-size:0.95em">${it.num||''}</span>${glassesTag}</span>`;
+        const glassesTag=(_hasGlasses&&it.type==='attack')?`<span style="font-size:0.7em;margin-left:2px;opacity:0.85;vertical-align:middle" title="👓 王微的眼镜：20% 概率减少最多 15 点伤害">👓</span>`:'';
+        const slowTag=(_hasSlow&&it.type==='attack')?`<span style="font-size:0.7em;margin-left:2px;opacity:0.85;vertical-align:middle" title="🐢 减速：攻击伤害 -25%">🐢</span>`:'';
+        // 减速状态下显示实际减少后的伤害数值
+        let displayNum=it.num||'';
+        if(_hasSlow && it.type==='attack' && displayNum && !isNaN(parseInt(displayNum))){
+          displayNum=String(Math.floor(parseInt(displayNum)*0.75));
+        }
+        return `<span class="intent-badge ${it.type||'unknown'}">${it.label}<span style="font-size:0.95em">${displayNum}</span>${glassesTag}${slowTag}</span>`;
       }).join('');
       wrap.style.position='relative';
       wrap.innerHTML=`<div class="enemy-intent">${intentHtml}</div><div class="enemy-figure" id="enemy-fig-${i}">${enemy.emoji}</div><div style="width:130px">${UI.renderHpBar(enemy.hp,enemy.maxHp,'130px',enemy.block)}</div><div style="font-size:1.1rem;font-weight:700;color:#e8e8f0">${enemy.name}</div><div style="font-size:0.95rem;color:rgba(255,255,255,0.8)">${enemy.hp}/${enemy.maxHp} HP${enemy.block>0?` · 🛡${enemy.block}`:''}</div><div class="enemy-buffs" style="display:flex;gap:4px;flex-wrap:wrap;justify-content:center">${UI.renderBuffs(enemy)}</div>`;
@@ -3824,6 +4910,7 @@ el.innerHTML=`<div class="card-type-bar"></div>${rarityTag}<div class="card-cost
 
   _renderHand(cs){
     const handEl=document.getElementById('hand-cards');if(!handEl)return;handEl.innerHTML='';
+    UI._hideCardHoverTip();
     cs.hand.forEach((cardId,idx)=>{
       const def=Data.cards[cardId];if(!def)return;
       // 放大镜：直接用手牌位置索引判断，精确匹配唯一那张牌
@@ -3841,7 +4928,7 @@ el.innerHTML=`<div class="card-type-bar"></div>${rarityTag}<div class="card-cost
       const effectiveCost = isMagnifier ? 0 : (isLaozao2 ? cs.laozaoCosts[laozaoKey2] : _rhBaseCost);
       const displayOverride = isMagnifier ? 0 : (isLaozao2 ? cs.laozaoCosts[laozaoKey2] : (_rhUpgLv > 0 ? _rhBaseCost : undefined));
       const _handUpgradeLv = cs.handUpgrades ? (cs.handUpgrades[idx] || 0) : 0;
-      const cardEl=UI.renderCard(cardId, displayOverride, _handUpgradeLv);
+      const cardEl=UI.renderCard(cardId, displayOverride, _handUpgradeLv, true);
       cardEl.dataset.handIdx = String(idx); // 精确手牌位置，供打牌逻辑使用
       const canPlay=cs.energy>=effectiveCost&&cs.phase==='player'&&effectiveCost!==99;
       if(!canPlay)cardEl.classList.add('unplayable');if(UI._selectedCard===cardId)cardEl.classList.add('selected');
@@ -3883,8 +4970,40 @@ el.innerHTML=`<div class="card-type-bar"></div>${rarityTag}<div class="card-cost
         const fakeE = { button:0, clientX:touch.clientX, clientY:touch.clientY, preventDefault:()=>e.preventDefault() };
         _handleCardPress(fakeE, true);
       }, { passive: false });
+      // 悬浮显示完整描述
+      cardEl.addEventListener('mouseenter', () => UI._showCardHoverTip(cardEl));
+      cardEl.addEventListener('mouseleave', () => UI._hideCardHoverTip());
       handEl.appendChild(cardEl);
     });
+  },
+
+  _showCardHoverTip(cardEl){
+    const fullDesc = cardEl.dataset.fullDesc;
+    const name = cardEl.dataset.cardName;
+    const emoji = cardEl.dataset.cardEmoji;
+    if(!fullDesc || !name) return;
+    let tip = document.getElementById('card-hover-tip');
+    if(!tip){ tip=document.createElement('div'); tip.id='card-hover-tip'; document.body.appendChild(tip); }
+    tip.innerHTML = `<div style="font-size:1rem;font-weight:700;margin-bottom:6px;color:#fff">${emoji} ${name}</div><div style="font-size:0.9rem;line-height:1.6;color:rgba(255,255,255,0.92)">${fullDesc}</div>`;
+    tip.style.cssText = 'position:fixed;z-index:9000;background:rgba(12,16,28,0.97);border:1.5px solid rgba(255,255,255,0.22);border-radius:10px;padding:10px 14px;max-width:220px;pointer-events:none;box-shadow:0 4px 20px rgba(0,0,0,0.7);display:block;transition:opacity 0.1s;opacity:0;';
+    // 定位到卡牌正上方居中
+    const rect = cardEl.getBoundingClientRect();
+    const tipW = 220;
+    let left = rect.left + rect.width/2 - tipW/2;
+    left = Math.max(8, Math.min(left, window.innerWidth - tipW - 8));
+    tip.style.left = left + 'px';
+    tip.style.top = '0px'; // 先放到顶部测量高度
+    tip.style.display = 'block';
+    const tipH = tip.offsetHeight;
+    let top = rect.top - tipH - 12;
+    if(top < 8) top = rect.bottom + 12; // 卡牌在屏幕顶部时改为显示在下方
+    tip.style.top = top + 'px';
+    tip.style.opacity = '1';
+  },
+
+  _hideCardHoverTip(){
+    const tip = document.getElementById('card-hover-tip');
+    if(tip) tip.style.opacity = '0';
   },
 
   _onCardClick(cardId,cardEl){
@@ -4036,7 +5155,32 @@ el.innerHTML=`<div class="card-type-bar"></div>${rarityTag}<div class="card-cost
     const container=document.getElementById('reward-cards');
     rewardCards.forEach((cardId,i)=>{
       const wrap=document.createElement('div');wrap.className='reward-card-wrap';const back=document.createElement('div');back.className='card-back';back.textContent='🎴';wrap.appendChild(back);container.appendChild(wrap);
-      setTimeout(()=>{wrap.innerHTML='';const cardEl=UI.renderCard(cardId);wrap.appendChild(cardEl);Anim.flipCard(cardEl,0);wrap.onclick=()=>UI._pickReward(cardId);},80+i*100);
+      setTimeout(()=>{
+        wrap.innerHTML='';
+        const cardEl=UI.renderCard(cardId);
+        wrap.appendChild(cardEl);
+        const hint=document.createElement('div');
+        hint.style.cssText='text-align:center;margin-top:5px;font-size:0.72rem;color:rgba(255,255,255,0.4)';
+        hint.textContent='单击查看 · 双击拿牌';
+        wrap.appendChild(hint);
+        Anim.flipCard(cardEl,0);
+        // 单击查看详情，双击拿牌
+        let rewardTapTime=0,rewardTapTimer=null;
+        const handlePress=()=>{
+          const now=Date.now();
+          if(now-rewardTapTime<280){
+            clearTimeout(rewardTapTimer);rewardTapTimer=null;rewardTapTime=0;
+            UI._pickReward(cardId);
+            return;
+          }
+          rewardTapTime=now;
+          if(rewardTapTimer){clearTimeout(rewardTapTimer);rewardTapTimer=null;return;}
+          rewardTapTimer=setTimeout(()=>{rewardTapTimer=null;UI._showCardDetailOverlay(cardId);},220);
+        };
+        wrap.addEventListener('click',handlePress);
+        wrap.addEventListener('touchstart',e=>{if(e.touches.length===1){e.preventDefault();handlePress();}},{passive:false});
+        wrap.style.cursor='pointer';
+      },80+i*100);
     });
     document.getElementById('btn-skip').onclick=()=>{
       run.pendingRelic=null;
@@ -4087,9 +5231,11 @@ el.innerHTML=`<div class="card-type-bar"></div>${rarityTag}<div class="card-cost
       relics: [...run.relics],
       deck: [...run.deck],
     };
-    // 随机选一个问号事件
-    const events = Data.questionEvents;
-    const evt = events[Math.floor(Math.random() * events.length)];
+    // 随机选一个问号事件（过滤掉已拿到对应遗物的事件）
+    const _ownedRelics = run.relics||[];
+    const events = Data.questionEvents.filter(e => !e.relicId || !_ownedRelics.includes(e.relicId));
+    const _evtPool = events.length > 0 ? events : Data.questionEvents; // 全部过滤完时保底随机
+    const evt = _evtPool[Math.floor(Math.random() * _evtPool.length)];
 
     const wrap = document.createElement('div');
     wrap.style.cssText = 'min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;background:#1a1a2e;';
@@ -4372,7 +5518,7 @@ el.innerHTML=`<div class="card-type-bar"></div>${rarityTag}<div class="card-cost
 
     // 移除卡牌服务
     const removeSection = document.getElementById('shop-remove-section');
-    const removePrice = Data.removeCardPrice;
+    const removePrice = Data.getRemovePrice(run);
     const canAffordRemove = gold >= removePrice;
     removeSection.innerHTML = `
       <div class="shop-remove-title">🗑️ 移除卡牌</div>
@@ -4444,6 +5590,35 @@ el.innerHTML=`<div class="card-type-bar"></div>${rarityTag}<div class="card-cost
         });
       }
       potionBuySection.appendChild(laozaoCard);
+
+      // ── 阿高的柠檬水 ──
+      const lemonData = Data.potions['lemon_water'];
+      const lemonPrice = 120;
+      const shopLemonBought = run.shopLemonBought || false;
+      const canAffordLemon = gold >= lemonPrice;
+      const hasEmptySlot3 = (run.potions || [null,null,null]).some(p => p === null);
+      const lemonCard = document.createElement('div');
+      lemonCard.style.cssText = `display:flex;flex-direction:column;align-items:center;gap:6px;background:rgba(255,255,255,0.06);border:1px solid ${shopLemonBought ? 'rgba(255,255,255,0.1)' : 'rgba(198,232,41,0.5)'};border-radius:12px;padding:12px 18px;cursor:${shopLemonBought || !hasEmptySlot3 || !canAffordLemon ? 'default' : 'pointer'};transition:all 0.2s;opacity:${shopLemonBought || !hasEmptySlot3 ? '0.45' : '1'};`;
+      lemonCard.innerHTML = `
+        <img src="${lemonData.img}" style="width:56px;height:56px;object-fit:contain;image-rendering:pixelated" onerror="this.style.display='none';this.nextSibling.style.display='block'">
+        <span style="font-size:2rem;display:none">${lemonData.emoji}</span>
+        <div style="font-size:1rem;font-weight:700;color:#fff">${lemonData.name}</div>
+        <div style="font-size:0.85rem;color:rgba(255,255,255,0.6);text-align:center;max-width:160px">${lemonData.desc}</div>
+        <div class="shop-price-tag ${shopLemonBought ? '' : (!canAffordLemon ? 'cant-afford' : '')}">${shopLemonBought ? '✅ 已购买' : (!hasEmptySlot3 ? '药水栏已满' : `💰 ${lemonPrice}`)}</div>
+      `;
+      if (!shopLemonBought && hasEmptySlot3 && canAffordLemon) {
+        lemonCard.addEventListener('mouseenter', () => lemonCard.style.background = 'rgba(198,232,41,0.1)');
+        lemonCard.addEventListener('mouseleave', () => lemonCard.style.background = 'rgba(255,255,255,0.06)');
+        lemonCard.addEventListener('click', () => {
+          run.gold -= lemonPrice;
+          const slot3 = run.potions.findIndex(p => p === null);
+          run.potions[slot3] = 'lemon_water';
+          run.shopLemonBought = true;
+          State.saveRun(0);
+          UI._renderShop();
+        });
+      }
+      potionBuySection.appendChild(lemonCard);
     }
 
     // 渲染药水出售区域
@@ -4511,7 +5686,8 @@ el.innerHTML=`<div class="card-type-bar"></div>${rarityTag}<div class="card-cost
 
   _shopRemoveCard(){
     const run = State.run;
-    if (run.removeUsed || run.gold < Data.removeCardPrice) return;
+    const removePrice = Data.getRemovePrice(run);
+    if (run.removeUsed || run.gold < removePrice) return;
     // 显示牌组选择覆层
     const overlay = document.createElement('div');
     overlay.className = 'overlay';
@@ -4524,18 +5700,23 @@ el.innerHTML=`<div class="card-type-bar"></div>${rarityTag}<div class="card-cost
       <div style="display:flex;flex-wrap:wrap;gap:10px;justify-content:center">${cardsHtml}</div>
       <button class="btn" style="margin-top:14px;width:100%" id="btn-cancel-remove">取消</button>
     </div>`;
+    let _removeHandled = false;
     overlay.addEventListener('click', e => {
       const wrap = e.target.closest('[data-remove-idx]');
       if (wrap) {
+        if (_removeHandled) return;
+        _removeHandled = true;
         const i = parseInt(wrap.dataset.removeIdx, 10);
         const cardId = removable[i];
         const deckIdx = run.deck.indexOf(cardId);
         if (deckIdx !== -1) run.deck.splice(deckIdx, 1);
-        run.gold -= Data.removeCardPrice;
+        run.gold -= removePrice;
+        run.removedTotal = (run.removedTotal || 0) + 1;
         run.removeUsed = true;
         State.saveRun(0);
         overlay.remove();
         UI._renderShop();
+        return;
       }
       if (e.target === overlay || e.target.id === 'btn-cancel-remove') overlay.remove();
     });
@@ -4778,48 +5959,78 @@ el.innerHTML=`<div class="card-type-bar"></div>${rarityTag}<div class="card-cost
       }
     };
   },
-  // 文豪剧本：删牌界面（至多删 3 张）
+  // 文豪剧本：免费删 2 张，之后可花 50 金再删 1 张
   _wenhaoScriptRemove(onDone){
     const run=State.run;
     let removedCount=0;
-    const MAX_REMOVE=3;
-    function openRemovePanel(){
+    const FREE_REMOVE=2;
+    const EXTRA_COST=50;
+
+    function openRemovePanel(isPaid){
       const removable=run.deck.filter(id=>Data.cards[id]&&Data.cards[id].cost!==99);
       const overlay=document.createElement('div');
       overlay.className='overlay';
-      const remaining=MAX_REMOVE-removedCount;
+      const freeLeft=FREE_REMOVE-removedCount;
+      const subtitle=isPaid
+        ?`<p style="margin:0 0 12px;color:rgba(255,255,255,0.65);font-size:0.9rem">已花费 <b style="color:#f5c518">50 💰</b>，再删 1 张牌</p>`
+        :`<p style="margin:0 0 12px;color:rgba(255,255,255,0.65);font-size:0.9rem">人生的剧本由你自己决定！还可免费删除 <b style="color:#a8d8ff">${freeLeft}</b> 张卡牌</p>`;
       const cardsHtml=removable.length===0
         ?'<p style="color:var(--ink-light)">没有可删除的卡牌</p>'
         :removable.map((id,i)=>`<div class="shop-card-wrap" data-remove-idx="${i}" style="cursor:pointer">${UI.renderCard(id).outerHTML}<div class="shop-price-tag" style="font-size:0.8rem">点击删除</div></div>`).join('');
       overlay.innerHTML=`<div class="panel bounce-in" style="max-width:90vw;max-height:82vh;overflow-y:auto">
         <h3 style="margin:0 0 4px;color:#a8d8ff">📜 文豪的剧本</h3>
-        <p style="margin:0 0 12px;color:rgba(255,255,255,0.65);font-size:0.9rem">人生的剧本由你自己决定！还可删除 <b style="color:#a8d8ff">${remaining}</b> 张卡牌</p>
+        ${subtitle}
         <div style="display:flex;flex-wrap:wrap;gap:10px;justify-content:center">${cardsHtml}</div>
-        <button class="btn" style="margin-top:14px;width:100%" id="btn-script-done">完成（已删 ${removedCount}/${MAX_REMOVE} 张）</button>
+        <button class="btn" style="margin-top:14px;width:100%" id="btn-script-done">完成（已删 ${removedCount} 张）</button>
       </div>`;
       overlay.addEventListener('click',e=>{
         const wrap=e.target.closest('[data-remove-idx]');
-        if(wrap&&removedCount<MAX_REMOVE){
+        if(wrap){
           const i=parseInt(wrap.dataset.removeIdx,10);
           const cardId=removable[i];
           const deckIdx=run.deck.indexOf(cardId);
           if(deckIdx!==-1)run.deck.splice(deckIdx,1);
           removedCount++;
           overlay.remove();
-          if(removedCount<MAX_REMOVE&&run.deck.filter(id=>Data.cards[id]&&Data.cards[id].cost!==99).length>0){
-            openRemovePanel();
+          const hasMore=run.deck.filter(id=>Data.cards[id]&&Data.cards[id].cost!==99).length>0;
+          if(!isPaid&&removedCount<FREE_REMOVE&&hasMore){
+            openRemovePanel(false);
+          } else if(!isPaid&&removedCount>=FREE_REMOVE&&hasMore){
+            openExtraPanel();
           } else {
             onDone();
           }
         }
-        if(e.target.id==='btn-script-done'){
-          overlay.remove();
-          onDone();
-        }
+        if(e.target.id==='btn-script-done'){overlay.remove();onDone();}
       });
       document.body.appendChild(overlay);
     }
-    openRemovePanel();
+
+    function openExtraPanel(){
+      const canAfford=(run.gold||0)>=EXTRA_COST;
+      const overlay=document.createElement('div');
+      overlay.className='overlay';
+      overlay.innerHTML=`<div class="panel bounce-in" style="max-width:380px;text-align:center">
+        <h3 style="margin:0 0 8px;color:#a8d8ff">📜 文豪的剧本</h3>
+        <p style="color:rgba(255,255,255,0.65);font-size:0.9rem;margin:0 0 16px">已完成 2 次免费删除。<br>是否花费 <b style="color:#f5c518">50 💰</b> 再删 1 张？</p>
+        <p style="color:${canAfford?'#f5c518':'#ff6b6b'};font-size:0.85rem;margin:0 0 14px">当前金币：${run.gold||0}${canAfford?'':' （不足）'}</p>
+        <div style="display:flex;gap:10px;justify-content:center">
+          <button class="btn" id="btn-extra-yes" ${canAfford?'':'disabled'} style="padding:8px 24px">花 50 💰 再删一张</button>
+          <button class="btn" id="btn-extra-no" style="padding:8px 24px">不了，完成</button>
+        </div>
+      </div>`;
+      overlay.addEventListener('click',e=>{
+        if(e.target.id==='btn-extra-yes'&&canAfford){
+          run.gold-=EXTRA_COST;
+          overlay.remove();
+          openRemovePanel(true);
+        }
+        if(e.target.id==='btn-extra-no'){overlay.remove();onDone();}
+      });
+      document.body.appendChild(overlay);
+    }
+
+    openRemovePanel(false);
   },
   gaoshanSelect(){
     const run=State.run;
@@ -5095,12 +6306,21 @@ window.addEventListener('DOMContentLoaded', () => {
     'game-over':   () => UI.gameOver(),
     'victory':     () => UI.victory(),
     'act2-transition': () => UI.act2Transition(),
-    'act3-transition': () => UI.act3Transition()
+    'act3-transition': () => UI.act3Transition(),
+    'card-reward-tutorial-end': () => Tutorial._complete(),
   };
   State.on('screenChange', ({ screen }) => {
     const fn = screens[screen];
     if (fn) fn();
     else console.warn('Unknown screen:', screen);
+    Tutorial.handleScreen(screen);
+    // BGM 切换：仅在模式需要变化时才重启（避免同类屏幕间的打断）
+    if (screen === 'combat') {
+      if (Audio._bgmMode !== 'map') Audio.startBgmMap();
+    } else {
+      if (Audio._bgmMode !== 'combat') Audio.startBgmCombat();
+    }
   });
+  Audio.startBgmCombat();
   UI.menu();
 });

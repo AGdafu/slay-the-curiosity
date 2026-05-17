@@ -118,6 +118,7 @@ body {
   flex-shrink: 0;
   filter: url(#doodle);
   color: #e8e8f0;
+  overflow: hidden;
 }
 .card:hover {
   transform: translateY(-22px) rotate(-2deg);
@@ -192,8 +193,10 @@ body {
   padding: 4px 6px;
   text-align: center;
   line-height: 1.25;
-  min-height: 42px;
   color: rgba(255,255,255,0.9);
+  /* 最多2行高度，超出裁切 */
+  max-height: 2.65rem;
+  overflow: hidden;
 }
 
 .hp-bar-wrap {
