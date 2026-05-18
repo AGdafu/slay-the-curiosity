@@ -5721,6 +5721,21 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
     const screen = document.createElement('div');
     screen.className = 'shop-screen slide-up';
 
+    // 预先计算憨人台词，以便后续判断是否触发音效
+    const _hanrenLine = (()=>{
+      const g = run.gold || 0;
+      if(g >= 500) return '500金！？你是这关的老板吗！？能不能顺手资助我装修一下？💸';
+      if(g < 50) return '这身家？兄弟你确定你走对地方了？这里最便宜的也比你钱包厚。';
+      if(run.removedBlockCard) return '有个勇士说进攻是最好的防守，把所有防御牌全删了……后来没再来过。';
+      const lines = [
+        '欢迎光临好奇小卖部！<br>本店货真价实，童叟无欺～',
+        '今天想买点什么？😊',
+        '嘟嘟嘟嘟嘟嘟～🎵',
+        '上次那个冒险者买了三瓶药水……没撑过下一关。请好好规划！',
+      ];
+      return lines[Math.floor(Math.random() * lines.length)];
+    })();
+
     // 顶栏
     screen.innerHTML = `
       <div class="shop-topbar">
@@ -5736,19 +5751,7 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
           <div style="text-align:center;font-size:0.8rem;color:rgba(255,255,255,0.6);margin-top:2px">憨人</div>
         </div>
         <div style="background:rgba(255,255,255,0.07);border:1.5px solid rgba(255,255,255,0.15);border-radius:14px 14px 14px 4px;padding:10px 16px;font-size:0.95rem;color:rgba(255,255,255,0.9);max-width:260px;line-height:1.5;margin-bottom:28px">
-          ${(()=>{
-  const gold = run.gold || 0;
-  if(gold >= 500) return '500金！？你是这关的老板吗！？能不能顺手资助我装修一下？💸';
-  if(gold < 50) return '这身家？兄弟你确定你走对地方了？这里最便宜的也比你钱包厚。';
-  if(run.removedBlockCard) return '有个勇士说进攻是最好的防守，把所有防御牌全删了……后来没再来过。';
-  const lines = [
-    '欢迎光临好奇小卖部！<br>本店货真价实，童叟无欺～',
-    '今天想买点什么？😊',
-    '嘟嘟嘟嘟嘟嘟～🎵',
-    '上次那个冒险者买了三瓶药水……没撑过下一关。请好好规划！',
-  ];
-  return lines[Math.floor(Math.random() * lines.length)];
-})()}
+          ${_hanrenLine}
         </div>
       </div>
       <div class="shop-section-title">购买卡牌</div>
@@ -5762,6 +5765,17 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
       <button class="btn" style="margin-top:8px;margin-bottom:20px;min-width:160px" id="btn-shop-leave">👣 离开好奇小卖部</button>
     `;
     app.appendChild(screen);
+
+    // 嘟嘟嘟台词触发音效（进入商店 1 秒后播放）
+    if(_hanrenLine === '嘟嘟嘟嘟嘟嘟～🎵'){
+      setTimeout(()=>{
+        try{
+          const _dudu = new Audio('/manus-storage/hanren_dudu_bd3a1f22.m4a');
+          _dudu.volume = 0.85;
+          _dudu.play().catch(()=>{});
+        }catch(e){}
+      }, 1000);
+    }
 
     // 渲染卡牌
     const grid = document.getElementById('shop-cards-grid');
