@@ -4416,6 +4416,7 @@ el.innerHTML=`<div class="card-type-bar"></div>${rarityTag}<div class="card-cost
         map: null, currentNodeId: null,
       };
       State.current.run.shopInventory = Data.getShopInventory(State.current.run.deck);
+      State.current.run._forceHanrenLine = '嘟嘟嘟嘟嘟嘟～🎵';
       UI._renderShop();
     };
   },
@@ -5736,6 +5737,8 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
 
     // 预先计算憨人台词，以便后续判断是否触发音效
     const _hanrenLine = (()=>{
+      // 测试强制台词（用完即清）
+      if(run._forceHanrenLine){ const l=run._forceHanrenLine; run._forceHanrenLine=null; return l; }
       // 刚刚删了防御牌：一次性嘲讽，读完即清
       if(run._shopJustRemovedBlock){
         run._shopJustRemovedBlock = false;
