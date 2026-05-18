@@ -475,7 +475,7 @@ const Data = {
       id: 'amulet',
       name: '大眼的水晶球',
       icon: '🔮',
-      desc: '每局游戏第一次被致死时，以 1 HP 存活（仅触发一次）。',
+      desc: '每局游戏第一次被致死时，以 50% 最大生命值存活（仅触发一次）。',
       apply(run){ run.relics.push('amulet'); }
     }
   ],
@@ -638,9 +638,9 @@ const Data = {
       id: 'susu_pocketwatch',
       name: '苏苏的怀表',
       icon: '⌚',
-      tier: 'epic',
+      tier: 'rare',
       source: 'battle',
-      desc: '当你被致死时，有 50% 概率时间短暂回溯：以 50% 最大生命值复活。每场冒险仅触发一次。',
+      desc: '当你被致死时，有 5% 概率时间倒流：满血复活，并瞬间击溃当前房间所有敌人（Boss 房：仅复活）。每场冒险仅触发一次。',
       apply(run){ run.relics.push('susu_pocketwatch'); }
     },
     {
@@ -2886,24 +2886,29 @@ const Combat = {
     } // end spike_shoes else
     if(cs.player.hp<=0){
       const run2=State.run;
-      // 苏苏的怀表：50% 概率以 50% 最大HP复活（每场冒险仅一次）
-      if(run2.relics?.includes('susu_pocketwatch') && !run2.pocketwatchUsed && Math.random() < 0.5){
+      // 苏苏的怀表：5% 概率满血复活并秒杀非Boss房全场敌人（每场冒险仅一次）
+      if(run2.relics?.includes('susu_pocketwatch') && !run2.pocketwatchUsed && Math.random() < 0.05){
         run2.pocketwatchUsed = true;
-        const reviveHp = Math.max(1, Math.floor(run2.character.maxHp * 0.5));
-        cs.player.hp = reviveHp;
-        run2.character.hp = reviveHp;
+        cs.player.hp = run2.character.maxHp;
+        run2.character.hp = run2.character.maxHp;
         cs.player.block = 0;
         const _curNode = run2.map?.nodes?.find(n => n.id === run2.currentNodeId);
         const _isBoss = _curNode && _curNode.type === 'boss';
-        UI._triggerPocketWatch(_isBoss);
+        if(!_isBoss){
+          cs.enemies.forEach(e => { if(e.hp > 0){ e.hp = 0; e._dead = true; } });
+          UI._triggerPocketWatch(_isBoss, ()=>{ try{ Combat._onVictory(); }catch(e){} });
+        } else {
+          UI._triggerPocketWatch(_isBoss);
+        }
         return;
       }
-      // 护身符：第一次被致死时以1HP存活
+      // 护身符：第一次被致死时以 50% 最大HP存活
       if(run2.relics?.includes('amulet')&&!run2.amuletUsed){
-        cs.player.hp=1;run2.character.hp=1;run2.amuletUsed=true;
+        const amuletHp = Math.max(1, Math.floor(run2.character.maxHp * 0.5));
+        cs.player.hp=amuletHp; run2.character.hp=amuletHp; run2.amuletUsed=true;
         const tip=document.createElement('div');
         tip.style.cssText='position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(10,20,60,0.95);color:#a8d8ff;font-size:1.4rem;font-weight:900;padding:14px 32px;border-radius:16px;border:2px solid #60a8ff;z-index:9999;pointer-events:none;text-shadow:0 0 10px rgba(96,168,255,0.9);box-shadow:0 0 28px rgba(96,168,255,0.5),0 0 60px rgba(96,168,255,0.2)';
-        tip.textContent='🔮 水晶球触发！命运庇护，以 1 HP 存活！';
+        tip.textContent='🔮 水晶球触发！命运庇护，以半血存活！';
         document.body.appendChild(tip);
         setTimeout(()=>tip.remove(),2000);
       } else {
@@ -3982,10 +3987,10 @@ el.innerHTML=`<div class="card-type-bar"></div>${rarityTag}<div class="card-cost
       spike_shoes:    { name: '大眼的钉鞋',   icon: '👟', desc: '每回合结束后，有 5% 概率跳过怪物回合。' },
       magnifier:      { name: '大眼的放大镜', icon: '🔍', desc: '每场战斗开始时，随机1张手牌本回合费用变0。' },
       iron_stomach:   { name: '大眼的铁胃',   icon: null, img: '/manus-storage/img_00_572k_79c2d105.png', desc: '永久增加 11 点生命上限，并立即回复 11 HP。' },
-      amulet:         { name: '大眼的水晶球', icon: '🔮', desc: '第一次被致死时，以 1 HP 存活（仅触发一次）。命运早已在水晶球中显现。' },
+      amulet:         { name: '大眼的水晶球', icon: '🔮', desc: '第一次被致死时，以 50% 最大生命值存活（仅触发一次）。命运早已在水晶球中显现。' },
       football:       { name: '橄榄球', icon: '🏈', img: '/manus-storage/football_icon_0390dd99.png', desc: '每场战斗第一回合增加 1 点能量。' },
       susu_eyemask:   { name: 'Susu的眼罩', icon: null, img: '/manus-storage/img_01_3443k_f8fb25b0.png', desc: '每场战斗中，第一次受到负面状态效果时免疫（弱化/易伤/中毒等），仅触发一次。' },
-      susu_pocketwatch:{ name: '苏苏的怀表', icon: '⌚', desc: '当你被致死时，有 50% 概率时间短暂回溯：以 50% 最大生命值复活。每场冒险仅触发一次。' },
+      susu_pocketwatch:{ name: '苏苏的怀表', icon: '⌚', desc: '当你被致死时，有 5% 概率时间倒流：满血复活，并瞬间击溃当前房间所有敌人（Boss 房：仅复活）。每场冒险仅触发一次。' },
       xiaojiu_guitar: { name: '小九的六弦琴', icon: null, img: '/manus-storage/xiaojiu_guitar_e444f0fa.png', desc: '从第二回合开始，每个回合额外多抽 1 张牌。' },
       wangwei_bracelet: { name: '王微的手绳', icon: '📿', desc: '每回合开始时，获得 3 点格挡（不会消失，可累计）。' },
       wangwei_glasses:  { name: '王微的眼镜', icon: '👓', desc: '受到伤害时，有 20% 概率减少最多 15 点伤害。' },
