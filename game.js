@@ -4859,16 +4859,12 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
       }
     };
     setTimeout(()=>{
-      fetch('/manus-storage/susu_pocketwatch.m4a')
-        .then(r=>r.arrayBuffer())
-        .then(buf=>{
-          const blob=new Blob([buf],{type:'audio/mp4'});
-          const url=URL.createObjectURL(blob);
-          _audioEl=new window.Audio(url);
-          _audioEl.volume=0.9;
-          _audioEl.play().catch(()=>{});
-          _audioEl.onended=()=>{ setTimeout(dismiss,500); };
-        }).catch(()=>{ setTimeout(dismiss,4000); });
+      try{
+        _audioEl = new window.Audio('/manus-storage/susu_pocketwatch.m4a');
+        _audioEl.volume = 0.9;
+        _audioEl.play().catch(()=>{});
+        _audioEl.onended = ()=>{ setTimeout(dismiss, 500); };
+      }catch(e){ setTimeout(dismiss, 4000); }
     }, 500);
 
     const overlay = document.createElement('div');
@@ -5791,17 +5787,10 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
     app.appendChild(screen);
 
     // 嘟嘟嘟台词触发音效（进入商店 1 秒后播放）
-    // 用 fetch+Blob 绕过服务器 MIME type 问题
     if(_hanrenLine === '嘟嘟嘟嘟嘟嘟～🎵'){
-      fetch('/manus-storage/hanren_dudu_bd3a1f22.m4a')
-        .then(r => r.arrayBuffer())
-        .then(buf => {
-          const blob = new Blob([buf], {type:'audio/mp4'});
-          const url = URL.createObjectURL(blob);
-          const _dudu = new Audio(url);
-          _dudu.volume = 0.85;
-          setTimeout(()=>{ _dudu.play().catch(()=>{}); }, 1000);
-        }).catch(()=>{});
+      const _dudu = new Audio('/manus-storage/hanren_dudu_bd3a1f22.m4a');
+      _dudu.volume = 0.85;
+      setTimeout(()=>{ _dudu.play().catch(()=>{}); }, 1000);
     }
 
     // 渲染卡牌
