@@ -5738,11 +5738,14 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
         <div style="background:rgba(255,255,255,0.07);border:1.5px solid rgba(255,255,255,0.15);border-radius:14px 14px 14px 4px;padding:10px 16px;font-size:0.95rem;color:rgba(255,255,255,0.9);max-width:260px;line-height:1.5;margin-bottom:28px">
           ${(()=>{
   const gold = run.gold || 0;
-  if(gold >= 1000) return '我去，这么有钱，富婆哦！💰';
+  if(gold >= 500) return '500金！？你是这关的老板吗！？能不能顺手资助我装修一下？💸';
+  if(gold < 50) return '这身家？兄弟你确定你走对地方了？这里最便宜的也比你钱包厚。';
+  if(run.removedBlockCard) return '有个勇士说进攻是最好的防守，把所有防御牌全删了……后来没再来过。';
   const lines = [
     '欢迎光临好奇小卖部！<br>本店货真价实，童叟无欺～',
     '今天想买点什么？😊',
-    '嘟嘟嘟嘟嘟嘟～🎵'
+    '嘟嘟嘟嘟嘟嘟～🎵',
+    '上次那个冒险者买了三瓶药水……没撑过下一关。请好好规划！',
   ];
   return lines[Math.floor(Math.random() * lines.length)];
 })()}
@@ -5998,6 +6001,7 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
         const cardId = removable[i];
         const deckIdx = run.deck.indexOf(cardId);
         if (deckIdx !== -1) run.deck.splice(deckIdx, 1);
+        if (Data.cards[cardId]?.description?.includes('格挡')) run.removedBlockCard = true;
         run.gold -= removePrice;
         run.removedTotal = (run.removedTotal || 0) + 1;
         run.removeUsed = true;
