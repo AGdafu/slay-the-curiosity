@@ -637,10 +637,10 @@ const Data = {
     {
       id: 'susu_pocketwatch',
       name: '苏苏的怀表',
-      icon: '🕰',
+      icon: '⌚',
       tier: 'epic',
       source: 'battle',
-      desc: '当你被致死时，有 1% 概率时间倒流：满血复活，并瞬间击溃当前房间所有敌人（Boss 房：仅复活）。每场冒险仅触发一次。',
+      desc: '当你被致死时，有 50% 概率时间短暂回溯：以 50% 最大生命值复活。每场冒险仅触发一次。',
       apply(run){ run.relics.push('susu_pocketwatch'); }
     },
     {
@@ -2886,21 +2886,16 @@ const Combat = {
     } // end spike_shoes else
     if(cs.player.hp<=0){
       const run2=State.run;
-      // 苏苏的怀表：1% 概率时间倒流满血复活；非boss房间还秒杀全场（每场冒险仅一次）
-      if(run2.relics?.includes('susu_pocketwatch') && !run2.pocketwatchUsed && Math.random() < 0.01){
+      // 苏苏的怀表：50% 概率以 50% 最大HP复活（每场冒险仅一次）
+      if(run2.relics?.includes('susu_pocketwatch') && !run2.pocketwatchUsed && Math.random() < 0.5){
         run2.pocketwatchUsed = true;
-        cs.player.hp = run2.character.maxHp;
-        run2.character.hp = run2.character.maxHp;
+        const reviveHp = Math.max(1, Math.floor(run2.character.maxHp * 0.5));
+        cs.player.hp = reviveHp;
+        run2.character.hp = reviveHp;
         cs.player.block = 0;
         const _curNode = run2.map?.nodes?.find(n => n.id === run2.currentNodeId);
         const _isBoss = _curNode && _curNode.type === 'boss';
-        if(!_isBoss){
-          // 非boss房间：秒杀全场敌人，动画结束后触发胜利结算
-          cs.enemies.forEach(e => { if(e.hp > 0){ e.hp = 0; e._dead = true; } });
-          UI._triggerPocketWatch(_isBoss, ()=>{ try{ Combat._onVictory(); }catch(e){} });
-        } else {
-          UI._triggerPocketWatch(_isBoss);
-        }
+        UI._triggerPocketWatch(_isBoss);
         return;
       }
       // 护身符：第一次被致死时以1HP存活
@@ -3990,7 +3985,7 @@ el.innerHTML=`<div class="card-type-bar"></div>${rarityTag}<div class="card-cost
       amulet:         { name: '大眼的水晶球', icon: '🔮', desc: '第一次被致死时，以 1 HP 存活（仅触发一次）。命运早已在水晶球中显现。' },
       football:       { name: '橄榄球', icon: '🏈', img: '/manus-storage/football_icon_0390dd99.png', desc: '每场战斗第一回合增加 1 点能量。' },
       susu_eyemask:   { name: 'Susu的眼罩', icon: null, img: '/manus-storage/img_01_3443k_f8fb25b0.png', desc: '每场战斗中，第一次受到负面状态效果时免疫（弱化/易伤/中毒等），仅触发一次。' },
-      susu_pocketwatch:{ name: '苏苏的怀表', icon: '🕰', desc: '当你被致死时，有 1% 概率时间倒流：满血复活，并瞬间击溃当前房间所有敌人（Boss 房：仅复活）。每场冒险仅触发一次。' },
+      susu_pocketwatch:{ name: '苏苏的怀表', icon: '⌚', desc: '当你被致死时，有 50% 概率时间短暂回溯：以 50% 最大生命值复活。每场冒险仅触发一次。' },
       xiaojiu_guitar: { name: '小九的六弦琴', icon: null, img: '/manus-storage/xiaojiu_guitar_e444f0fa.png', desc: '从第二回合开始，每个回合额外多抽 1 张牌。' },
       wangwei_bracelet: { name: '王微的手绳', icon: '📿', desc: '每回合开始时，获得 3 点格挡（不会消失，可累计）。' },
       wangwei_glasses:  { name: '王微的眼镜', icon: '👓', desc: '受到伤害时，有 20% 概率减少最多 15 点伤害。' },
