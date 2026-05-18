@@ -4398,15 +4398,25 @@ el.innerHTML=`<div class="card-type-bar"></div>${rarityTag}<div class="card-cost
   },
   menu(){
     const saves=Save.list();const hasSave=saves.some(s=>s.run!==null);
-    UI.app().innerHTML=`<div class="menu-screen slide-up"><div class="menu-title">Slay the<br>Curiosity</div><div class="menu-subtitle">一场好奇心的冒险</div><div style="display:flex;flex-direction:column;gap:12px;align-items:center;margin-top:16px"><button class="btn primary" id="btn-new">✨ 新游戏</button>${hasSave?'<button class="btn" id="btn-continue">📂 继续游戏</button>':''}<button class="btn" id="btn-saves">💾 存档管理</button><button class="btn" id="btn-tutorial" style="background:rgba(80,160,255,0.12);border-color:rgba(80,160,255,0.4);color:#90c8ff">📖 新手教程</button><button class="btn" id="btn-test-shop" style="background:rgba(80,220,160,0.12);border-color:rgba(80,220,160,0.4);color:#80ffcc;font-size:0.85rem;padding:6px 18px">🎵 测试嘟嘟嘟音效</button></div><div style="font-size:0.85rem;color:var(--ink-light);margin-top:32px">Slay the Curiosity v0.1 demo</div></div>`;
+    UI.app().innerHTML=`<div class="menu-screen slide-up"><div class="menu-title">Slay the<br>Curiosity</div><div class="menu-subtitle">一场好奇心的冒险</div><div style="display:flex;flex-direction:column;gap:12px;align-items:center;margin-top:16px"><button class="btn primary" id="btn-new">✨ 新游戏</button>${hasSave?'<button class="btn" id="btn-continue">📂 继续游戏</button>':''}<button class="btn" id="btn-saves">💾 存档管理</button><button class="btn" id="btn-tutorial" style="background:rgba(80,160,255,0.12);border-color:rgba(80,160,255,0.4);color:#90c8ff">📖 新手教程</button><button class="btn" id="btn-test-shop" style="background:rgba(80,220,160,0.12);border-color:rgba(80,220,160,0.4);color:#80ffcc;font-size:0.85rem;padding:6px 18px">🏪 测试商店</button></div><div style="font-size:0.85rem;color:var(--ink-light);margin-top:32px">Slay the Curiosity v0.1 demo</div></div>`;
     document.getElementById('btn-new').onclick=()=>State.go('char-select');
     if(hasSave)document.getElementById('btn-continue').onclick=()=>UI.showSaveSlots('load');
     document.getElementById('btn-saves').onclick=()=>UI.showSaveSlots('manage');
     document.getElementById('btn-tutorial').onclick=()=>UI.tutorial();
     document.getElementById('btn-test-shop').onclick=()=>{
-      const a = new Audio('/manus-storage/hanren_dudu_bd3a1f22.m4a');
-      a.volume = 0.85;
-      a.play().catch(()=>{});
+      const char = Data.characters['laozao'] || Object.values(Data.characters)[0];
+      // 先赋值，再调 getShopInventory（避免 State.run getter 在 getShopInventory 内部报错）
+      State.current.run = {
+        character: { ...char, hp: char.maxHp },
+        deck: [...(char.startDeck || [])],
+        relics: [], potions: [null,null,null,null,null],
+        gold: 120, floor: 1, act: 1,
+        shopInventory: [], shopSold: [],
+        removedTotal: 0, removeUsed: false,
+        map: null, currentNodeId: null,
+      };
+      State.current.run.shopInventory = Data.getShopInventory(State.current.run.deck);
+      UI._renderShop();
     };
   },
 
