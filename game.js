@@ -5723,10 +5723,14 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
 
     // 预先计算憨人台词，以便后续判断是否触发音效
     const _hanrenLine = (()=>{
+      // 刚刚删了防御牌：一次性嘲讽，读完即清
+      if(run._shopJustRemovedBlock){
+        run._shopJustRemovedBlock = false;
+        return '有个勇士说进攻是最好的防守，把所有防御牌全删了……后来没再来过。';
+      }
       const g = run.gold || 0;
       if(g >= 500) return '500金！？你是这关的老板吗！？能不能顺手资助我装修一下？💸';
       if(g < 50) return '这身家？兄弟你确定你走对地方了？这里最便宜的也比你钱包厚。';
-      if(run.removedBlockCard) return '有个勇士说进攻是最好的防守，把所有防御牌全删了……后来没再来过。';
       const lines = [
         '欢迎光临好奇小卖部！<br>本店货真价实，童叟无欺～',
         '今天想买点什么？😊',
@@ -6015,7 +6019,7 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
         const cardId = removable[i];
         const deckIdx = run.deck.indexOf(cardId);
         if (deckIdx !== -1) run.deck.splice(deckIdx, 1);
-        if (Data.cards[cardId]?.description?.includes('格挡')) run.removedBlockCard = true;
+        if (Data.cards[cardId]?.description?.includes('格挡')) run._shopJustRemovedBlock = true;
         run.gold -= removePrice;
         run.removedTotal = (run.removedTotal || 0) + 1;
         run.removeUsed = true;
