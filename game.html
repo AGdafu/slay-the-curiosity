@@ -32,6 +32,14 @@
 <body>
   <div id="app"></div>
   <div id="fx-layer"></div>
-  <script src="/game.js?v=36"></script>
+  <div id="err-banner" style="display:none;position:fixed;top:0;left:0;right:0;background:#400;color:#fff;padding:10px;font-family:monospace;font-size:13px;z-index:99999;white-space:pre-wrap;max-height:50vh;overflow:auto"></div>
+  <script>
+    window.addEventListener('error', function(e){
+      var b=document.getElementById('err-banner');
+      b.style.display='block';
+      b.textContent = '❌ JS ERROR: '+e.message+'\nat '+e.filename+':'+e.lineno+':'+e.colno+(e.error&&e.error.stack?'\n\n'+e.error.stack:'');
+    });
+  </script>
+  <script src="/game.js?v=60"></script>
 </body>
 </html>

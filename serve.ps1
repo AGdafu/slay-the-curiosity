@@ -1,5 +1,5 @@
 $dir = Split-Path -Parent $MyInvocation.MyCommand.Path
-$port = 8765
+$port = 8766
 $listener = [System.Net.HttpListener]::new()
 $listener.Prefixes.Add("http://localhost:$port/")
 $listener.Start()

@@ -41,8 +41,6 @@ const Data = {
         mechanics: [
           { name: '⚙️ 档位（Gear 1–3）', desc: '战斗初始档位2（中立）。1挡防御×1.3、伤害×0.8；2挡标准倍率；3挡伤害×1.3、防御×0.7。换挡是最核心的决策点。' },
           { name: '⚡ 动力值（Momentum）', desc: '升档时积累，上限3点；升级「竞速本能」牌后上限提升至5点。回合开始时动力值转化为额外能量，是赛车手能量优势的来源。' },
-          { name: '🔥 全油门（Full Throttle）', desc: '激活后所有攻击额外+1伤害；升档时收益翻倍（+2）。升级后即使不升档也保持+1，是中后期核心输出增益。' },
-          { name: '🌀 过热（Overload）', desc: '压力测试等牌会在当前档位较高时叠加过热层数。过热达到阈值后可触发强化效果，是高档位专属爆发手段。' },
           { name: '🏁 竞速本能（Race Instinct）', desc: '升档时积累动力值，可视作"回合内额外能量储蓄"。配合多张换挡牌可在一回合内打出超过能量上限的牌。' },
         ]
       }
@@ -266,10 +264,10 @@ const Data = {
       effect(cs,ti,lv=0){ const c=cs.charge||0; cs.charge=0; const base=[6,8,8][lv]||6; const burn=[4,4,5][lv]||4; cs.enemies.forEach((_,i)=>{ if(!cs.enemies[i]._dead){ Combat.dealDamage(cs,i,base+c*2); Combat.applyDebuff(cs.enemies[i],'burn',burn); } }); } },
 
     // ── 箭矢元素扩池：冰系 ──────────────────────────────────────────────────────────
-    ar_chill_arrow: { id:'ar_chill_arrow', rarity:'uncommon', name:'严寒箭', cost:2, type:'attack', emoji:'❄️', description:'造成 <b>5</b> 点伤害。消耗全部蓄力，每消耗 1 点额外造成 <b>2</b> 点伤害。<b>20%</b> 概率冻结敌人（跳过其本回合行动）。', needsTarget:true,
-      effect(cs,ti,lv=0){ const c=cs.charge||0; cs.charge=0; const base=[5,7,7][lv]||5; const cost=[2,2,1][lv]||2; Combat.dealDamage(cs,ti,base+c*2); if(Math.random()<0.20){ Combat.applyDebuff(cs.enemies[ti],'freeze',1); Combat._showFreezeEffect(); } } },
-    ar_freeze_arrow: { id:'ar_freeze_arrow', rarity:'rare', name:'冰封箭', cost:3, type:'attack', emoji:'❄️', description:'造成 <b>8</b> 点伤害。消耗全部蓄力，每消耗 1 点额外造成 <b>3</b> 点伤害。<b>30%</b> 概率冻结敌人（跳过其本回合行动）。', needsTarget:true,
-      effect(cs,ti,lv=0){ const c=cs.charge||0; cs.charge=0; const base=[8,12,12][lv]||8; const chance=[0.30,0.35,0.40][lv]||0.30; Combat.dealDamage(cs,ti,base+c*3); if(Math.random()<chance){ Combat.applyDebuff(cs.enemies[ti],'freeze',1); Combat._showFreezeEffect(); } } },
+    ar_chill_arrow: { id:'ar_chill_arrow', rarity:'uncommon', name:'严寒箭', cost:2, type:'attack', emoji:'❄️', description:'造成 <b>5</b> 点伤害。消耗全部蓄力，每消耗 1 点额外造成 <b>2</b> 点伤害；并且每消耗 1 点蓄力，<b>+12%</b> 冻结概率（基础 0%，上限 <b>85%</b>）。', needsTarget:true,
+      effect(cs,ti,lv=0){ const c=cs.charge||0; cs.charge=0; const base=[5,7,7][lv]||5; const perChg=[0.12,0.14,0.16][lv]||0.12; const chance=Math.min(0.85, c*perChg); Combat.dealDamage(cs,ti,base+c*2); if(Math.random()<chance){ Combat.applyDebuff(cs.enemies[ti],'freeze',1); Combat._showFreezeEffect(); } } },
+    ar_freeze_arrow: { id:'ar_freeze_arrow', rarity:'rare', name:'冰封箭', cost:3, type:'attack', emoji:'❄️', description:'造成 <b>8</b> 点伤害。消耗全部蓄力，每消耗 1 点额外造成 <b>3</b> 点伤害；并且每消耗 1 点蓄力，<b>+15%</b> 冻结概率（基础 10%，上限 <b>90%</b>）。', needsTarget:true,
+      effect(cs,ti,lv=0){ const c=cs.charge||0; cs.charge=0; const base=[8,12,12][lv]||8; const perChg=[0.15,0.17,0.19][lv]||0.15; const chance=Math.min(0.90, 0.10 + c*perChg); Combat.dealDamage(cs,ti,base+c*3); if(Math.random()<chance){ Combat.applyDebuff(cs.enemies[ti],'freeze',1); Combat._showFreezeEffect(); } } },
   },
   enemies: {
     slime: {
@@ -494,7 +492,7 @@ const Data = {
       id: 'datou_sunglasses',
       name: '大头的墨镜',
       icon: '🕶️',
-      desc: '每次抽牌时，25% 概率额外再抽一张',
+      desc: '每场战斗第一回合，额外抽 2 张牌并获得 1 点能量',
       apply(run){ run.relics.push('datou_sunglasses'); }
     },
     {
@@ -635,6 +633,15 @@ const Data = {
       img: '/manus-storage/img_01_3443k_f8fb25b0.png',
       desc: '每场战斗中，抵御第一次受到的负面状态（弱化/易伤/中毒等）。',
       apply(run){ run.relics.push('susu_eyemask'); }
+    },
+    {
+      id: 'susu_pocketwatch',
+      name: '苏苏的怀表',
+      icon: '🕰',
+      tier: 'epic',
+      source: 'battle',
+      desc: '当你被致死时，有 1% 概率时间倒流：满血复活，并瞬间击溃当前房间所有敌人（Boss 房：仅复活）。每场冒险仅触发一次。',
+      apply(run){ run.relics.push('susu_pocketwatch'); }
     },
     {
       id: 'xiaojiu_guitar',
@@ -906,6 +913,54 @@ const Data = {
         }
       ]
     },
+    {
+      id: 'datou_drive',
+      title: '带你兜风的大头',
+      img: '/manus-storage/datou_drive_pixel.png',
+      noBeforeBoss: true,
+      desc: '一辆 SUV 缓缓停下，大头反戴着棒球帽，从车窗探出脑袋朝你咧嘴一笑："上车？我带你抄个近路！" 你看了一眼他握方向盘的姿势……心里有点没底。',
+      options: [
+        {
+          label: '上车（消耗 50 金币）',
+          tooltip: '💰 消耗 50 金币\n🎲 30% 概率：飞驰穿越，跳过下一个房间\n💥 70% 概率：撞车，最大HP 永久 -5',
+          resolve(run, UI) {
+            if ((run.gold || 0) < 50) {
+              return { type: 'bad', msg: '你摸了摸口袋……金币不够 50。大头摇摇头："那算了。"' };
+            }
+            run.gold -= 50;
+            const r = Math.random();
+            if (r < 0.30) {
+              // 跳过下一个房间：把当前可达节点中任意一个（非boss）标记为 done 并把玩家位置移过去
+              const reachableIds = run.map.paths.filter(p => p.from === run.currentNodeId).map(p => p.to);
+              const skipCandidates = reachableIds
+                .map(id => run.map.nodes.find(n => n.id === id))
+                .filter(n => n && n.type !== 'boss');
+              if (skipCandidates.length > 0) {
+                const skipNode = skipCandidates[Math.floor(Math.random() * skipCandidates.length)];
+                skipNode.done = true;
+                run.currentNodeId = skipNode.id;
+                return { type: 'good', msg: '🚗💨 大头一脚油门，路边的世界都模糊了！你跳过了下一个房间。' };
+              } else {
+                // 异常兜底：理论上 noBeforeBoss 已经过滤了，这里不会触发
+                return { type: 'good', msg: '🚗 大头载你绕了一圈又把你送回了原地。下次再说吧。' };
+              }
+            } else {
+              run.character.maxHp = Math.max(1, run.character.maxHp - 5);
+              run.character.hp = Math.min(run.character.hp, run.character.maxHp);
+              return { type: 'bad', msg: '💥 砰！大头一个急转——你的脑袋撞在了车窗上。最大HP 永久 -5。' };
+            }
+          }
+        },
+        {
+          label: '婉拒，自己走',
+          tooltip: '✅ 稳定获得 HP +5\n❌ 错过抄近路的机会',
+          resolve(run, UI) {
+            run.character.hp = Math.min(run.character.maxHp, run.character.hp + 5);
+            return { type: 'good', msg: '你委婉地谢绝了大头的好意，悠悠地步行了一段。沿途风景不错，HP +5。' };
+          }
+        }
+      ]
+    }
  ],
 
   shopPool: [
@@ -1430,6 +1485,50 @@ const Audio = {
     osc.frequency.setValueAtTime(180, t); osc.frequency.exponentialRampToValueAtTime(80, t + 0.3);
     osc.connect(og); og.connect(this._sfxGain);
     osc.start(t); osc.stop(t + 0.3);
+  },
+
+  // 蓄力中段音效（达到 3 点）：双音上扬"嗒嗒"
+  playChargeMid() {
+    const ctx = this._getCtx(), t = ctx.currentTime;
+    // 主音：上扬三角波
+    const o1 = this._osc(ctx, 'triangle', 440);
+    const g1 = this._gain(ctx, 0.35);
+    o1.frequency.setValueAtTime(440, t);
+    o1.frequency.exponentialRampToValueAtTime(880, t + 0.12);
+    g1.gain.setValueAtTime(0, t);
+    g1.gain.linearRampToValueAtTime(0.35, t + 0.02);
+    g1.gain.exponentialRampToValueAtTime(0.001, t + 0.28);
+    o1.connect(g1); g1.connect(this._sfxGain);
+    o1.start(t); o1.stop(t + 0.3);
+    // 五度泛音叠加，更清亮
+    const o2 = this._osc(ctx, 'sine', 660);
+    const g2 = this._gain(ctx, 0.18);
+    o2.frequency.setValueAtTime(660, t + 0.04);
+    o2.frequency.exponentialRampToValueAtTime(1320, t + 0.16);
+    g2.gain.setValueAtTime(0, t + 0.04);
+    g2.gain.linearRampToValueAtTime(0.18, t + 0.06);
+    g2.gain.exponentialRampToValueAtTime(0.001, t + 0.3);
+    o2.connect(g2); g2.connect(this._sfxGain);
+    o2.start(t + 0.04); o2.stop(t + 0.32);
+  },
+  // 蓄力满（达到 5 点 / 满蓄）：明亮"叮"+和声
+  playChargeMax() {
+    const ctx = this._getCtx(), t = ctx.currentTime;
+    [880, 1320, 1760].forEach((freq, i) => {
+      const osc = this._osc(ctx, 'triangle', freq);
+      const og = this._gain(ctx, 0.18);
+      og.gain.setValueAtTime(0, t + i*0.04);
+      og.gain.linearRampToValueAtTime(0.18, t + i*0.04 + 0.02);
+      og.gain.exponentialRampToValueAtTime(0.001, t + 0.55);
+      osc.connect(og); og.connect(this._sfxGain);
+      osc.start(t + i*0.04); osc.stop(t + 0.6);
+    });
+    // 微弱闪烁噪声层
+    const { src: ns, out: nf } = this._noise(ctx, 0.08, 8000);
+    const ng = this._gain(ctx, 0.06);
+    ng.gain.exponentialRampToValueAtTime(0.001, t + 0.08);
+    nf.connect(ng); ng.connect(this._sfxGain);
+    ns.start(t); ns.stop(t + 0.08);
   },
 
   playCardDraw() {
@@ -2530,7 +2629,19 @@ const Combat = {
     if(run.relics && run.relics.includes('gaoshan_sunglasses')){
       cs.energy = cs.energy + 1;
     }
-    run.combat=cs;    Combat.drawCards(cs, run.character.id==='archer' ? 6 : 5);
+    // 大头的墨镜：战斗第一回合 +1 能量 + 额外抽2张
+    const _hasSunglasses = run.relics && run.relics.includes('datou_sunglasses');
+    if(_hasSunglasses){ cs.energy = cs.energy + 1; }
+    run.combat=cs;    Combat.drawCards(cs, (run.character.id==='archer' ? 6 : 5) + (_hasSunglasses ? 2 : 0));
+    if(_hasSunglasses){
+      setTimeout(()=>{
+        const tip=document.createElement('div');
+        tip.style.cssText='position:fixed;top:42%;left:50%;transform:translate(-50%,-50%);background:rgba(20,20,40,0.95);color:#f5c518;font-size:1.05rem;font-weight:900;padding:10px 22px;border-radius:12px;border:2px solid #f5c518;z-index:9999;pointer-events:none;box-shadow:0 0 14px rgba(245,197,24,0.45)';
+        tip.textContent='🕶️ 大头的墨镜！+2 抽牌，+1 能量';
+        document.body.appendChild(tip);
+        setTimeout(()=>tip.remove(),1600);
+      }, 400);
+    }
     // 高山的冲锋衣：战斗开始时重置翻倍标记（新效果：第一次获得格挡时翻倍）
     cs._jacketUsed = false;
     // 刘行的头巾：每场战斗重置触发标记
@@ -2586,7 +2697,6 @@ const Combat = {
   drawCards(cs,n){
     setTimeout(()=>Audio.playCardDraw(),0);
     const hasSpanishBook = State.run?.relics?.includes('datou_spanish_book');
-    const hasSunglasses = State.run?.relics?.includes('datou_sunglasses');
     for(let i=0;i<n;i++){
       if(cs.drawPile.length===0){if(cs.discardPile.length===0)break;cs.drawPile=[...cs.discardPile].sort(()=>Math.random()-0.5);cs.discardPile=[];}
       const drawnCard=cs.drawPile.shift();
@@ -2599,21 +2709,6 @@ const Combat = {
         if(cs.upgradeMap[drawnCard].length === 0) delete cs.upgradeMap[drawnCard];
       }
       if(cs.handTokens){ cs.handTokens.push((cs.hand.length-1)+'_'+Math.random().toString(36).slice(2)); }
-      // 大头的墨镜：每回合最多触发一次额外抽牌（回合级别标记，回合结束时才重置）
-      if(hasSunglasses && !cs._sunglassesUsedThisTurn && Math.random()<0.25){
-        cs._sunglassesUsedThisTurn = true; // 本回合已触发，不再重置直到回合结束
-        if(cs.drawPile.length===0&&cs.discardPile.length>0){cs.drawPile=[...cs.discardPile].sort(()=>Math.random()-0.5);cs.discardPile=[];}
-        if(cs.drawPile.length>0){
-          const bonusCard=cs.drawPile.shift();
-          cs.hand.push(bonusCard);
-          if(cs.handTokens){ cs.handTokens.push((cs.hand.length-1)+'_'+Math.random().toString(36).slice(2)); }
-          const tip = document.createElement('div');
-          tip.style.cssText = 'position:fixed;top:45%;left:50%;transform:translate(-50%,-50%);background:rgba(20,20,40,0.95);color:#f5c518;font-size:1.0rem;font-weight:900;padding:8px 20px;border-radius:10px;border:2px solid #f5c518;z-index:9999;pointer-events:none;box-shadow:0 0 12px rgba(245,197,24,0.4)';
-          tip.textContent = '🕶️ 大头的墨镜触发！额外抽一张！';
-          document.body.appendChild(tip);
-          setTimeout(()=>tip.remove(), 1000);
-        }
-      }
     }
   },
   playCard(cardId,targetEnemyIndex,handIndexOverride){
@@ -2790,8 +2885,25 @@ const Combat = {
     });
     } // end spike_shoes else
     if(cs.player.hp<=0){
-      // 护身符：第一次被致死时以1HP存活
       const run2=State.run;
+      // 苏苏的怀表：1% 概率时间倒流满血复活；非boss房间还秒杀全场（每场冒险仅一次）
+      if(run2.relics?.includes('susu_pocketwatch') && !run2.pocketwatchUsed && Math.random() < 0.01){
+        run2.pocketwatchUsed = true;
+        cs.player.hp = run2.character.maxHp;
+        run2.character.hp = run2.character.maxHp;
+        cs.player.block = 0;
+        const _curNode = run2.map?.nodes?.find(n => n.id === run2.currentNodeId);
+        const _isBoss = _curNode && _curNode.type === 'boss';
+        if(!_isBoss){
+          // 非boss房间：秒杀全场敌人，动画结束后触发胜利结算
+          cs.enemies.forEach(e => { if(e.hp > 0){ e.hp = 0; e._dead = true; } });
+          UI._triggerPocketWatch(_isBoss, ()=>{ try{ Combat._onVictory(); }catch(e){} });
+        } else {
+          UI._triggerPocketWatch(_isBoss);
+        }
+        return;
+      }
+      // 护身符：第一次被致死时以1HP存活
       if(run2.relics?.includes('amulet')&&!run2.amuletUsed){
         cs.player.hp=1;run2.character.hp=1;run2.amuletUsed=true;
         const tip=document.createElement('div');
@@ -2815,7 +2927,6 @@ const Combat = {
     } else {
       cs.player.block=0;
     }
-    cs._sunglassesUsedThisTurn = false; // 大头墨镜回合级标记重置
     cs._speedDrawnThisTurn = false; // 速度感升挡抽牌回合级标记重置
     // ── 赛车手档位系统回合重置 ──
     if(State.run?.character?.id==='racer'){
@@ -3162,6 +3273,9 @@ const Combat = {
     const max = cs.chargeMax || 5;
     const prev = cs.charge || 0;
     cs.charge = Math.min(prev + amount, max);
+    // 蓄力里程碑音效：第一次到 3 / 第一次到 max 时触发（出牌音已在 _playCard 被预判跳过）
+    if(prev < 3 && cs.charge >= 3 && cs.charge < max){ Audio.playChargeMid(); }
+    if(prev < max && cs.charge >= max){ Audio.playChargeMax(); }
     // 只更新HUD数字，不重建整个战斗界面（避免在playCard执行中途破坏手牌DOM）
     if(cs.charge !== prev){
       const hudEl = document.getElementById('archer-charge-hud');
@@ -3478,7 +3592,7 @@ const Tutorial = {
       </div>`;
     document.body.appendChild(hint);
     hint.querySelector('#tut-ok').onclick=()=>{ this.clearHint(); onGotIt?.(); };
-    hint.querySelector('#tut-skip')?.onclick=()=>{ this.end(); State.go('menu'); };
+    const _skipBtn=hint.querySelector('#tut-skip'); if(_skipBtn) _skipBtn.onclick=()=>{ this.end(); State.go('menu'); };
   },
 
   end(){
@@ -3876,6 +3990,7 @@ el.innerHTML=`<div class="card-type-bar"></div>${rarityTag}<div class="card-cost
       amulet:         { name: '大眼的水晶球', icon: '🔮', desc: '第一次被致死时，以 1 HP 存活（仅触发一次）。命运早已在水晶球中显现。' },
       football:       { name: '橄榄球', icon: '🏈', img: '/manus-storage/football_icon_0390dd99.png', desc: '每场战斗第一回合增加 1 点能量。' },
       susu_eyemask:   { name: 'Susu的眼罩', icon: null, img: '/manus-storage/img_01_3443k_f8fb25b0.png', desc: '每场战斗中，第一次受到负面状态效果时免疫（弱化/易伤/中毒等），仅触发一次。' },
+      susu_pocketwatch:{ name: '苏苏的怀表', icon: '🕰', desc: '当你被致死时，有 1% 概率时间倒流：满血复活，并瞬间击溃当前房间所有敌人（Boss 房：仅复活）。每场冒险仅触发一次。' },
       xiaojiu_guitar: { name: '小九的六弦琴', icon: null, img: '/manus-storage/xiaojiu_guitar_e444f0fa.png', desc: '从第二回合开始，每个回合额外多抽 1 张牌。' },
       wangwei_bracelet: { name: '王微的手绳', icon: '📿', desc: '每回合开始时，获得 3 点格挡（不会消失，可累计）。' },
       wangwei_glasses:  { name: '王微的眼镜', icon: '👓', desc: '受到伤害时，有 20% 概率减少最多 15 点伤害。' },
@@ -3888,7 +4003,7 @@ el.innerHTML=`<div class="card-type-bar"></div>${rarityTag}<div class="card-cost
       wenhao_script:      { name: '文豪的剧本', icon: '📜', desc: '获取时，免费删除至多2张卡牌；之后可花费50金币再删1张。' },
       // 大头遗物
       datou_spanish_book: { name: '大头的西班牙语书', icon: '📖', desc: '回合结束时，若本回合造成过伤害，回复 2 点 HP。' },
-      datou_sunglasses:   { name: '大头的墨镜',       icon: '🕶️', desc: '每次抽牌时，25% 概率额外再抽一张（每回合最多触发一次）。' },
+      datou_sunglasses:   { name: '大头的墨镜',       icon: '🕶️', desc: '每场战斗第一回合，额外抽 2 张牌并获得 1 点能量。' },
       datou_drumstick:    { name: '大头的鼓棒',       icon: '🥁', desc: '打出攻击牌时，10% 概率额外释放一次。' },
       datou_hat:          { name: '大头的帽子',       icon: '🧢', desc: '永久增加 20 点生命上限，并立即回复 20 点 HP。' },
       datou_whistle:      { name: '大头的哨子',       icon: '🎺', desc: '回合结束时，若本回合未打出过防御牌，获得 10 点格挡。' },
@@ -4283,11 +4398,13 @@ el.innerHTML=`<div class="card-type-bar"></div>${rarityTag}<div class="card-cost
   },
   menu(){
     const saves=Save.list();const hasSave=saves.some(s=>s.run!==null);
-    UI.app().innerHTML=`<div class="menu-screen slide-up"><div class="menu-title">Slay the<br>Curiosity</div><div class="menu-subtitle">一场好奇心的冒险</div><div style="display:flex;flex-direction:column;gap:12px;align-items:center;margin-top:16px"><button class="btn primary" id="btn-new">✨ 新游戏</button>${hasSave?'<button class="btn" id="btn-continue">📂 继续游戏</button>':''}<button class="btn" id="btn-saves">💾 存档管理</button><button class="btn" id="btn-tutorial" style="background:rgba(80,160,255,0.12);border-color:rgba(80,160,255,0.4);color:#90c8ff">📖 新手教程</button></div><div style="font-size:0.85rem;color:var(--ink-light);margin-top:32px">Slay the Curiosity v0.1 demo</div></div>`;
+    UI.app().innerHTML=`<div class="menu-screen slide-up"><div class="menu-title">Slay the<br>Curiosity</div><div class="menu-subtitle">一场好奇心的冒险</div><div style="display:flex;flex-direction:column;gap:12px;align-items:center;margin-top:16px"><button class="btn primary" id="btn-new">✨ 新游戏</button>${hasSave?'<button class="btn" id="btn-continue">📂 继续游戏</button>':''}<button class="btn" id="btn-saves">💾 存档管理</button><button class="btn" id="btn-tutorial" style="background:rgba(80,160,255,0.12);border-color:rgba(80,160,255,0.4);color:#90c8ff">📖 新手教程</button><div style="display:flex;gap:8px;margin-top:6px"><button class="btn" id="btn-pw-normal" style="background:rgba(255,200,80,0.12);border-color:rgba(255,200,80,0.45);color:#ffd97a;font-size:0.85rem;padding:6px 12px">🕰 预览怀表（普通房）</button><button class="btn" id="btn-pw-boss" style="background:rgba(255,90,90,0.12);border-color:rgba(255,90,90,0.45);color:#ff9090;font-size:0.85rem;padding:6px 12px">🕰 预览怀表（Boss房）</button></div></div><div style="font-size:0.85rem;color:var(--ink-light);margin-top:32px">Slay the Curiosity v0.1 demo</div></div>`;
     document.getElementById('btn-new').onclick=()=>State.go('char-select');
     if(hasSave)document.getElementById('btn-continue').onclick=()=>UI.showSaveSlots('load');
     document.getElementById('btn-saves').onclick=()=>UI.showSaveSlots('manage');
     document.getElementById('btn-tutorial').onclick=()=>UI.tutorial();
+    document.getElementById('btn-pw-normal').onclick=()=>UI._triggerPocketWatch(false);
+    document.getElementById('btn-pw-boss').onclick=()=>UI._triggerPocketWatch(true);
   },
 
   tutorial(){
@@ -4421,9 +4538,9 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
     const counts={};char.startingDeck.forEach(id=>counts[id]=(counts[id]||0)+1);
     const deckNames=Object.entries(counts).map(([id,n])=>`${Data.cards[id]?.name||id}×${n}`).join(' · ');
     const mechHtml=(d.mechanics||[]).map(m=>`
-      <div style="margin-bottom:10px">
-        <div style="font-weight:700;color:#e8e8f0;font-size:0.98rem;margin-bottom:3px">${m.name}</div>
-        <div style="color:rgba(255,255,255,0.78);font-size:0.9rem;line-height:1.55">${m.desc}</div>
+      <div style="margin-bottom:14px">
+        <div style="font-weight:700;color:#e8e8f0;font-size:1.12rem;margin-bottom:5px">${m.name}</div>
+        <div style="color:rgba(255,255,255,0.82);font-size:1.02rem;line-height:1.6">${m.desc}</div>
       </div>`).join('');
     const overlay=document.createElement('div');
     overlay.style.cssText='position:fixed;inset:0;z-index:8000;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.75);backdrop-filter:blur(3px)';
@@ -4444,7 +4561,7 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
         </div>
         <div style="margin-bottom:18px">
           <div style="font-size:0.75rem;letter-spacing:0.12em;color:${char.color};font-weight:700;margin-bottom:6px;text-transform:uppercase">打法简介</div>
-          <div style="color:rgba(255,255,255,0.85);font-size:0.95rem;line-height:1.65">${d.playstyle||char.description}</div>
+          <div style="color:rgba(255,255,255,0.88);font-size:1.05rem;line-height:1.7">${d.playstyle||char.description}</div>
         </div>
         <div style="margin-bottom:18px">
           <div style="font-size:0.75rem;letter-spacing:0.12em;color:${char.color};font-weight:700;margin-bottom:10px;text-transform:uppercase">核心机制</div>
@@ -4522,6 +4639,13 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
         card.classList.add('selected');
         selectedRelic = relic;
         document.getElementById('btn-dayan-confirm').disabled = false;
+      };
+      card.ondblclick = () => {
+        grid.querySelectorAll('.dayan-relic-card').forEach(c => c.classList.remove('selected'));
+        card.classList.add('selected');
+        selectedRelic = relic;
+        document.getElementById('btn-dayan-confirm').disabled = false;
+        document.getElementById('btn-dayan-confirm').click();
       };
       grid.appendChild(card);
     });
@@ -4644,6 +4768,151 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
     else if(node.type==='rest'){State.go('rest');}
     else if(node.type==='shop'){State.go('shop');}
     else if(node.type==='question'){State.go('question');}
+  },
+
+  // ── 苏苏的怀表：时间倒流演出（onDone 在动画结束后回调） ──────────────
+  _triggerPocketWatch(isBoss, onDone){
+    // 先暂停 BGM；演出结束后根据当前屏幕恢复
+    const _bgmModeBefore = Audio._bgmMode;
+    try { Audio.stopAll && Audio.stopAll(); } catch(e){}
+
+    // 先黑屏 0.5s，然后再开始整套动画
+    const blackVeil = document.createElement('div');
+    blackVeil.style.cssText = 'position:fixed;inset:0;z-index:99998;background:#000;opacity:0;transition:opacity 0.1s linear;pointer-events:auto;';
+    document.body.appendChild(blackVeil);
+    requestAnimationFrame(()=>{ blackVeil.style.opacity = '1'; });
+
+    const _startAnim = () => {
+      // 黑幕保留在底下，等怀表 overlay 自己淡入盖住它；动画结束时一起移除
+      this._renderPocketWatchScene(isBoss, _bgmModeBefore, blackVeil, onDone);
+    };
+    setTimeout(_startAnim, 200);
+  },
+
+  _renderPocketWatchScene(isBoss, _bgmModeBefore, blackVeil, onDone){
+    // 注入一次性 keyframes（如果还没注入）
+    if(!document.getElementById('pocketwatch-style')){
+      const st=document.createElement('style'); st.id='pocketwatch-style';
+      st.textContent=`
+        @keyframes pw-spinHour { from{transform:translate(-50%,-100%) rotate(0deg);} to{transform:translate(-50%,-100%) rotate(-73deg);} }
+        @keyframes pw-spinMin  { from{transform:translate(-50%,-100%) rotate(0deg);} to{transform:translate(-50%,-100%) rotate(-227deg);} }
+        @keyframes pw-spinSec  { from{transform:translate(-50%,-100%) rotate(0deg);} to{transform:translate(-50%,-100%) rotate(-1043deg);} }
+        @keyframes pw-fadeIn { from{opacity:0;backdrop-filter:blur(0);} to{opacity:1;backdrop-filter:blur(8px);} }
+        @keyframes pw-fadeOut { from{opacity:1;backdrop-filter:blur(8px);} to{opacity:0;backdrop-filter:blur(0);} }
+        /* Elastic 弹性入场：模拟 GSAP Elastic.easeOut(1.2, 0.75)，从 0 弹大，多次振荡后稳定 */
+        @keyframes pw-watchIn {
+          0%   { transform:translate(-50%,-50%) scale(0)    rotate(-180deg); opacity:0; }
+          20%  { transform:translate(-50%,-50%) scale(0.45) rotate(-50deg);  opacity:1; }
+          35%  { transform:translate(-50%,-50%) scale(1.18) rotate(18deg);   opacity:1; }
+          50%  { transform:translate(-50%,-50%) scale(0.88) rotate(-10deg);  opacity:1; }
+          65%  { transform:translate(-50%,-50%) scale(1.08) rotate(6deg);    opacity:1; }
+          78%  { transform:translate(-50%,-50%) scale(0.96) rotate(-3deg);   opacity:1; }
+          88%  { transform:translate(-50%,-50%) scale(1.02) rotate(1deg);    opacity:1; }
+          100% { transform:translate(-50%,-50%) scale(1)    rotate(0deg);    opacity:1; }
+        }
+        @keyframes pw-titleIn { 0%{transform:translateX(-50%) translateY(40px);opacity:0;letter-spacing:1em;} 100%{transform:translateX(-50%) translateY(0);opacity:1;letter-spacing:0.18em;} }
+        @keyframes pw-rayRotate { from{transform:translate(-50%,-50%) rotate(0deg);} to{transform:translate(-50%,-50%) rotate(360deg);} }
+        @keyframes pw-rayPulse { 0%,100%{opacity:0.35;} 50%{opacity:0.7;} }
+        @keyframes pw-vignette { 0%{box-shadow:inset 0 0 0 0 rgba(0,0,0,0);} 100%{box-shadow:inset 0 0 300px 60px rgba(0,0,0,0.85);} }
+      `;
+      document.head.appendChild(st);
+    }
+    // 延迟 0.5s 后再播放语音，让指针先转起来；语音结束 + 0.5s 后再淡出并恢复 BGM
+    let _audioEl = null;
+    let _dismissed = false;
+    const restoreBgm = () => {
+      try {
+        if(_bgmModeBefore === 'combat') Audio.startBgmCombat();
+        else if(_bgmModeBefore === 'map') Audio.startBgmMap();
+      } catch(e){}
+    };
+    const dismiss = () => {
+      if(_dismissed) return; _dismissed = true;
+      if(overlay && overlay.parentNode){
+        overlay.style.animation = 'pw-fadeOut 0.7s ease forwards';
+        if(blackVeil) blackVeil.style.transition = 'opacity 0.7s ease';
+        if(blackVeil) blackVeil.style.opacity = '0';
+        setTimeout(()=>{
+          overlay.remove();
+          if(blackVeil && blackVeil.parentNode) blackVeil.remove();
+          restoreBgm();
+          if(typeof onDone==='function') onDone();
+        }, 750);
+      } else {
+        if(blackVeil && blackVeil.parentNode) blackVeil.remove();
+        restoreBgm();
+        if(typeof onDone==='function') onDone();
+      }
+    };
+    setTimeout(()=>{
+      try {
+        _audioEl = new window.Audio('/manus-storage/susu_pocketwatch.m4a');
+        _audioEl.volume = 0.9;
+        _audioEl.play().catch(()=>{});
+        _audioEl.onended = ()=>{ setTimeout(dismiss, 500); };
+      } catch(e){}
+    }, 500);
+
+    const overlay = document.createElement('div');
+    overlay.style.cssText = 'position:fixed;inset:0;z-index:99999;background:radial-gradient(circle at center,#1a1208 0%,#06050a 70%);animation:pw-fadeIn 0.6s ease forwards, pw-vignette 1.5s ease forwards;pointer-events:auto;overflow:hidden;';
+
+    // 旋转光芒射线（大圆放射状）
+    overlay.innerHTML = `
+      <div style="position:absolute;top:50%;left:50%;width:140vmax;height:140vmax;animation:pw-rayRotate 6s linear infinite,pw-rayPulse 2.4s ease-in-out infinite;background:conic-gradient(from 0deg, rgba(180,180,200,0.14) 0deg 4deg, transparent 4deg 18deg, rgba(180,180,200,0.14) 18deg 22deg, transparent 22deg 40deg, rgba(180,180,200,0.14) 40deg 44deg, transparent 44deg 60deg, rgba(180,180,200,0.14) 60deg 64deg, transparent 64deg 90deg, rgba(180,180,200,0.14) 90deg 94deg, transparent 94deg 120deg, rgba(180,180,200,0.14) 120deg 124deg, transparent 124deg 150deg, rgba(180,180,200,0.14) 150deg 154deg, transparent 154deg 180deg, rgba(180,180,200,0.14) 180deg 184deg, transparent 184deg 210deg, rgba(180,180,200,0.14) 210deg 214deg, transparent 214deg 240deg, rgba(180,180,200,0.14) 240deg 244deg, transparent 244deg 270deg, rgba(180,180,200,0.14) 270deg 274deg, transparent 274deg 300deg, rgba(180,180,200,0.14) 300deg 304deg, transparent 304deg 330deg, rgba(180,180,200,0.14) 330deg 334deg, transparent 334deg 360deg);transform:translate(-50%,-50%);"></div>
+      <!-- 怀表本体 SVG -->
+      <div id="pw-watch" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%) scale(0);width:min(60vmin,560px);height:min(60vmin,560px);animation:pw-watchIn 1.8s linear forwards;filter:drop-shadow(0 0 22px rgba(200,200,220,0.45)) drop-shadow(0 0 70px rgba(60,60,90,0.7));">
+        <svg viewBox="0 0 400 460" style="width:100%;height:100%;">
+          <defs>
+            <radialGradient id="pw-bodyGrad" cx="40%" cy="30%" r="75%">
+              <stop offset="0%" stop-color="#4a4a52"/>
+              <stop offset="35%" stop-color="#26262c"/>
+              <stop offset="75%" stop-color="#0d0d12"/>
+              <stop offset="100%" stop-color="#000"/>
+            </radialGradient>
+            <radialGradient id="pw-faceGrad" cx="50%" cy="42%" r="65%">
+              <stop offset="0%" stop-color="#252530"/>
+              <stop offset="70%" stop-color="#101015"/>
+              <stop offset="100%" stop-color="#02020a"/>
+            </radialGradient>
+            <linearGradient id="pw-handGrad" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#d4d4dc"/>
+              <stop offset="100%" stop-color="#7a7a86"/>
+            </linearGradient>
+          </defs>
+          <!-- 链条小环 -->
+          <circle cx="200" cy="22" r="14" fill="none" stroke="#2a2a32" stroke-width="6"/>
+          <circle cx="200" cy="22" r="14" fill="none" stroke="#050508" stroke-width="2"/>
+          <!-- 上方按钮 -->
+          <rect x="188" y="38" width="24" height="22" rx="4" fill="url(#pw-bodyGrad)" stroke="#000" stroke-width="2"/>
+          <!-- 表壳外圈 -->
+          <circle cx="200" cy="240" r="180" fill="url(#pw-bodyGrad)" stroke="#000" stroke-width="4"/>
+          <!-- 表壳内环装饰 -->
+          <circle cx="200" cy="240" r="165" fill="none" stroke="#3a3a44" stroke-width="2" opacity="0.85"/>
+          <circle cx="200" cy="240" r="158" fill="none" stroke="#5a5a66" stroke-width="1.5"/>
+          <!-- 表面 -->
+          <circle cx="200" cy="240" r="148" fill="url(#pw-faceGrad)" stroke="#0a0a10" stroke-width="3"/>
+          <!-- 罗马数字时标（银白色） -->
+          ${[
+            ['XII',200,108],['I',267,124],['II',316,168],['III',332,240],['IV',316,312],['V',267,356],
+            ['VI',200,372],['VII',133,356],['VIII',84,312],['IX',68,240],['X',84,168],['XI',133,124]
+          ].map(([n,x,y])=>`<text x="${x}" y="${y}" text-anchor="middle" dominant-baseline="middle" font-family="Georgia,serif" font-size="22" font-weight="bold" fill="#d8d8e4">${n}</text>`).join('')}
+          <!-- 中心装饰小圆 -->
+          <circle cx="200" cy="240" r="14" fill="#1a1a22"/>
+          <circle cx="200" cy="240" r="8" fill="#050508"/>
+        </svg>
+        <!-- 指针：3秒内由快到慢停下，停留角度刻意不规整 -->
+        <div style="position:absolute;top:54.5%;left:50%;width:8px;height:30%;background:linear-gradient(to bottom,#e8e8f0 0%,#9a9aa6 100%);border-radius:4px 4px 0 0;transform-origin:50% 100%;transform:translate(-50%,-100%);animation:pw-spinHour 3s cubic-bezier(0.05,0.7,0.25,1) forwards;box-shadow:0 0 5px rgba(0,0,0,0.9);"></div>
+        <div style="position:absolute;top:54.5%;left:50%;width:5px;height:40%;background:linear-gradient(to bottom,#f0f0f8 0%,#b0b0bc 100%);border-radius:2.5px 2.5px 0 0;transform-origin:50% 100%;transform:translate(-50%,-100%);animation:pw-spinMin 3s cubic-bezier(0.05,0.7,0.25,1) forwards;box-shadow:0 0 5px rgba(0,0,0,0.8);"></div>
+        <div style="position:absolute;top:54.5%;left:50%;width:2.5px;height:44%;background:#e23a44;transform-origin:50% 100%;transform:translate(-50%,-100%);animation:pw-spinSec 3s cubic-bezier(0.05,0.7,0.25,1) forwards;box-shadow:0 0 5px rgba(226,58,68,0.85);"></div>
+      </div>
+      <!-- 顶部标题 -->
+      <div style="position:absolute;top:8vh;left:50%;transform:translateX(-50%);font-family:'Georgia',serif;color:#e8e8f0;font-size:clamp(1.4rem,3.4vw,2.6rem);font-weight:900;letter-spacing:0.12em;text-shadow:0 0 24px rgba(220,220,240,0.7),0 0 48px rgba(120,120,160,0.5),0 2px 0 #000;animation:pw-titleIn 1.2s cubic-bezier(0.34,1.56,0.64,1) 0.4s forwards;opacity:0;white-space:nowrap;">咦？真由氏的怀表怎么停掉了？</div>
+      <div style="position:absolute;top:calc(8vh + clamp(2.0rem,4vw,3.2rem) + 16px);left:50%;transform:translateX(-50%);color:rgba(220,220,240,0.7);font-size:clamp(0.85rem,1.6vw,1.05rem);letter-spacing:0.32em;text-shadow:0 0 12px rgba(180,180,220,0.5);animation:pw-titleIn 1.0s ease-out 0.9s forwards;opacity:0;white-space:nowrap;">SUSU'S POCKET WATCH</div>
+    `;
+    document.body.appendChild(overlay);
+
+    // 兜底：如果语音加载失败或 onended 不触发，最长 15 秒后强制淡出
+    setTimeout(dismiss, 15000);
   },
 
   _showRelicPickup(relicId, name, icon, effectText, onPick, onSkip){
@@ -5020,7 +5289,19 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
 
   _playCard(cardId,cardEl,targetIndex,handIndexOverride){
     const _pdef=Data.cards[cardId];
-    if(_pdef){if(_pdef.type==='attack')Audio.playAttack();else if(_pdef.type==='skill')Audio.playBlock();else Audio.playPowerUp();}
+    // 预判：射手卡牌打出后是否会越过蓄力 3 / 5 里程碑 → 是则跳过出牌音，留给"嗒嗒/叮"
+    const _arCs=(State.run?.character?.id==='archer')?State.run.combat:null;
+    // 蓄力增益（基础值，未计升级）：宁可保守不抓 → 升级后实际多给 1 蓄力，会出现"出牌音 + 里程碑音"双响，但比"该响出牌音不响"好接受
+    const _arGainMap={ar_dodge:1,ar_aim:2,ar_focus_aim:3,ar_charge_defend:1,ar_block_charge:1,ar_charge_block_plus:2,ar_charge_swift:1,ar_gale:2,ar_cap_up:2,ar_arrow_rain:1,ar_aim_weak:1,ar_dodge_aim:2,ar_hunter_rhythm:2};
+    let _suppressCardSfx=false;
+    if(_arCs){
+      const _max=_arCs.chargeMax||5;
+      const _cur=_arCs.charge||0;
+      const _gain=_arGainMap[cardId]||0;
+      const _after=Math.min(_max,_cur+_gain);
+      if((_cur<3 && _after>=3 && _after<_max) || (_cur<_max && _after>=_max)) _suppressCardSfx=true;
+    }
+    if(_pdef && !_suppressCardSfx){if(_pdef.type==='attack')Audio.playAttack();else if(_pdef.type==='skill')Audio.playBlock();else Audio.playPowerUp();}
     const cs=State.run.combat,def=Data.cards[cardId];UI._selectedCard=null;document.querySelectorAll('.enemy-card').forEach(e=>e.classList.remove('targeted'));
     const enemyHpBefore=targetIndex!==undefined?(cs.enemies[targetIndex]?.hp??0):0;const playerBlockBefore=cs.player.block;
     const discardEl=document.getElementById('discard-pile');const targetRect=discardEl?discardEl.getBoundingClientRect():{left:window.innerWidth-80,top:window.innerHeight-100,width:60,height:85};
@@ -5233,7 +5514,14 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
     };
     // 随机选一个问号事件（过滤掉已拿到对应遗物的事件）
     const _ownedRelics = run.relics||[];
-    const events = Data.questionEvents.filter(e => !e.relicId || !_ownedRelics.includes(e.relicId));
+    // 检测下一房间是否为 boss：是则排除标记了 noBeforeBoss 的事件，避免抄近路跳过 boss
+    const _reachableIds = run.map.paths.filter(p => p.from === run.currentNodeId).map(p => p.to);
+    const _nextHasBoss = _reachableIds.some(id => {
+      const n = run.map.nodes.find(nn => nn.id === id);
+      return n && n.type === 'boss';
+    });
+    let events = Data.questionEvents.filter(e => !e.relicId || !_ownedRelics.includes(e.relicId));
+    if (_nextHasBoss) events = events.filter(e => !e.noBeforeBoss);
     const _evtPool = events.length > 0 ? events : Data.questionEvents; // 全部过滤完时保底随机
     const evt = _evtPool[Math.floor(Math.random() * _evtPool.length)];
 
@@ -5840,6 +6128,13 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
         selectedRelic = relic;
         document.getElementById('btn-wangwei-confirm').disabled = false;
       };
+      card.ondblclick = () => {
+        grid.querySelectorAll('.dayan-relic-card').forEach(c => c.classList.remove('selected'));
+        card.classList.add('selected');
+        selectedRelic = relic;
+        document.getElementById('btn-wangwei-confirm').disabled = false;
+        document.getElementById('btn-wangwei-confirm').click();
+      };
       grid.appendChild(card);
     });
 
@@ -5900,6 +6195,13 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
         selectedRelic=relic;
         document.getElementById('btn-datou-confirm').disabled=false;
       };
+      card.ondblclick=()=>{
+        grid.querySelectorAll('.dayan-relic-card').forEach(c=>c.classList.remove('selected'));
+        card.classList.add('selected');
+        selectedRelic=relic;
+        document.getElementById('btn-datou-confirm').disabled=false;
+        document.getElementById('btn-datou-confirm').click();
+      };
       grid.appendChild(card);
     });
     document.getElementById('btn-datou-confirm').onclick=()=>{
@@ -5944,6 +6246,13 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
         card.classList.add('selected');
         selectedRelic=relic;
         document.getElementById('btn-wenhao-confirm').disabled=false;
+      };
+      card.ondblclick=()=>{
+        grid.querySelectorAll('.dayan-relic-card').forEach(c=>c.classList.remove('selected'));
+        card.classList.add('selected');
+        selectedRelic=relic;
+        document.getElementById('btn-wenhao-confirm').disabled=false;
+        document.getElementById('btn-wenhao-confirm').click();
       };
       grid.appendChild(card);
     });
@@ -6064,6 +6373,13 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
         card.classList.add('selected');
         selectedRelic=relic;
         document.getElementById('btn-gaoshan-confirm').disabled=false;
+      };
+      card.ondblclick=()=>{
+        grid.querySelectorAll('.dayan-relic-card').forEach(c=>c.classList.remove('selected'));
+        card.classList.add('selected');
+        selectedRelic=relic;
+        document.getElementById('btn-gaoshan-confirm').disabled=false;
+        document.getElementById('btn-gaoshan-confirm').click();
       };
       grid.appendChild(card);
     });
@@ -6310,6 +6626,10 @@ window.addEventListener('DOMContentLoaded', () => {
     'card-reward-tutorial-end': () => Tutorial._complete(),
   };
   State.on('screenChange', ({ screen }) => {
+    // 切屏时清理所有可能残留的悬浮 tooltip（防止从问号事件/商店等带到下一屏）
+    ['q-option-tooltip','global-relic-tooltip','global-potion-tooltip','card-hover-tip']
+      .forEach(id=>{ const el=document.getElementById(id); if(el) el.style.display='none'; });
+    document.querySelectorAll('.enemy-tooltip,.buff-tooltip').forEach(el=>el.remove());
     const fn = screens[screen];
     if (fn) fn();
     else console.warn('Unknown screen:', screen);
