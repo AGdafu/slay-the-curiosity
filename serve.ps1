@@ -13,6 +13,10 @@ $mimeTypes = @{
     '.jpg'  = 'image/jpeg'
     '.ico'  = 'image/x-icon'
     '.svg'  = 'image/svg+xml'
+    '.m4a'  = 'audio/mp4'
+    '.mp3'  = 'audio/mpeg'
+    '.ogg'  = 'audio/ogg'
+    '.wav'  = 'audio/wav'
 }
 
 while ($true) {
