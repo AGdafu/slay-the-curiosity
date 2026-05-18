@@ -1047,7 +1047,7 @@ const Data = {
   getRemovePrice(run){ return 50 + ((run.removedTotal||0) * 25); },
   getShopInventory(deck){
     // 根据当前角色过滤商店卡牌池
-    const charId = State.run?.character?.id || 'default';
+    const charId = State.current?.run?.character?.id || 'default';
     const racerCards = new Set(['nitro_boost','collision_block','drift_charge','overtake','turbo_crush',
       'pit_repair','race_predict','pressure_test','fuel_save','corner_line',
       'quick_upshift','forced_downshift','redline','race_instinct','full_throttle',
@@ -1123,7 +1123,7 @@ const Data = {
     return pool[Math.floor(Math.random()*pool.length)];
   },
   getRewardCards(deck){
-    const charId = State.run?.character?.id || 'default';
+    const charId = State.current?.run?.character?.id || 'default';
     const fullPool = Data.rewardPool[charId] || Data.rewardPool.default;
     const weights = Data._getActWeights('reward');
     const result = [];
@@ -4404,19 +4404,16 @@ el.innerHTML=`<div class="card-type-bar"></div>${rarityTag}<div class="card-cost
     document.getElementById('btn-saves').onclick=()=>UI.showSaveSlots('manage');
     document.getElementById('btn-tutorial').onclick=()=>UI.tutorial();
     document.getElementById('btn-test-shop').onclick=()=>{
-      // 用一个临时 run 数据直接跳商店
+      // 构造最小可用 run（先赋值再调 getShopInventory，避免 State.run getter 报错）
       if(!State.current.run){
-        State.current.run = State._blankRun ? State._blankRun() : null;
-      }
-      if(!State.current.run){
-        // 构造最小可用 run
         const char = Data.characters['laozao'] || Object.values(Data.characters)[0];
         State.current.run = {
           character:{ ...char, hp: char.maxHp },
           deck: [...(char.startDeck||[])],
-          relics:[], potions:[], gold:120, floor:1, act:1,
-          shopInventory: Data.getShopInventory(char.startDeck||[]),
-          shopSold:[], removedTotal:0, removeUsed:false, map:null, currentNodeId:null,
+          relics:[], potions:Array.from({length:5},()=>null),
+          gold:120, floor:1, act:1,
+          shopInventory:[], shopSold:[],
+          removedTotal:0, removeUsed:false, map:null, currentNodeId:null,
         };
       }
       const run = State.current.run;
