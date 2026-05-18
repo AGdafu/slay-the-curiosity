@@ -4398,13 +4398,34 @@ el.innerHTML=`<div class="card-type-bar"></div>${rarityTag}<div class="card-cost
   },
   menu(){
     const saves=Save.list();const hasSave=saves.some(s=>s.run!==null);
-    UI.app().innerHTML=`<div class="menu-screen slide-up"><div class="menu-title">Slay the<br>Curiosity</div><div class="menu-subtitle">一场好奇心的冒险</div><div style="display:flex;flex-direction:column;gap:12px;align-items:center;margin-top:16px"><button class="btn primary" id="btn-new">✨ 新游戏</button>${hasSave?'<button class="btn" id="btn-continue">📂 继续游戏</button>':''}<button class="btn" id="btn-saves">💾 存档管理</button><button class="btn" id="btn-tutorial" style="background:rgba(80,160,255,0.12);border-color:rgba(80,160,255,0.4);color:#90c8ff">📖 新手教程</button><div style="display:flex;gap:8px;margin-top:6px"><button class="btn" id="btn-pw-normal" style="background:rgba(255,200,80,0.12);border-color:rgba(255,200,80,0.45);color:#ffd97a;font-size:0.85rem;padding:6px 12px">🕰 预览怀表（普通房）</button><button class="btn" id="btn-pw-boss" style="background:rgba(255,90,90,0.12);border-color:rgba(255,90,90,0.45);color:#ff9090;font-size:0.85rem;padding:6px 12px">🕰 预览怀表（Boss房）</button></div></div><div style="font-size:0.85rem;color:var(--ink-light);margin-top:32px">Slay the Curiosity v0.1 demo</div></div>`;
+    UI.app().innerHTML=`<div class="menu-screen slide-up"><div class="menu-title">Slay the<br>Curiosity</div><div class="menu-subtitle">一场好奇心的冒险</div><div style="display:flex;flex-direction:column;gap:12px;align-items:center;margin-top:16px"><button class="btn primary" id="btn-new">✨ 新游戏</button>${hasSave?'<button class="btn" id="btn-continue">📂 继续游戏</button>':''}<button class="btn" id="btn-saves">💾 存档管理</button><button class="btn" id="btn-tutorial" style="background:rgba(80,160,255,0.12);border-color:rgba(80,160,255,0.4);color:#90c8ff">📖 新手教程</button><button class="btn" id="btn-test-shop" style="background:rgba(80,220,160,0.12);border-color:rgba(80,220,160,0.4);color:#80ffcc;font-size:0.85rem;padding:6px 18px">🏪 测试商店</button></div><div style="font-size:0.85rem;color:var(--ink-light);margin-top:32px">Slay the Curiosity v0.1 demo</div></div>`;
     document.getElementById('btn-new').onclick=()=>State.go('char-select');
     if(hasSave)document.getElementById('btn-continue').onclick=()=>UI.showSaveSlots('load');
     document.getElementById('btn-saves').onclick=()=>UI.showSaveSlots('manage');
     document.getElementById('btn-tutorial').onclick=()=>UI.tutorial();
-    document.getElementById('btn-pw-normal').onclick=()=>UI._triggerPocketWatch(false);
-    document.getElementById('btn-pw-boss').onclick=()=>UI._triggerPocketWatch(true);
+    document.getElementById('btn-test-shop').onclick=()=>{
+      // 用一个临时 run 数据直接跳商店
+      if(!State.current.run){
+        State.current.run = State._blankRun ? State._blankRun() : null;
+      }
+      if(!State.current.run){
+        // 构造最小可用 run
+        const char = Data.characters['laozao'] || Object.values(Data.characters)[0];
+        State.current.run = {
+          character:{ ...char, hp: char.maxHp },
+          deck: [...(char.startDeck||[])],
+          relics:[], potions:[], gold:120, floor:1, act:1,
+          shopInventory: Data.getShopInventory(char.startDeck||[]),
+          shopSold:[], removedTotal:0, removeUsed:false, map:null, currentNodeId:null,
+        };
+      }
+      const run = State.current.run;
+      if(!run.shopInventory || run.shopInventory.length===0){
+        run.shopInventory = Data.getShopInventory(run.deck||[]);
+        run.shopSold = [];
+      }
+      UI._renderShop();
+    };
   },
 
   tutorial(){
