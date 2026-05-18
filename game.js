@@ -916,7 +916,7 @@ const Data = {
     {
       id: 'datou_drive',
       title: '带你兜风的大头',
-      img: '/manus-storage/datou_drive_pixel.png',
+      img: '/manus-storage/datou_sprite.png',
       noBeforeBoss: true,
       desc: '一辆 SUV 缓缓停下，大头反戴着棒球帽，从车窗探出脑袋朝你咧嘴一笑："上车？我带你抄个近路！" 你看了一眼他握方向盘的姿势……心里有点没底。',
       options: [
