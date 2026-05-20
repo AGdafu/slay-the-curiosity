@@ -3962,6 +3962,89 @@ const Tutorial = {
   },
 };
 
+// ── net.js ────────────────────────────────────────────────────────────────────
+// PeerJS 联机层：房主权威模式。房主生成房间码，访客输码加入，P2P 直连。
+const Net = {
+  peer: null,
+  conn: null,
+  isHost: false,
+  connected: false,
+  roomCode: null,
+  _handlers: {},
+  // 房间码字符集：去掉易混淆的 0O1IL
+  _CHARS: 'ABCDEFGHJKMNPQRSTUVWXYZ23456789',
+  _PREFIX: 'slaycuriosity-v1-',
+
+  on(type, fn) { this._handlers[type] = fn; },
+  _emit(type, data) { try { if (this._handlers[type]) this._handlers[type](data); } catch(e){ console.error('Net handler error', e); } },
+
+  _genCode() {
+    let c = '';
+    for (let i = 0; i < 5; i++) c += this._CHARS[Math.floor(Math.random() * this._CHARS.length)];
+    return c;
+  },
+
+  // 房主：创建房间
+  host() {
+    if (typeof Peer === 'undefined') { this._emit('error', 'PeerJS 未加载，请检查网络连接'); return; }
+    this.disconnect();
+    this.isHost = true;
+    this.connected = false;
+    const code = this._genCode();
+    this.roomCode = code;
+    this.peer = new Peer(this._PREFIX + code);
+    this.peer.on('open', () => this._emit('hosted', code));
+    this.peer.on('connection', conn => {
+      // 已有连接则拒绝（固定 2 人）
+      if (this.conn && this.connected) { conn.close(); return; }
+      this.conn = conn;
+      this._bindConn(conn);
+    });
+    this.peer.on('error', err => this._emit('error', this._errMsg(err)));
+  },
+
+  // 访客：加入房间
+  join(code) {
+    if (typeof Peer === 'undefined') { this._emit('error', 'PeerJS 未加载，请检查网络连接'); return; }
+    this.disconnect();
+    this.isHost = false;
+    this.connected = false;
+    code = (code || '').trim().toUpperCase();
+    this.roomCode = code;
+    this.peer = new Peer();
+    this.peer.on('open', () => {
+      const conn = this.peer.connect(this._PREFIX + code, { reliable: true });
+      this.conn = conn;
+      this._bindConn(conn);
+    });
+    this.peer.on('error', err => this._emit('error', this._errMsg(err)));
+  },
+
+  _bindConn(conn) {
+    conn.on('open', () => { this.connected = true; this._emit('connected'); });
+    conn.on('data', data => this._emit('message', data));
+    conn.on('close', () => { this.connected = false; this._emit('disconnected'); });
+    conn.on('error', err => this._emit('error', this._errMsg(err)));
+  },
+
+  _errMsg(err) {
+    const t = (err && err.type) || '';
+    if (t === 'peer-unavailable') return '房间不存在或已关闭，请检查房间码';
+    if (t === 'unavailable-id') return '房间码冲突，请重新创建';
+    if (t === 'network' || t === 'server-error') return '网络错误，无法连接信令服务器';
+    if (t === 'browser-incompatible') return '当前浏览器不支持联机';
+    return '连接出错：' + (t || (err && err.message) || '未知');
+  },
+
+  send(msg) { if (this.conn && this.connected) { try { this.conn.send(msg); } catch(e){ console.error('Net send error', e); } } },
+
+  disconnect() {
+    try { if (this.conn) this.conn.close(); } catch(e){}
+    try { if (this.peer) this.peer.destroy(); } catch(e){}
+    this.peer = null; this.conn = null; this.connected = false; this.roomCode = null;
+  },
+};
+
 // ── ui.js ─────────────────────────────────────────────────────────────────────
 const DAYAN_IMG_SRC = '/manus-storage/img_03_574k_632f1438.png';
 const WANGWEI_IMG_SRC = '/manus-storage/wangwei_sprite_nobg_90111a38.png';
@@ -4694,12 +4777,117 @@ el.innerHTML=`<div class="card-type-bar"></div>${rarityTag}<div class="card-cost
   },
   menu(){
     const saves=Save.list();const hasSave=saves.some(s=>s.run!==null);
-    UI.app().innerHTML=`<div class="menu-screen slide-up"><div class="menu-title">Slay the<br>Curiosity</div><div class="menu-subtitle">一场好奇心的冒险</div><div style="display:flex;flex-direction:column;gap:12px;align-items:stretch;width:260px;margin:16px auto 0"><button class="btn primary" id="btn-new">✨ 新游戏</button>${hasSave?'<button class="btn" id="btn-continue">📂 继续游戏</button>':''}<button class="btn" id="btn-saves">💾 存档管理</button><button class="btn" id="btn-tutorial" style="background:rgba(80,160,255,0.12);border-color:rgba(80,160,255,0.4);color:#90c8ff">📖 新手教程</button><button class="btn" id="btn-database" style="background:rgba(160,90,255,0.12);border-color:rgba(160,90,255,0.4);color:#c8a0ff">📚 图鉴</button></div><div style="font-size:0.85rem;color:var(--ink-light);margin-top:32px">Slay the Curiosity v0.1 demo</div></div>`;
+    UI.app().innerHTML=`<div class="menu-screen slide-up"><div class="menu-title">Slay the<br>Curiosity</div><div class="menu-subtitle">一场好奇心的冒险</div><div style="display:flex;flex-direction:column;gap:12px;align-items:stretch;width:260px;margin:16px auto 0"><button class="btn primary" id="btn-new">✨ 新游戏</button>${hasSave?'<button class="btn" id="btn-continue">📂 继续游戏</button>':''}<button class="btn" id="btn-coop" style="background:rgba(80,200,140,0.14);border-color:rgba(80,200,140,0.45);color:#7fe0a8">🤝 联机合作</button><button class="btn" id="btn-saves">💾 存档管理</button><button class="btn" id="btn-tutorial" style="background:rgba(80,160,255,0.12);border-color:rgba(80,160,255,0.4);color:#90c8ff">📖 新手教程</button><button class="btn" id="btn-database" style="background:rgba(160,90,255,0.12);border-color:rgba(160,90,255,0.4);color:#c8a0ff">📚 图鉴</button></div><div style="font-size:0.85rem;color:var(--ink-light);margin-top:32px">Slay the Curiosity v0.1 demo</div></div>`;
     document.getElementById('btn-new').onclick=()=>State.go('char-select');
     if(hasSave)document.getElementById('btn-continue').onclick=()=>UI.showSaveSlots('load');
+    document.getElementById('btn-coop').onclick=()=>State.go('coop-lobby');
     document.getElementById('btn-saves').onclick=()=>UI.showSaveSlots('manage');
     document.getElementById('btn-tutorial').onclick=()=>UI.tutorial();
     document.getElementById('btn-database').onclick=()=>UI.showDatabase();
+  },
+
+  // ── 联机合作大厅（阶段1：PeerJS 连接 + 房间码）──────────────────────────────
+  coopLobby(){
+    const C = UI._coop = { view:'choose', error:'', code:'', pingOk:false };
+
+    const leave = () => { Net.disconnect(); UI._coop=null; State.go('menu'); };
+
+    function render(){
+      const err = C.error
+        ? `<div style="background:rgba(231,76,60,0.15);border:1px solid rgba(231,76,60,0.5);color:#ff9b8f;border-radius:10px;padding:8px 14px;font-size:0.88rem;margin-bottom:14px;max-width:340px">⚠️ ${C.error}</div>`
+        : '';
+      let body = '';
+
+      if (C.view === 'choose') {
+        body = `${err}
+          <div style="display:flex;flex-direction:column;gap:12px;align-items:stretch;width:280px;margin:8px auto 0">
+            <button class="btn primary" id="cl-host">🏠 创建房间</button>
+            <button class="btn" id="cl-join" style="background:rgba(80,160,255,0.12);border-color:rgba(80,160,255,0.4);color:#90c8ff">🔑 加入房间</button>
+            <button class="btn" id="cl-back">← 返回主菜单</button>
+          </div>`;
+      } else if (C.view === 'creating') {
+        body = `<div style="font-size:1rem;color:rgba(255,255,255,0.7);margin:20px 0">⏳ 正在创建房间…</div>
+          <button class="btn" id="cl-cancel" style="width:200px;margin:0 auto">取消</button>`;
+      } else if (C.view === 'hosting') {
+        body = `${err}
+          <div style="font-size:0.95rem;color:rgba(255,255,255,0.65);margin-bottom:10px">把房间码发给朋友，让他「加入房间」：</div>
+          <div style="display:flex;align-items:center;gap:10px;justify-content:center;margin-bottom:8px">
+            <div style="font-family:monospace;font-size:2.4rem;font-weight:900;letter-spacing:6px;color:#7fe0a8;background:rgba(80,200,140,0.12);border:2px solid rgba(80,200,140,0.5);border-radius:14px;padding:10px 22px">${C.code}</div>
+            <button class="btn" id="cl-copy" style="width:auto;padding:8px 14px;font-size:0.85rem">📋 复制</button>
+          </div>
+          <div style="font-size:0.95rem;color:rgba(255,255,255,0.55);margin:16px 0">⏳ 等待朋友加入…</div>
+          <button class="btn" id="cl-cancel" style="width:200px;margin:0 auto">取消房间</button>`;
+      } else if (C.view === 'joining') {
+        body = `${err}
+          <div style="font-size:0.95rem;color:rgba(255,255,255,0.65);margin-bottom:12px">输入朋友给你的 5 位房间码：</div>
+          <input id="cl-code" maxlength="5" placeholder="ABCDE" autocomplete="off"
+            style="font-family:monospace;font-size:1.8rem;font-weight:900;letter-spacing:6px;text-align:center;text-transform:uppercase;width:240px;padding:10px;border-radius:12px;border:2px solid rgba(80,160,255,0.5);background:rgba(255,255,255,0.06);color:#fff;outline:none;margin-bottom:14px">
+          <div style="display:flex;flex-direction:column;gap:10px;align-items:stretch;width:280px;margin:0 auto">
+            <button class="btn primary" id="cl-connect">🔗 连接</button>
+            <button class="btn" id="cl-back2">← 返回</button>
+          </div>`;
+      } else if (C.view === 'connecting') {
+        body = `<div style="font-size:1rem;color:rgba(255,255,255,0.7);margin:20px 0">🔗 连接中…</div>
+          <button class="btn" id="cl-cancel" style="width:200px;margin:0 auto">取消</button>`;
+      } else if (C.view === 'connected') {
+        body = `
+          <div style="font-size:3rem;margin:8px 0">✅</div>
+          <div style="font-size:1.3rem;font-weight:800;color:#7fe0a8;margin-bottom:6px">已连接！</div>
+          <div style="font-size:0.95rem;color:rgba(255,255,255,0.7);margin-bottom:4px">你的身份：<b style="color:#fff">${Net.isHost?'🏠 房主':'🔑 访客'}</b></div>
+          <div style="font-size:0.9rem;color:${C.pingOk?'#7fe0a8':'rgba(255,255,255,0.5)'};margin-bottom:18px">${C.pingOk?'🟢 双向通信正常':'⏳ 测试通信中…'}</div>
+          <div style="background:rgba(80,160,255,0.1);border:1px solid rgba(80,160,255,0.35);border-radius:10px;padding:10px 16px;font-size:0.86rem;color:#90c8ff;max-width:340px;margin:0 auto 18px">阶段 1 完成：联机连接已打通。<br>合作战斗（阶段 2）开发中。</div>
+          <button class="btn" id="cl-back3" style="width:220px;margin:0 auto">← 断开并返回</button>`;
+      }
+
+      UI.app().innerHTML = `<div class="menu-screen slide-up">
+        <div class="screen-title" style="color:#7fe0a8">🤝 联机合作</div>
+        <div style="margin-top:14px">${body}</div>
+      </div>`;
+      bind();
+    }
+
+    function bind(){
+      const $ = id => document.getElementById(id);
+      if ($('cl-host'))   $('cl-host').onclick   = () => { C.view='creating'; C.error=''; render(); Net.host(); };
+      if ($('cl-join'))   $('cl-join').onclick   = () => { C.view='joining';  C.error=''; render(); };
+      if ($('cl-back'))   $('cl-back').onclick   = leave;
+      if ($('cl-back2'))  $('cl-back2').onclick  = () => { C.view='choose'; C.error=''; render(); };
+      if ($('cl-back3'))  $('cl-back3').onclick  = leave;
+      if ($('cl-cancel')) $('cl-cancel').onclick = () => { Net.disconnect(); C.view='choose'; C.error=''; render(); };
+      if ($('cl-copy'))   $('cl-copy').onclick   = () => { try{ navigator.clipboard.writeText(C.code); $('cl-copy').textContent='✓ 已复制'; }catch(e){} };
+      if ($('cl-connect')) $('cl-connect').onclick = () => {
+        const code = ($('cl-code').value||'').trim().toUpperCase();
+        if (code.length !== 5) { C.error='请输入完整的 5 位房间码'; render(); return; }
+        C.view='connecting'; C.error=''; render(); Net.join(code);
+      };
+      if ($('cl-code')) $('cl-code').oninput = e => { e.target.value = e.target.value.toUpperCase(); };
+    }
+
+    // Net 事件
+    Net.on('hosted', code => { if(!UI._coop) return; C.code=code; C.view='hosting'; C.error=''; render(); });
+    Net.on('connected', () => {
+      if(!UI._coop) return;
+      C.view='connected'; C.pingOk=false; render();
+      Net.send({ t:'hello', from: Net.isHost?'host':'guest' });
+    });
+    Net.on('message', data => {
+      if(!UI._coop || !data) return;
+      if (data.t==='hello') { Net.send({ t:'hello-ack' }); C.pingOk=true; render(); }
+      else if (data.t==='hello-ack') { C.pingOk=true; render(); }
+    });
+    Net.on('disconnected', () => {
+      if(!UI._coop) return;
+      C.error='对方已断开连接'; C.view='choose'; render();
+    });
+    Net.on('error', msg => {
+      if(!UI._coop) return;
+      C.error=msg;
+      if (C.view==='creating'||C.view==='hosting') C.view='choose';
+      if (C.view==='connecting') C.view='joining';
+      render();
+    });
+
+    render();
   },
 
   tutorial(){
@@ -5400,15 +5588,34 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
       // 若所有意图均为防御则留空，不显示问号
       const _hasGlasses=State.run?.relics?.includes('wangwei_glasses');
       const _hasSlow=(enemy.debuffs?.slow||0)>0;
+      const _hasWeak=(enemy.debuffs?.weak||0)>0;
+      const _hasVuln=(cs.player.debuffs?.vulnerable||0)>0;
+      // 把怪物攻击意图换算成玩家实际会承受的伤害（虚弱/减速 减伤，易伤 增伤），玩家无需自己算
+      const _modDmg=(v)=>{
+        let d=v;
+        if(_hasWeak) d=Math.floor(d*0.75);
+        if(_hasSlow) d=Math.floor(d*0.75);
+        if(_hasVuln) d=Math.floor(d*1.5);
+        return d;
+      };
       const intentHtml=visibleIntentArr.map(it=>{
         const glassesTag=(_hasGlasses&&it.type==='attack')?`<span style="font-size:0.7em;margin-left:2px;opacity:0.85;vertical-align:middle" title="👓 王微的眼镜：20% 概率减少最多 15 点伤害">👓</span>`:'';
         const slowTag=(_hasSlow&&it.type==='attack')?`<span style="font-size:0.7em;margin-left:2px;opacity:0.85;vertical-align:middle" title="🐢 减速：攻击伤害 -25%">🐢</span>`:'';
-        // 减速状态下显示实际减少后的伤害数值
+        const weakTag=(_hasWeak&&it.type==='attack')?`<span style="font-size:0.7em;margin-left:2px;opacity:0.85;vertical-align:middle" title="💧 虚弱：怪物攻击伤害 -25%">💧</span>`:'';
+        const vulnTag=(_hasVuln&&it.type==='attack')?`<span style="font-size:0.7em;margin-left:2px;opacity:0.85;vertical-align:middle" title="💥 易伤：你受到的伤害 +50%">💥</span>`:'';
+        // 攻击意图数值实时换算成玩家实际会承受的伤害（支持单段与「×N(每段)」多段格式）
         let displayNum=it.num||'';
-        if(_hasSlow && it.type==='attack' && displayNum && !isNaN(parseInt(displayNum))){
-          displayNum=String(Math.floor(parseInt(displayNum)*0.75));
+        if(it.type==='attack' && (_hasWeak||_hasSlow||_hasVuln) && displayNum){
+          const m=String(displayNum).match(/^×(\d+)\((\d+)\)$/);
+          if(m){
+            displayNum=`×${m[1]}(${_modDmg(parseInt(m[2]))})`;
+          } else if(typeof it.val==='number'){
+            displayNum=String(_modDmg(it.val));
+          } else if(!isNaN(parseInt(displayNum))){
+            displayNum=String(_modDmg(parseInt(displayNum)));
+          }
         }
-        return `<span class="intent-badge ${it.type||'unknown'}">${it.label}<span style="font-size:0.95em">${displayNum}</span>${glassesTag}${slowTag}</span>`;
+        return `<span class="intent-badge ${it.type||'unknown'}">${it.label}<span style="font-size:0.95em">${displayNum}</span>${glassesTag}${slowTag}${weakTag}${vulnTag}</span>`;
       }).join('');
       wrap.style.position='relative';
       wrap.innerHTML=`<div class="enemy-intent">${intentHtml}</div><div class="enemy-figure" id="enemy-fig-${i}">${enemy.emoji}</div><div style="width:130px">${UI.renderHpBar(enemy.hp,enemy.maxHp,'130px',enemy.block)}</div><div style="font-size:1.1rem;font-weight:700;color:#e8e8f0">${enemy.name}</div><div style="font-size:0.95rem;color:rgba(255,255,255,0.8)">${enemy.hp}/${enemy.maxHp} HP${enemy.block>0?` · 🛡${enemy.block}`:''}</div><div class="enemy-buffs" style="display:flex;gap:4px;flex-wrap:wrap;justify-content:center">${UI.renderBuffs(enemy)}</div>`;
@@ -6371,6 +6578,8 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
     run.act=2;
     run.floor=0;
     run.map=MapGen.generate(2);
+    run.travelEdges=[];  // 清空上一层的路线高亮
+    run.mapDrawingData=null;  // 清空上一层的手绘线
     const startNode=run.map.nodes.find(n=>n.floor===0);
     if(startNode)run.currentNodeId=startNode.id;
     // 全量回血
@@ -6412,6 +6621,8 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
     } else {
       run.map=MapGen.generate(3);
     }
+    run.travelEdges=[];  // 清空上一层的路线高亮
+    run.mapDrawingData=null;  // 清空上一层的手绘线
     const startNode=run.map.nodes.find(n=>n.floor===0);
     if(startNode)run.currentNodeId=startNode.id;
     // 全量回血
@@ -6741,6 +6952,7 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
       // 指南针效果：选完后如果持有指南针，重新生成直路地图
       if(run.relics.includes('gaoshan_compass')){
         run.map=MapGen.generateCompass();
+        run.travelEdges=[];  // 清空路线高亮
         const startNode=run.map.nodes.find(n=>n.floor===0);
         if(startNode)run.currentNodeId=startNode.id;
       }
@@ -7201,7 +7413,7 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
           const arr = Array.isArray(intents) ? intents : [intents];
           const desc = arr.map(i => i.detail || i.label || '').filter(Boolean).join('，');
           const icon = typeIcons[arr[0]?.type] || '▸';
-          return `<div style="display:flex;gap:7px;margin-bottom:5px;align-items:flex-start;"><span style="flex-shrink:0;">${icon}</span><span style="font-size:0.8rem;color:rgba(255,255,255,0.68);line-height:1.45;">${desc}</span></div>`;
+          return `<div style="display:flex;gap:9px;margin-bottom:8px;align-items:flex-start;"><span style="flex-shrink:0;font-size:1.05rem;">${icon}</span><span style="font-size:0.95rem;color:rgba(255,255,255,0.72);line-height:1.5;">${desc}</span></div>`;
         } catch(e) { return ''; }
       }).join('');
     }
@@ -7214,13 +7426,13 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
         const validIds = g.ids.filter(id => Data.enemies[id]);
         if (!validIds.length) return;
         const tile = document.createElement('div');
-        tile.style.cssText = `background:${g.color}15;border:2px solid ${g.color}55;border-radius:20px;padding:28px 24px;text-align:center;cursor:pointer;transition:all 0.18s;box-sizing:border-box;`;
-        const previewEmojis = validIds.slice(0,3).map(id => `<span style="font-size:2rem;">${Data.enemies[id].emoji}</span>`).join('');
+        tile.style.cssText = `background:${g.color}15;border:2px solid ${g.color}55;border-radius:24px;padding:48px 32px;text-align:center;cursor:pointer;transition:all 0.18s;box-sizing:border-box;`;
+        const previewEmojis = validIds.slice(0,3).map(id => `<span style="font-size:3rem;">${Data.enemies[id].emoji}</span>`).join('');
         tile.innerHTML = `
-          <div style="font-size:2.8rem;margin-bottom:10px;">${g.emoji}</div>
-          <div style="font-size:1.3rem;font-weight:800;color:${g.color};margin-bottom:6px;">${g.label}</div>
-          <div style="font-size:0.88rem;color:rgba(255,255,255,0.45);margin-bottom:14px;">${validIds.length} 种怪物</div>
-          <div style="display:flex;justify-content:center;gap:8px;">${previewEmojis}</div>`;
+          <div style="font-size:4.6rem;line-height:1.05;margin-bottom:16px;">${g.emoji}</div>
+          <div style="font-size:1.75rem;font-weight:800;color:${g.color};margin-bottom:10px;">${g.label}</div>
+          <div style="font-size:1.1rem;color:rgba(255,255,255,0.5);margin-bottom:22px;">${validIds.length} 种怪物</div>
+          <div style="display:flex;justify-content:center;gap:14px;min-height:48px;align-items:center;">${previewEmojis}</div>`;
         tile.onmouseenter = () => { tile.style.background = `${g.color}25`; tile.style.borderColor = `${g.color}99`; tile.style.transform = 'translateY(-4px)'; };
         tile.onmouseleave = () => { tile.style.background = `${g.color}15`; tile.style.borderColor = `${g.color}55`; tile.style.transform = ''; };
         tile.onclick = () => renderMonsterDetail(box, g);
@@ -7237,20 +7449,20 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
       header.innerHTML = `<span style="font-size:2.2rem;">${g.emoji}</span><div><div style="font-size:1.2rem;font-weight:800;color:${g.color};">${g.label}</div><div style="font-size:0.85rem;color:rgba(255,255,255,0.45);margin-top:3px;">${g.ids.filter(id=>Data.enemies[id]).length} 种怪物</div></div>`;
       box.appendChild(header);
       const row = document.createElement('div');
-      row.style.cssText = 'display:flex;flex-wrap:wrap;gap:16px;';
+      row.style.cssText = 'display:flex;flex-wrap:wrap;gap:20px;';
       g.ids.filter(id => Data.enemies[id]).forEach(id => {
         const e = Data.enemies[id];
         const card = document.createElement('div');
-        card.style.cssText = `background:rgba(255,255,255,0.05);border:1.5px solid ${g.color}44;border-radius:16px;padding:18px 20px;width:260px;box-sizing:border-box;flex-shrink:0;`;
+        card.style.cssText = `background:rgba(255,255,255,0.05);border:1.5px solid ${g.color}44;border-radius:20px;padding:24px 26px;width:360px;box-sizing:border-box;flex-shrink:0;`;
         card.innerHTML = `
-          <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
-            <span style="font-size:2.8rem;line-height:1;">${e.emoji}</span>
+          <div style="display:flex;align-items:center;gap:16px;margin-bottom:16px;">
+            <span style="font-size:3.8rem;line-height:1;">${e.emoji}</span>
             <div>
-              <div style="font-weight:800;color:#fff;font-size:1.05rem;">${e.name}</div>
-              <div style="font-size:0.78rem;color:rgba(255,255,255,0.45);margin-top:3px;">❤️ ${e.maxHp} HP</div>
+              <div style="font-weight:800;color:#fff;font-size:1.35rem;">${e.name}</div>
+              <div style="font-size:0.95rem;color:rgba(255,255,255,0.5);margin-top:5px;">❤️ ${e.maxHp} HP</div>
             </div>
           </div>
-          <div style="border-top:1px solid rgba(255,255,255,0.1);padding-top:10px;">${getEnemyActions(e)}</div>`;
+          <div style="border-top:1px solid rgba(255,255,255,0.1);padding-top:14px;">${getEnemyActions(e)}</div>`;
         row.appendChild(card);
       });
       box.appendChild(row);
@@ -7303,6 +7515,7 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
 window.addEventListener('DOMContentLoaded', () => {
   const screens = {
     'menu':        () => UI.menu(),
+    'coop-lobby':  () => UI.coopLobby(),
     'char-select': () => UI.characterSelect(),
     'map':         () => UI.map(),
     'combat':      () => UI.combat(),
