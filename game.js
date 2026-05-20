@@ -2,46 +2,60 @@
 const Data = {
   characters: [
     {
-      id: 'archer', name: '射手', emoji: '🏹', color: '#27ae60',
-      hp: 60, maxHp: 60, description: '蓄力型角色。打出技能牌积累蓄力，在关键时刻一击爆发。HP较低。',
-      startingDeck: ['ar_shoot','ar_shoot','ar_shoot','ar_shoot','ar_dodge','ar_dodge','ar_dodge','ar_aim','ar_aim','ar_sprint'],
+      id: 'boxer', name: '拳击手', emoji: '🥊', color: '#c0392b',
+      hp: 90, maxHp: 90, description: '越战越勇的拳击手。受击积累愤怒，血量越低出拳越狠。',
+      startingDeck: ['box_jab','box_jab','box_jab','box_jab','box_guard','box_guard','box_guard','box_cross','box_cross','box_uppercut'],
       detail: {
-        gold: 75,
-        playstyle: '蓄力爆发流。平时用技能牌积攒蓄力值（上限5点），攒满后用消耗蓄力的攻击牌一波输出高额伤害。格挡与蓄力往往同步增长，前期稳住防线、中期蓄势待发、关键时刻一击制敌是核心节奏。',
+        gold: 80,
+        playstyle: '硬抗反打流。主动挨打积累愤怒，下回合把伤害转化为攻击爆发。血量越低出拳越重，打到命悬一线反而是最强状态。比起格挡，更需要掌握受伤节奏。',
         mechanics: [
-          { name: '🏹 蓄力（Charge）', desc: '上限默认5点。打出稀有强化牌「蓄力上限」后可提升至8点。消耗全部蓄力的攻击牌：每消耗1点额外造成3~4点伤害，蓄力越满爆发越高。' },
-          { name: '🛡 格挡蓄力联动', desc: '大量技能牌同时增加格挡+蓄力，打防守就等于在攒爆发，攻防一体是射手的核心优势。闪身、格挡蓄力、疾风步等都是典型例子。' },
-          { name: '🎯 消耗型爆发', desc: '攻击牌打出时将蓄力清零并转化为伤害。蓄满5点后一击输出可达15~25点以上。「满蓄爆射」须满蓄才能打出，造成30点高额伤害。' },
-          { name: '💥 易伤利用', desc: '给敌人施加易伤（受到伤害×1.5）后，配合高蓄力爆发牌可将单回合伤害最大化。弱化箭、易伤箭是前期破防的核心工具。' },
+          { name: '💢 愤怒（Fury）', desc: '上回合敌人来袭伤害总量÷3（向下取整），成为下回合所有攻击牌的加成伤害。被格挡吸收的部分也计入，因此即便完美格挡也能积愤怒。无上限。愤怒在下一次回合结束时归零。' },
+          { name: '🩸 搏命（Berserk）', desc: '被动，永久生效。HP每损失25%，所有攻击伤害+2（最高+6）。血量越低越暴力。' },
+          { name: '🥊 上勾拳（反打）', desc: '上回合挨过打则造成高额伤害，未受伤则只有一半效果。与愤怒完美配合。' },
         ]
       }
     },
     {
-      id: 'brute', name: 'The Brute', emoji: '⚔️', color: '#c0392b',
-      hp: 90, maxHp: 90, description: '力量型角色，重伤敌人。',
+      id: 'brute', name: '战士', emoji: '⚔️', color: '#2e86c1',
+      hp: 85, maxHp: 85, description: '就是力气大。',
       startingDeck: ['strike','strike','strike','strike','strike','strike','defend','defend','defend','clash'],
       detail: {
-        gold: 99,
-        playstyle: '硬桥硬马暴力流。HP最高、金币最多，直接靠攻击力和血量碾压敌人。机制简单直白，适合初次上手，也适合喜欢稳扎稳打风格的玩家。',
+        gold: 85,
+        playstyle: '硬桥硬马暴力流。HP厚、金币足，直接靠攻击力和血量碾压敌人。机制简单直白，适合初次上手，也适合喜欢稳扎稳打风格的玩家。',
         mechanics: [
-          { name: '❤️ 高HP（90点）', desc: '三角色中血量最厚，能扛住更多伤害，容错空间最大，不需要精确计算格挡也能撑过来。' },
-          { name: '💰 高起始金币（99金）', desc: '初始资金最充裕，可以在商店优先购买强力遗物或删牌，让牌组更精锐。' },
+          { name: '❤️ 高HP（85点）', desc: '血量厚，能扛较多伤害，容错空间高，不需要精确计算格挡也能撑过来。' },
+          { name: '💰 起始金币（85金）', desc: '初始资金较充裕，可以在商店优先购买强力遗物或删牌，让牌组更精锐。' },
           { name: '💪 力量叠加', desc: '通过特定牌积累力量层数，每1点力量使所有攻击额外+1伤害。力量越高，每张攻击牌的边际收益越大。' },
-          { name: '💢 冲撞（0费）', desc: '当手牌全为攻击牌时造成14点高伤，否则仅6点。合理安排手牌顺序能让0费牌稳定触发全额伤害。' },
+          { name: '💢 冲撞（0费）', desc: '当手牌全为攻击牌时造成12点高伤，否则仅5点。合理安排手牌顺序能让0费牌稳定触发全额伤害。' },
         ]
       }
     },
     {
       id: 'racer', name: '赛车手', emoji: '🏎️', color: '#e67e22',
-      hp: 75, maxHp: 75, description: '档位系统角色。通过换挡在攻守之间切换，高档爆发伤害，低档厚实防御。',
+      hp: 80, maxHp: 80, description: '档位系统角色。通过换挡在攻守之间切换，高档爆发伤害，低档厚实防御。',
       startingDeck: ['gear_strike','gear_strike','gear_strike','gear_strike','gear_defend','gear_defend','gear_defend','gear_shift','gear_shift','gear_brake'],
       detail: {
-        gold: 85,
+        gold: 90,
         playstyle: '档位操控流。战斗中灵活升降档位在攻守之间切换：3挡爆发伤害最高，1挡防御最厚实，2挡为中立初始档位。每次换挡都有额外收益，节奏感极强，上手需要一定练习。',
         mechanics: [
-          { name: '⚙️ 档位（Gear 1–3）', desc: '战斗初始档位2（中立）。1挡防御×1.3、伤害×0.8；2挡标准倍率；3挡伤害×1.3、防御×0.7。换挡是最核心的决策点。' },
+          { name: '⚙️ 档位（Gear 1–3）', desc: '战斗初始档位2（中立）。1挡防御×1.4、伤害×0.8；2挡标准倍率；3挡伤害×1.5、防御×0.7。换挡是最核心的决策点。' },
           { name: '⚡ 动力值（Momentum）', desc: '升档时积累，上限3点；升级「竞速本能」牌后上限提升至5点。回合开始时动力值转化为额外能量，是赛车手能量优势的来源。' },
           { name: '🏁 竞速本能（Race Instinct）', desc: '升档时积累动力值，可视作"回合内额外能量储蓄"。配合多张换挡牌可在一回合内打出超过能量上限的牌。' },
+        ]
+      }
+    },
+    {
+      id: 'archer', name: '射手', emoji: '🏹', color: '#27ae60',
+      hp: 72, maxHp: 72, description: '蓄力型角色。打出技能牌积累蓄力，在关键时刻一击爆发。',
+      startingDeck: ['ar_shoot','ar_shoot','ar_shoot','ar_shoot','ar_dodge','ar_dodge','ar_dodge','ar_aim','ar_aim','ar_sprint'],
+      detail: {
+        gold: 85,
+        playstyle: '蓄力爆发流。平时用技能牌积攒蓄力值（上限5点），攒满后用消耗蓄力的攻击牌一波输出高额伤害。格挡与蓄力往往同步增长，前期稳住防线、中期蓄势待发、关键时刻一击制敌是核心节奏。',
+        mechanics: [
+          { name: '🏹 蓄力（Charge）', desc: '上限默认5点。打出稀有强化牌「蓄力上限」后可提升至6点。消耗全部蓄力的攻击牌：每消耗1点额外造成2~3点伤害，蓄力越满爆发越高。' },
+          { name: '🛡 格挡蓄力联动', desc: '大量技能牌同时增加格挡+蓄力，打防守就等于在攒爆发，攻防一体是射手的核心优势。闪身、格挡蓄力、疾风步等都是典型例子。' },
+          { name: '🎯 消耗型爆发', desc: '攻击牌打出时将蓄力清零并转化为伤害。蓄满5点后一击输出可达15~25点以上。「满蓄爆射」须满蓄才能打出，造成30点高额伤害。' },
+          { name: '💥 易伤利用', desc: '给敌人施加易伤（受到伤害×1.5）后，配合高蓄力爆发牌可将单回合伤害最大化。弱化箭、易伤箭是前期破防的核心工具。' },
         ]
       }
     }
@@ -51,7 +65,7 @@ const Data = {
     defend:   { id:'defend',   name:'防御',   cost:1, type:'skill',  emoji:'🛡', description:'获得 5 点格挡。',                          needsTarget:false, effect(cs,ti,lv=0){ const blk=[5,8,11][lv]||5; Combat.gainBlock(cs,blk,true); } },
     bash:     { id:'bash',     name:'猛击',   cost:2, type:'attack', emoji:'🔨', description:'造成 8 点伤害并施加 2 层易伤。',            needsTarget:true,  effect(cs,ti,lv=0){ const dmg=lv>=1?10:8; const vuln=lv>=1?3:2; Combat.dealDamage(cs,ti,dmg); Combat.applyDebuff(cs.enemies[ti],'vulnerable',vuln); } },
     zap:      { id:'zap',      name:'电击',   cost:1, type:'attack', emoji:'⚡', description:'造成 5 点伤害。若目标有易伤则额外 3 点。',  needsTarget:true,  effect(cs,ti){ const b=(cs.enemies[ti].debuffs.vulnerable||0)>0?3:0; Combat.dealDamage(cs,ti,5+b); } },
-    clash:    { id:'clash',    name:'冲撞',   cost:0, type:'attack', emoji:'💢', description:'若手牌全为攻击牌，造成 14 点伤害，否则 6 点。', needsTarget:true, effect(cs,ti,lv=0){ const a=cs.hand.every(id=>Data.cards[id]&&Data.cards[id].type==='attack'); const dmgFull=[14,18,22][lv]||14; const dmgElse=[6,8,10][lv]||6; Combat.dealDamage(cs,ti,a?dmgFull:dmgElse); } },
+    clash:    { id:'clash',    name:'冲撞',   cost:0, type:'attack', emoji:'💢', description:'若手牌全为攻击牌，造成 12 点伤害，否则 5 点。', needsTarget:true, effect(cs,ti,lv=0){ const a=cs.hand.every(id=>Data.cards[id]&&Data.cards[id].type==='attack'); const dmgFull=[12,16,20][lv]||12; const dmgElse=[5,7,9][lv]||5; Combat.dealDamage(cs,ti,a?dmgFull:dmgElse); } },
     pommel:   { id:'pommel',   name:'剑柄击', cost:1, type:'attack', emoji:'🗡', description:'造成 9 点伤害，摸 1 张牌。',                needsTarget:true,  effect(cs,ti,lv=0){ Combat.dealDamage(cs,ti,9); Combat.drawCards(cs,lv>=1?2:1); } },
     shrug:    { id:'shrug',    name:'耸肩',   cost:1, type:'skill',  emoji:'🤷', description:'获得 8 点格挡，摸 1 张牌。',                needsTarget:false, effect(cs,ti,lv=0){ const blk=lv>=1?11:8; const draw=lv>=2?2:1; Combat.gainBlock(cs,blk,true); Combat.drawCards(cs,draw); } },
     armaments:{ id:'armaments',name:'武装',   cost:1, type:'skill',  emoji:'⚒', description:'获得 5 点格挡。',                          needsTarget:false, effect(cs,ti,lv=0){
@@ -85,39 +99,39 @@ const Data = {
 
     // 起始牌：档位打击（替代打击）
     gear_strike: { id:'gear_strike', rarity:'common', name:'档位打击', cost:1, type:'attack', emoji:'👊', description:'造成 <b>6</b> 点伤害（含档位倍率）。', needsTarget:true,
-      effect(cs,ti){ const g=cs.gear||2; const dmgMult=[0,0.8,1.0,1.3][g]; const bonus=Combat._getFtBonus(cs); Combat.dealDamage(cs,ti,Math.floor(6*dmgMult)+bonus); } },
+      effect(cs,ti){ const g=cs.gear||2; const dmgMult=[0,0.8,1.0,1.5][g]; const bonus=Combat._getFtBonus(cs); Combat.dealDamage(cs,ti,Math.floor(6*dmgMult)+bonus); } },
     // 起始牌：档位防御（替代防御）
     gear_defend: { id:'gear_defend', rarity:'common', name:'档位防御', cost:1, type:'skill', emoji:'🛡', description:'获得 <b>5</b> 点格挡（含档位倍率）。', needsTarget:false,
-      effect(cs){ const g=cs.gear||2; const hasRedline=(cs.player.buffs.redline||0)>0; const blkMult=hasRedline&&g>=3?1.0:[0,1.3,1.0,0.7][g]; Combat.gainBlock(cs,Math.floor(5*blkMult),true); } },
+      effect(cs){ const g=cs.gear||2; const hasRedline=(cs.player.buffs.redline||0)>0; const blkMult=hasRedline&&g>=3?1.0:[0,1.4,1.0,0.7][g]; Combat.gainBlock(cs,Math.floor(5*blkMult),true); } },
     // 起始牌：换挡时机
     gear_shift: { id:'gear_shift', rarity:'common', name:'换挡时机', cost:0, type:'skill', emoji:'🔄', description:'升 1 挡或降 1 挡（选择）。本卡本轮最多使用 2 次。', needsTarget:false,
       effect(cs){ Combat._gearShiftInteractive(cs, 'gear_shift'); } },
     // 起始牌：刹车漂移（替代猛击）
     gear_brake: { id:'gear_brake', rarity:'common', name:'刹车漂移', cost:1, type:'attack', emoji:'💨', description:'造成 <b>8</b> 点伤害（含档位倍率）。3 挡时附加 2 层减速。', needsTarget:true,
-      effect(cs,ti){ const g=cs.gear||2; const dmgMult=[0,0.8,1.0,1.3][g]; const bonus=Combat._getFtBonus(cs); Combat.dealDamage(cs,ti,Math.floor(8*dmgMult)+bonus); if(g>=3){ Combat.applyDebuff(cs.enemies[ti],'slow',2); } } },
+      effect(cs,ti){ const g=cs.gear||2; const dmgMult=[0,0.8,1.0,1.5][g]; const bonus=Combat._getFtBonus(cs); Combat.dealDamage(cs,ti,Math.floor(8*dmgMult)+bonus); if(g>=3){ Combat.applyDebuff(cs.enemies[ti],'slow',2); } } },
 
     // ── 攻击牌（6张）────────────────────────────────────────────────────────────────────────────────
     // 1. 刹车漂移（起始牌已包含）
     // 2. 氮气加速：2费 攻击+换挡 12伤+升±1挡，6挡时改为16伤
-    nitro_boost: { id:'nitro_boost', rarity:'rare', name:'氮气加速', cost:2, type:'attack', emoji:'💥', description:'造成 <b>12</b> 点伤害并升 1 挡。若已处于 3 挡，改为造成 <b>16</b> 点伤害。', needsTarget:true,
-      effect(cs,ti){ const g=cs.gear||2; const bonus=Combat._getFtBonus(cs); if(g>=3){ Combat.dealDamage(cs,ti,16+bonus); } else { Combat.dealDamage(cs,ti,12+bonus); Combat._changeGear(cs,1); } } },
+    nitro_boost: { id:'nitro_boost', rarity:'rare', name:'氮气加速', cost:2, type:'attack', emoji:'💥', description:'造成 <b>14</b> 点伤害并升 1 挡。若已处于 3 挡，改为造成 <b>18</b> 点伤害。', needsTarget:true,
+      effect(cs,ti){ const g=cs.gear||2; const bonus=Combat._getFtBonus(cs); if(g>=3){ Combat.dealDamage(cs,ti,18+bonus); } else { Combat.dealDamage(cs,ti,14+bonus); Combat._changeGear(cs,1); } } },
     // 3. 碰撞拦截：1费 攻击 4格挡+造成等同格挡值伤害
     collision_block: { id:'collision_block', rarity:'uncommon', name:'碰撞拦截', cost:1, type:'attack', emoji:'💥', description:'获得 <b>5</b> 点格挡，造成 <b>7</b> 点伤害（均含档位倍率）。', needsTarget:true,
-      effect(cs,ti,lv=0){ const g=cs.gear||2; const blkMult=[0,1.3,1.0,0.7][g]; const dmgMult=[0,0.8,1.0,1.3][g]; const blk=[5,6,7][lv]||5; const dmg=[7,9,10][lv]||7; const bonus=Combat._getFtBonus(cs); Combat.gainBlock(cs,Math.floor(blk*blkMult),true); Combat.dealDamage(cs,ti,Math.floor(dmg*dmgMult)+bonus); if(lv>=2) Combat.applyDebuff(cs.enemies[ti],'vulnerable',1); } },
+      effect(cs,ti,lv=0){ const g=cs.gear||2; const blkMult=[0,1.4,1.0,0.7][g]; const dmgMult=[0,0.8,1.0,1.5][g]; const blk=[5,6,7][lv]||5; const dmg=[7,9,10][lv]||7; const bonus=Combat._getFtBonus(cs); Combat.gainBlock(cs,Math.floor(blk*blkMult),true); Combat.dealDamage(cs,ti,Math.floor(dmg*dmgMult)+bonus); if(lv>=2) Combat.applyDebuff(cs.enemies[ti],'vulnerable',1); } },
     // 4. 甩尾冲锋：2费 全体攻击 5伤，速度感每10点+2伤
     drift_charge: { id:'drift_charge', rarity:'rare', name:'甩尾冲锋', cost:2, type:'attack', emoji:'🏎️', description:'对所有敌人造成 <b>6</b> 点伤害（含档位倍率）。速度感每满 <b>20</b> 点，额外造成 <b>2</b> 点伤害（最多 +8）。', needsTarget:false,
-      effect(cs,lv=0){ const g=cs.gear||2; const dmgMult=[0,0.8,1.0,1.3][g]; const base=[6,7,7][lv]||6; const step=[20,20,16][lv]||20; const speedBonus=Math.min(Math.floor((cs.speed||0)/step)*2,8); const ftBonus=Combat._getFtBonus(cs); cs.enemies.forEach((_,i)=>{ if(!cs.enemies[i]._dead) Combat.dealDamage(cs,i,Math.floor(base*dmgMult)+speedBonus+ftBonus); }); } },
+      effect(cs,lv=0){ const g=cs.gear||2; const dmgMult=[0,0.8,1.0,1.5][g]; const base=[6,7,7][lv]||6; const step=[20,20,16][lv]||20; const speedBonus=Math.min(Math.floor((cs.speed||0)/step)*2,8); const ftBonus=Combat._getFtBonus(cs); cs.enemies.forEach((_,i)=>{ if(!cs.enemies[i]._dead) Combat.dealDamage(cs,i,Math.floor(base*dmgMult)+speedBonus+ftBonus); }); } },
     // 5. 超车外线：1费 攻击 4+4伤（两段），3挡时免费
     overtake: { id:'overtake', rarity:'uncommon', name:'超车外线', cost:1, type:'attack', emoji:'🏎️', description:'造成两段 <b>4</b> 点伤害（含档位倍率）。处于 3 挡时，本卡费用变为 <b>0</b>。', needsTarget:true,
-      effect(cs,ti,lv=0){ const g=cs.gear||2; const dmgMult=[0,0.8,1.0,1.3][g]; const ftBonus=Combat._getFtBonus(cs); const base=[4,5,6][lv]||4; const hit=Math.floor(base*dmgMult)+ftBonus; Combat.dealDamage(cs,ti,hit); Combat.dealDamage(cs,ti,hit); if(lv>=2) Combat.applyDebuff(cs.enemies[ti],'slow',1); } },
+      effect(cs,ti,lv=0){ const g=cs.gear||2; const dmgMult=[0,0.8,1.0,1.5][g]; const ftBonus=Combat._getFtBonus(cs); const base=[4,5,6][lv]||4; const hit=Math.floor(base*dmgMult)+ftBonus; Combat.dealDamage(cs,ti,hit); Combat.dealDamage(cs,ti,hit); if(lv>=2) Combat.applyDebuff(cs.enemies[ti],'slow',1); } },
     // 6. 涡轮压榨：3费 攻击+换挡 6×档位伤害，降2挡
-    turbo_crush: { id:'turbo_crush', rarity:'rare', name:'涡轮压榨', cost:3, type:'attack', emoji:'⚡', description:'造成 <b>6×档位</b> 点伤害（6 / 12 / 18），随后降 2 挡。', needsTarget:true,
-      effect(cs,ti){ const g=cs.gear||2; const ftBonus=Combat._getFtBonus(cs); Combat.dealDamage(cs,ti,6*g+ftBonus); Combat._changeGear(cs,-2); } },
+    turbo_crush: { id:'turbo_crush', rarity:'rare', name:'涡轮压榨', cost:3, type:'attack', emoji:'⚡', description:'造成 <b>8×档位</b> 点伤害（8 / 16 / 24），随后降 2 挡。', needsTarget:true,
+      effect(cs,ti){ const g=cs.gear||2; const ftBonus=Combat._getFtBonus(cs); Combat.dealDamage(cs,ti,8*g+ftBonus); Combat._changeGear(cs,-2); } },
 
     // ── 技能牌（8张）────────────────────────────────────────────────────────────────────────────────
     // 7. 进站维修：1费 技能 10格挡，1/2挡时+4回血
-    pit_repair: { id:'pit_repair', rarity:'uncommon', name:'进站维修', cost:1, type:'skill', emoji:'🔧', description:'获得 <b>10</b> 点格挡（含档位倍率）。非 3 挡时额外恢复 <b>4</b> 点生命。', needsTarget:false,
-      effect(cs){ const g=cs.gear||2; const blkMult=[0,1.3,1.0,0.7][g]; Combat.gainBlock(cs,Math.floor(10*blkMult),true); if(g<=2){ cs.player.hp=Math.min(cs.player.hp+4,cs.player.maxHp); State.run.character.hp=cs.player.hp; } } },
+    pit_repair: { id:'pit_repair', rarity:'uncommon', name:'进站维修', cost:1, type:'skill', emoji:'🔧', description:'获得 <b>10</b> 点格挡（含档位倍率）。非 3 挡时额外恢复 <b>6</b> 点生命。', needsTarget:false,
+      effect(cs){ const g=cs.gear||2; const blkMult=[0,1.4,1.0,0.7][g]; Combat.gainBlock(cs,Math.floor(10*blkMult),true); if(g<=2){ cs.player.hp=Math.min(cs.player.hp+6,cs.player.maxHp); State.run.character.hp=cs.player.hp; } } },
     // 8. 换挡时机（起始牌已包含）
     // 9. 赛线预判：1费 技能 看牌堆顶3张，可重新排列，再抄±1张
     race_predict: { id:'race_predict', rarity:'uncommon', name:'赛线预判', cost:1, type:'skill', emoji:'🔮', description:'查看牌堆顶 3 张牌，可重新排列顺序，再抄 1 张牌。', needsTarget:false,
@@ -165,11 +179,11 @@ const Data = {
 
     // ── 赛车手扩池 A：速度感深化（5张）────────────────────────────────────────────────────────
     speed_rush:     { id:'speed_rush',     rarity:'common',   name:'急加速',   cost:1, type:'attack', emoji:'💨', description:'造成 <b>3</b> 点伤害（含档位倍率），获得 <b>档位×3</b> 点速度感。', needsTarget:true,
-      effect(cs,ti,lv=0){ const g=cs.gear||2; const dmgMult=[0,0.8,1.0,1.3][g]; const bonus=Combat._getFtBonus(cs); const base=[3,4,5][lv]||3; const spMult=[3,4,5][lv]||3; Combat.dealDamage(cs,ti,Math.floor(base*dmgMult)+bonus); cs.speed=(cs.speed||0)+(g*spMult); } },
+      effect(cs,ti,lv=0){ const g=cs.gear||2; const dmgMult=[0,0.8,1.0,1.5][g]; const bonus=Combat._getFtBonus(cs); const base=[3,4,5][lv]||3; const spMult=[3,4,5][lv]||3; Combat.dealDamage(cs,ti,Math.floor(base*dmgMult)+bonus); cs.speed=(cs.speed||0)+(g*spMult); } },
     corner_guard:   { id:'corner_guard',   rarity:'common',   name:'弯道守势', cost:1, type:'skill',  emoji:'🛡️', description:'获得 <b>5</b> 点格挡。若本回合已升过挡，额外获得 <b>3</b> 点格挡。', needsTarget:false,
       effect(cs,ti,lv=0){ const base=[5,6,7][lv]||5; const extra=cs._shiftedUpThisTurn?([3,4,5][lv]||3):0; Combat.gainBlock(cs,base+extra,true); } },
     inertia_strike: { id:'inertia_strike', rarity:'uncommon', name:'惯性冲击', cost:1, type:'attack', emoji:'⚡', description:'造成 <b>8</b> 点伤害（含档位倍率）。速度感每满 <b>20</b> 点，追加 <b>2</b> 点伤害。', needsTarget:true,
-      effect(cs,ti,lv=0){ const g=cs.gear||2; const dmgMult=[0,0.8,1.0,1.3][g]; const base=[8,9,10][lv]||8; const spBonus=Math.floor((cs.speed||0)/20)*2; const bonus=Combat._getFtBonus(cs); Combat.dealDamage(cs,ti,Math.floor((base+spBonus)*dmgMult)+bonus); } },
+      effect(cs,ti,lv=0){ const g=cs.gear||2; const dmgMult=[0,0.8,1.0,1.5][g]; const base=[8,9,10][lv]||8; const spBonus=Math.floor((cs.speed||0)/20)*2; const bonus=Combat._getFtBonus(cs); Combat.dealDamage(cs,ti,Math.floor((base+spBonus)*dmgMult)+bonus); } },
     speed_limit_break: { id:'speed_limit_break', rarity:'uncommon', name:'飙车极限', cost:0, type:'skill', emoji:'🏁', description:'若速度感 ≥ <b>50</b>，本回合能量 +1。消耗。', needsTarget:false,
       effect(cs,ti,lv=0){ const threshold=lv>=1?35:50; if((cs.speed||0)>=threshold){ cs.energy+=1; } if(lv>=2){ return; } const oi=cs.discardPile.lastIndexOf('speed_limit_break'); if(oi!==-1) cs.discardPile.splice(oi,1); cs.exhaustPile.push('speed_limit_break'); } },
     speed_activate: { id:'speed_activate', rarity:'epic',   name:'速度感激活', cost:2, type:'power',  emoji:'✨', description:'永久：每回合开始额外获得 <b>8</b> 点速度感（上限 80）。', needsTarget:false,
@@ -184,10 +198,10 @@ const Data = {
     curse_card: { id:'curse_card', name:'诅咒', cost:99, type:'curse', emoji:'💀', description:'<span style="color:#ff8080">诅咒。无法打出。</span><br>黑暗的力量缠绕着你。', needsTarget:false,
       effect(cs){} },
     // 中毒：毒虱/Boss插入，1费可打出（无效果），回合结束若在手牌扣3HP
-    poison_card: { id:'poison_card', name:'中毒', cost:1, type:'curse', emoji:'☠️', description:'<span style="color:#ff8080">诅咒。</span>打出无效果。<br><span style="color:#ffaa60">⚠ 回合结束若仍在手牌中，扣 3 点 HP。</span>', needsTarget:false,
+    poison_card: { id:'poison_card', name:'中毒', cost:1, type:'curse', emoji:'☠️', description:'<span style="color:#ffaa60">⚠ 回合结束若仍在手牌中，<b>扣 3 HP</b>。</span><br><span style="color:#ff8080;opacity:0.85;font-size:0.85em">诅咒</span>', needsTarget:false,
       effect(cs){} },
     // 流血：Boss专属，1费可打出（无效果），回合结束若在手牌扣4HP
-    bleed_card: { id:'bleed_card', name:'流血', cost:1, type:'curse', emoji:'🔴', description:'<span style="color:#ff8080">诅咒。</span>打出无效果。<br><span style="color:#ffaa60">⚠ 回合结束若仍在手牌中，扣 4 点 HP。</span>', needsTarget:false,
+    bleed_card: { id:'bleed_card', name:'流血', cost:1, type:'curse', emoji:'🔴', description:'<span style="color:#ffaa60">⚠ 回合结束若仍在手牌中，<b>扣 4 HP</b>。</span><br><span style="color:#ff8080;opacity:0.85;font-size:0.85em">诅咒</span>', needsTarget:false,
       effect(cs){} },
 
     // ── 射手专属卡牌 ──────────────────────────────────────────────────────────────
@@ -227,17 +241,17 @@ const Data = {
     ar_arrow_rain: { id:'ar_arrow_rain', rarity:'uncommon', name:'箭雨', cost:2, type:'attack', emoji:'🏹', description:'对所有敌人造成 <b>2</b> 点伤害 <b>2</b> 次，消耗全部蓄力，每消耗 1 点额外造成 <b>2</b> 点伤害（作用于全体每次）。', needsTarget:false,
       effect(cs,ti,lv){ const c=cs.charge||0; cs.charge=0; const base=lv>=2?4:(lv>=1?3:2); cs.enemies.forEach((_,i)=>{ if(!cs.enemies[i]._dead){ Combat.dealDamage(cs,i,base+c*2); Combat.dealDamage(cs,i,base+c*2); } }); } },
     ar_full_charge: { id:'ar_full_charge', rarity:'epic', name:'满蓄爆射', cost:2, type:'attack', emoji:'🎯', description:'<b>仅当蓄力 = 5（满蓄）时可打出。</b>消耗全部蓄力，造成 <b>30</b> 点伤害。', needsTarget:true,
-      effect(cs,ti,lv){ const c=cs.charge||0; const threshold=lv>=2?4:(cs.chargeMax||5); const dmg=lv>=1?38:30; if(c>=threshold){ cs.charge=0; Combat.dealDamage(cs,ti,dmg); } } },
+      effect(cs,ti,lv){ const c=cs.charge||0; const threshold=lv>=2?4:(cs.chargeMax||5); const dmg=lv>=1?36:30; if(c>=threshold){ cs.charge=0; Combat.dealDamage(cs,ti,dmg); } } },
     ar_gale:    { id:'ar_gale',    rarity:'uncommon', name:'疾风步',   cost:1, type:'skill',  emoji:'💨', description:'获得 <b>5</b> 点格挡，获得 <b>2</b> 点蓄力，抽 <b>1</b> 张牌。消耗。', needsTarget:false,
       effect(cs){ Combat.gainBlock(cs,5,true); Combat.archerGainCharge(cs,2); Combat.drawCards(cs,1); const oi=cs.discardPile.lastIndexOf('ar_gale'); if(oi!==-1) cs.discardPile.splice(oi,1); cs.exhaustPile.push('ar_gale'); } },
     ar_pierce_all: { id:'ar_pierce_all', rarity:'uncommon', name:'贯穿射击', cost:2, type:'attack', emoji:'🏹', description:'对所有敌人造成 <b>6</b> 点伤害，消耗全部蓄力，每消耗 1 点额外造成 <b>3</b> 点伤害（作用于所有敌人）。', needsTarget:false,
       effect(cs,ti,lv){ const c=cs.charge||0; cs.charge=0; const base=lv>=1?8:6; cs.enemies.forEach((_,i)=>{ if(!cs.enemies[i]._dead) Combat.dealDamage(cs,i,base+c*3); }); } },
 
     // 史诗牌
-    ar_instinct: { id:'ar_instinct', rarity:'epic', name:'猎手直觉', cost:2, type:'power', emoji:'✨', description:'永久：每回合开始时，获得 <b>1</b> 点蓄力（不超过上限）。', needsTarget:false,
+    ar_instinct: { id:'ar_instinct', rarity:'epic', name:'猎手直觉', cost:2, type:'power', emoji:'✨', description:'永久：每 <b>2</b> 回合开始时，获得 <b>1</b> 点蓄力（不超过上限）。', needsTarget:false,
       effect(cs){ cs.player.buffs.archer_instinct=(cs.player.buffs.archer_instinct||0)+1; } },
-    ar_cap_up:  { id:'ar_cap_up',  rarity:'rare',     name:'蓄力上限', cost:2, type:'power',  emoji:'✨', description:'永久：蓄力上限提升至 <b>8</b>（原为5）。立即获得 <b>2</b> 点蓄力。', needsTarget:false,
-      effect(cs){ cs.chargeMax=8; Combat.archerGainCharge(cs,2); } },
+    ar_cap_up:  { id:'ar_cap_up',  rarity:'rare',     name:'蓄力上限', cost:2, type:'power',  emoji:'✨', description:'永久：蓄力上限提升至 <b>6</b>（原为5）。立即获得 <b>2</b> 点蓄力。', needsTarget:false,
+      effect(cs){ cs.chargeMax=6; Combat.archerGainCharge(cs,2); } },
     ar_ultimate: { id:'ar_ultimate', rarity:'rare',   name:'终极连射', cost:3, type:'attack', emoji:'🏹', description:'造成 <b>5</b> 点伤害 4 次，消耗全部蓄力，每消耗 1 点额外造成 <b>3</b> 点伤害（作用于全部 4 次）。', needsTarget:true,
       effect(cs,ti){ const c=cs.charge||0; cs.charge=0; for(let i=0;i<4;i++) Combat.dealDamage(cs,ti,5+c*3); } },
 
@@ -250,8 +264,8 @@ const Data = {
       effect(cs,ti,lv=0){ const blk=[5,6,8][lv]||5; Combat.gainBlock(cs,blk,true); if(cs._tookDamageThisCombat){ Combat.archerGainCharge(cs,[2,3,4][lv]||2); } } },
     ar_hunter_rhythm: { id:'ar_hunter_rhythm', rarity:'common', name:'猎手节奏', cost:0, type:'skill',  emoji:'🎵', description:'获得 <b>2</b> 点蓄力，抽 <b>1</b> 张牌。消耗。', needsTarget:false,
       effect(cs,ti,lv=0){ const amt=lv>=1?3:2; Combat.archerGainCharge(cs,amt); Combat.drawCards(cs,1); if(lv>=2){ return; } const oi=cs.discardPile.lastIndexOf('ar_hunter_rhythm'); if(oi!==-1) cs.discardPile.splice(oi,1); cs.exhaustPile.push('ar_hunter_rhythm'); } },
-    ar_arrow_storm:   { id:'ar_arrow_storm',   rarity:'rare',     name:'箭矢风暴', cost:3, type:'attack', emoji:'🌪️', description:'对所有敌人造成（<b>2</b>+蓄力）点伤害 <b>4</b> 次，消耗全部蓄力。', needsTarget:false,
-      effect(cs,ti,lv=0){ const c=cs.charge||0; cs.charge=0; const ftBonus=Combat._getFtBonus(cs); const base=[2,3,3][lv]||2; cs.enemies.forEach((_,i)=>{ if(!cs.enemies[i]._dead){ for(let j=0;j<4;j++) Combat.dealDamage(cs,i,base+c+ftBonus); } }); } },
+    ar_arrow_storm:   { id:'ar_arrow_storm',   rarity:'rare',     name:'箭矢风暴', cost:3, type:'attack', emoji:'🌪️', description:'对所有敌人造成（<b>1</b>+蓄力）点伤害 <b>4</b> 次，消耗全部蓄力。', needsTarget:false,
+      effect(cs,ti,lv=0){ const c=cs.charge||0; cs.charge=0; const ftBonus=Combat._getFtBonus(cs); const base=[1,2,2][lv]||1; cs.enemies.forEach((_,i)=>{ if(!cs.enemies[i]._dead){ for(let j=0;j<4;j++) Combat.dealDamage(cs,i,base+c+ftBonus); } }); } },
     ar_threshold:     { id:'ar_threshold',     rarity:'rare',     name:'蓄力爆发', cost:1, type:'power',  emoji:'✨', description:'永久：每回合开始时，若蓄力 ≥ <b>4</b>，获得 <b>1</b> 点额外能量。', needsTarget:false,
       effect(cs,ti,lv=0){ cs.player.buffs.ar_threshold=(cs.player.buffs.ar_threshold||0)+1; } },
 
@@ -260,14 +274,65 @@ const Data = {
       effect(cs,ti,lv=0){ const c=cs.charge||0; cs.charge=0; const base=[4,5,6][lv]||4; const burn=[2,2,3][lv]||2; Combat.dealDamage(cs,ti,base+c*2); Combat.applyDebuff(cs.enemies[ti],'burn',burn); } },
     ar_flame_arrow: { id:'ar_flame_arrow', rarity:'uncommon', name:'烈焰箭', cost:1, type:'attack', emoji:'🔥', description:'造成 <b>5</b> 点伤害，施加 <b>3</b> 层燃烧。消耗全部蓄力，每消耗 1 点额外造成 <b>2</b> 点伤害。', needsTarget:true,
       effect(cs,ti,lv=0){ const c=cs.charge||0; cs.charge=0; const base=[5,7,9][lv]||5; const burn=[3,3,4][lv]||3; Combat.dealDamage(cs,ti,base+c*2); Combat.applyDebuff(cs.enemies[ti],'burn',burn); } },
-    ar_inferno_arrow: { id:'ar_inferno_arrow', rarity:'rare', name:'焚天箭', cost:2, type:'attack', emoji:'🔥', description:'对所有敌人造成 <b>6</b> 点伤害，施加 <b>4</b> 层燃烧。消耗全部蓄力，每消耗 1 点额外造成 <b>2</b> 点伤害（对全体）。', needsTarget:false,
-      effect(cs,ti,lv=0){ const c=cs.charge||0; cs.charge=0; const base=[6,8,8][lv]||6; const burn=[4,4,5][lv]||4; cs.enemies.forEach((_,i)=>{ if(!cs.enemies[i]._dead){ Combat.dealDamage(cs,i,base+c*2); Combat.applyDebuff(cs.enemies[i],'burn',burn); } }); } },
+    ar_inferno_arrow: { id:'ar_inferno_arrow', rarity:'rare', name:'焚天箭', cost:2, type:'attack', emoji:'🔥', description:'对所有敌人造成 <b>5</b> 点伤害，施加 <b>4</b> 层燃烧。消耗全部蓄力，每消耗 1 点额外造成 <b>2</b> 点伤害（对全体）。', needsTarget:false,
+      effect(cs,ti,lv=0){ const c=cs.charge||0; cs.charge=0; const base=[5,7,7][lv]||5; const burn=[4,4,5][lv]||4; cs.enemies.forEach((_,i)=>{ if(!cs.enemies[i]._dead){ Combat.dealDamage(cs,i,base+c*2); Combat.applyDebuff(cs.enemies[i],'burn',burn); } }); } },
 
     // ── 箭矢元素扩池：冰系 ──────────────────────────────────────────────────────────
     ar_chill_arrow: { id:'ar_chill_arrow', rarity:'uncommon', name:'严寒箭', cost:2, type:'attack', emoji:'❄️', description:'造成 <b>5</b> 点伤害。消耗全部蓄力，每消耗 1 点额外造成 <b>2</b> 点伤害；并且每消耗 1 点蓄力，<b>+12%</b> 冻结概率（基础 0%，上限 <b>85%</b>）。', needsTarget:true,
       effect(cs,ti,lv=0){ const c=cs.charge||0; cs.charge=0; const base=[5,7,7][lv]||5; const perChg=[0.12,0.14,0.16][lv]||0.12; const chance=Math.min(0.85, c*perChg); Combat.dealDamage(cs,ti,base+c*2); if(Math.random()<chance){ Combat.applyDebuff(cs.enemies[ti],'freeze',1); Combat._showFreezeEffect(); } } },
     ar_freeze_arrow: { id:'ar_freeze_arrow', rarity:'rare', name:'冰封箭', cost:3, type:'attack', emoji:'❄️', description:'造成 <b>8</b> 点伤害。消耗全部蓄力，每消耗 1 点额外造成 <b>3</b> 点伤害；并且每消耗 1 点蓄力，<b>+15%</b> 冻结概率（基础 10%，上限 <b>90%</b>）。', needsTarget:true,
       effect(cs,ti,lv=0){ const c=cs.charge||0; cs.charge=0; const base=[8,12,12][lv]||8; const perChg=[0.15,0.17,0.19][lv]||0.15; const chance=Math.min(0.90, 0.10 + c*perChg); Combat.dealDamage(cs,ti,base+c*3); if(Math.random()<chance){ Combat.applyDebuff(cs.enemies[ti],'freeze',1); Combat._showFreezeEffect(); } } },
+
+    // ── 拳击手牌组 ───────────────────────────────────────────────────────────────────
+    // 起始牌
+    box_jab:      { id:'box_jab',      rarity:'common',   name:'直拳',     cost:1, type:'attack', emoji:'🥊', needsTarget:true,
+      description:'造成 <b>5</b> 点伤害。',
+      effect(cs,ti,lv=0){ const base=[5,7,10][lv]||5; Combat.dealDamage(cs,ti,base+Combat._getBoxerBonus(cs)); } },
+    box_guard:    { id:'box_guard',    rarity:'common',   name:'格挡步',   cost:1, type:'skill',  emoji:'🛡', needsTarget:false,
+      description:'获得 <b>6</b> 点格挡。',
+      effect(cs,ti,lv=0){ const blk=[6,8,11][lv]||6; Combat.gainBlock(cs,blk,true); } },
+    box_cross:    { id:'box_cross',    rarity:'common',   name:'右直拳',   cost:1, type:'attack', emoji:'🤜', needsTarget:true,
+      description:'造成 <b>9</b> 点伤害。',
+      effect(cs,ti,lv=0){ const base=[9,12,15][lv]||9; Combat.dealDamage(cs,ti,base+Combat._getBoxerBonus(cs)); } },
+    box_uppercut: { id:'box_uppercut', rarity:'common',   name:'上勾拳',   cost:2, type:'attack', emoji:'💥', needsTarget:true,
+      description:'造成 <b>22</b> 点伤害。若上回合未受到伤害，仅造成 <b>10</b> 点。',
+      effect(cs,ti,lv=0){ const tookDmg=(cs.damageTakenLastTurn||0)>0; const base=tookDmg?([22,26,30][lv]||22):([10,13,16][lv]||10); Combat.dealDamage(cs,ti,base+Combat._getBoxerBonus(cs)); } },
+
+    // 普通奖励牌
+    box_combo:    { id:'box_combo',    rarity:'common',   name:'连击',     cost:1, type:'attack', emoji:'🌪️', needsTarget:true,
+      description:'造成 <b>3</b> 段 <b>3</b> 点伤害。',
+      effect(cs,ti,lv=0){ const base=[3,4,5][lv]||3; const bonus=Combat._getBoxerBonus(cs); for(let i=0;i<3;i++) Combat.dealDamage(cs,ti,base+bonus); } },
+    box_body_blow:{ id:'box_body_blow',rarity:'common',   name:'身体打击', cost:1, type:'attack', emoji:'🎯', needsTarget:true,
+      description:'造成 <b>10</b> 点伤害，施加 <b>1</b> 层虚弱。',
+      effect(cs,ti,lv=0){ const base=[10,13,16][lv]||10; const weak=[1,1,2][lv]||1; Combat.dealDamage(cs,ti,base+Combat._getBoxerBonus(cs)); Combat.applyDebuff(cs.enemies[ti],'weak',weak); } },
+    box_counter:  { id:'box_counter',  rarity:'common',   name:'反击',     cost:1, type:'attack', emoji:'🔄', needsTarget:true,
+      description:'造成 <b>5</b> 点伤害。若有愤怒则改为造成 <b>10</b> 点并消耗全部愤怒。',
+      effect(cs,ti,lv=0){ const fury=cs.player.buffs?.fury||0; const bonus=Combat._getBoxerBonus(cs); if(fury>0){ cs.player.buffs.fury=0; Combat.dealDamage(cs,ti,([10,13,16][lv]||10)+bonus); } else { Combat.dealDamage(cs,ti,([5,7,9][lv]||5)+bonus); } } },
+    box_iron_step:{ id:'box_iron_step',rarity:'common',   name:'铁块步',   cost:1, type:'skill',  emoji:'🛡', needsTarget:false,
+      description:'获得 <b>10</b> 点格挡。',
+      effect(cs,ti,lv=0){ Combat.gainBlock(cs,[10,13,16][lv]||10,true); } },
+
+    // 稀有奖励牌
+    box_haymaker: { id:'box_haymaker', rarity:'rare',     name:'大摆拳',   cost:2, type:'attack', emoji:'🌀', needsTarget:true,
+      description:'消耗全部愤怒，每点愤怒转化为 <b>3</b> 点伤害，基础 <b>14</b> 点。',
+      effect(cs,ti,lv=0){ const fury=cs.player.buffs?.fury||0; cs.player.buffs.fury=0; const base=[14,18,22][lv]||14; const mult=[3,4,5][lv]||3; const berserk=Combat._getBoxerBerserk(cs); Combat.dealDamage(cs,ti,base+fury*mult+berserk); } },
+    box_rage_combo:{ id:'box_rage_combo',rarity:'rare',   name:'怒连击',   cost:1, type:'attack', emoji:'🔥', needsTarget:true,
+      description:'愤怒 ≥ 3 时造成 <b>3</b> 段伤害；否则 <b>1</b> 段 <b>6</b> 点。',
+      effect(cs,ti,lv=0){ const fury=cs.player.buffs?.fury||0; const bonus=Combat._getBoxerBonus(cs); const thr=[3,2,2][lv]||3; if(fury>=thr){ const base=[3,4,5][lv]||3; for(let i=0;i<3;i++) Combat.dealDamage(cs,ti,base+fury+bonus); } else { Combat.dealDamage(cs,ti,([6,8,10][lv]||6)+bonus); } } },
+    box_taunt:    { id:'box_taunt',    rarity:'rare',     name:'蓄势',     cost:1, type:'skill',  emoji:'😤', needsTarget:false,
+      description:'立即获得 <b>2</b> 点愤怒。打出后消耗。',
+      effect(cs,ti,lv=0){ if(!cs.player.buffs) cs.player.buffs={}; cs.player.buffs.fury=(cs.player.buffs.fury||0)+([2,3,3][lv]||2); const i=cs.discardPile.lastIndexOf('box_taunt'); if(i!==-1) cs.discardPile.splice(i,1); cs.exhaustPile.push('box_taunt'); } },
+    box_second_wind:{ id:'box_second_wind',rarity:'rare', name:'第二春',   cost:2, type:'skill',  emoji:'💚', needsTarget:false,
+      description:'回复 <b>8</b> 点 HP。血量低于一半时改为回复 <b>12</b> 点。',
+      effect(cs,ti,lv=0){ const half=cs.player.maxHp/2; const heal=cs.player.hp<half?([12,14,16][lv]||12):([8,10,12][lv]||8); cs.player.hp=Math.min(cs.player.hp+heal,cs.player.maxHp); State.run.character.hp=cs.player.hp; } },
+
+    // 史诗能力牌
+    box_bloodlust:{ id:'box_bloodlust',rarity:'epic',     name:'嗜血本能', cost:2, type:'power',  emoji:'🩸', needsTarget:false,
+      description:'能力。每回合开始时，若 HP 低于一半，获得 <b>1</b> 点额外能量。',
+      effect(cs){ cs.player.buffs.box_bloodlust=(cs.player.buffs.box_bloodlust||0)+1; } },
+    box_iron_will:{ id:'box_iron_will',rarity:'epic',     name:'钢铁意志', cost:1, type:'power',  emoji:'⚙️', needsTarget:false,
+      description:'能力。搏命加成翻倍：每损失 <b>25%</b> HP，攻击 <b>+4</b>（原为 +2）。',
+      effect(cs){ cs.player.buffs.box_iron_will=(cs.player.buffs.box_iron_will||0)+1; } },
   },
   enemies: {
     slime: {
@@ -368,6 +433,43 @@ const Data = {
         s.actionIndex++;
       }
     },
+    // ── 第三层敌人（普通）──
+    ironguard: {
+      id:'ironguard', name:'铁甲卫兵', emoji:'🛡️', hp:54, maxHp:54, actions:['fortify','bash','shieldbash','bash','fortify'],
+      getIntent(s){ const a=s.actions[s.actionIndex%s.actions.length]; const str=s.buffs?.strength||0;
+        if(a==='fortify') return [{type:'defend',val:20,label:'🛡',num:'20',detail:'坚守：为自身获得 20 点格挡'}];
+        if(a==='shieldbash') return [{type:'attack',val:10+str,label:'⚔️',num:String(10+str),detail:`盾击：造成 ${10+str} 点伤害`},{type:'defend',val:12,label:'🛡',num:'12',detail:'同时获得 12 点格挡'}];
+        return [{type:'attack',val:14+str,label:'⚔️',num:String(14+str),detail:`重锤：造成 ${14+str} 点伤害`}]; },
+      doAction(cs,si){ const s=cs.enemies[si],a=s.actions[s.actionIndex%s.actions.length]; const str=s.buffs.strength||0;
+        if(a==='fortify') s.block+=20;
+        else if(a==='shieldbash'){ Combat.enemyAttack(cs,si,10+str); s.block+=12; }
+        else Combat.enemyAttack(cs,si,14+str);
+        s.actionIndex++; }
+    },
+    cursemage: {
+      id:'cursemage', name:'诅咒法师', emoji:'🔮', hp:40, maxHp:40, actions:['darkbolt','hex','darkbolt','curse_rite','darkbolt'],
+      getIntent(s){ const a=s.actions[s.actionIndex%s.actions.length]; const str=s.buffs?.strength||0;
+        if(a==='hex') return [{type:'debuff',label:'💢',num:'诅咒术',detail:'对玩家施加 2 层【易伤】和 2 层【虚弱】'}];
+        if(a==='curse_rite') return [{type:'pollute',label:'🔥',num:'黑暗仪式',detail:'造成 6 点伤害，并将 2 张「诅咒」牌插入手牌'}];
+        return [{type:'attack',val:12+str,label:'⚔️',num:String(12+str),detail:`暗影箭：造成 ${12+str} 点伤害`}]; },
+      doAction(cs,si){ const s=cs.enemies[si],a=s.actions[s.actionIndex%s.actions.length]; const str=s.buffs.strength||0;
+        if(a==='hex'){ Combat.applyDebuff(cs.player,'vulnerable',2); Combat.applyDebuff(cs.player,'weak',2); }
+        else if(a==='curse_rite'){ Combat.enemyAttack(cs,si,6); cs.hand.push('curse_card'); cs.hand.push('curse_card'); }
+        else Combat.enemyAttack(cs,si,12+str);
+        s.actionIndex++; }
+    },
+    berserker: {
+      id:'berserker', name:'嗜血狂徒', emoji:'🪓', hp:62, maxHp:62, actions:['rage','cleave','cleave','frenzy','cleave'],
+      getIntent(s){ const a=s.actions[s.actionIndex%s.actions.length]; const str=s.buffs?.strength||0;
+        if(a==='rage') return [{type:'buff',label:'✨',num:'狂暴',detail:'为自身叠加 3 层【力量】\n力量：每层使攻击伤害 +1（永久）'}];
+        if(a==='frenzy') return [{type:'attack',val:8+str,label:'⚔️',num:`×2(${8+str})`,detail:`狂乱连击：造成 2×${8+str} = ${2*(8+str)} 点伤害`}];
+        return [{type:'attack',val:13+str,label:'⚔️',num:String(13+str),detail:`劈砍：造成 ${13+str} 点伤害`}]; },
+      doAction(cs,si){ const s=cs.enemies[si],a=s.actions[s.actionIndex%s.actions.length]; const str=s.buffs.strength||0;
+        if(a==='rage') Combat.applyBuff(s,'strength',3);
+        else if(a==='frenzy'){ for(let i=0;i<2;i++) Combat.enemyAttack(cs,si,8+(s.buffs.strength||0)); }
+        else Combat.enemyAttack(cs,si,13+str);
+        s.actionIndex++; }
+    },
     liuxing1: {
       id:'liuxing1', name:'刘行·赛场新秀', emoji:'🏎️', hp:48, maxHp:48, actions:['cruise','shift_up','sprint','brake','sprint'],
       getIntent(s){ const a=s.actions[s.actionIndex%s.actions.length]; const g=s.gear||2;
@@ -438,6 +540,9 @@ const Data = {
     easy2:  [['louse2','louse2'],['cultist2'],['louse2','louse2','louse2']],
     medium2:[['jawworm2'],['louse2','cultist2'],['jawworm2','louse2']],
     hard2:  [['jawworm2','cultist2'],['jawworm2','jawworm2']],
+    easy3:  [['ironguard','cursemage'],['berserker'],['cursemage','cursemage']],
+    medium3:[['ironguard','berserker'],['berserker','cursemage'],['ironguard','ironguard']],
+    hard3:  [['berserker','berserker'],['ironguard','cursemage','berserker']],
     boss2:  [['banbu']],
     boss3:  [['boge']]
   },
@@ -447,6 +552,7 @@ const Data = {
       id: 'protein_powder',
       name: '大眼的蛋白粉',
       icon: '💪',
+      tier: 'rare',
       desc: '拾起后永久获得 +1 力量，使所有攻击永久加成 1 点伤害。',
       apply(run){ run.character.buffs = run.character.buffs||{}; run.character.buffs.strength = (run.character.buffs.strength||0)+1; }
     },
@@ -454,6 +560,7 @@ const Data = {
       id: 'spike_shoes',
       name: '大眼的钉鞋',
       icon: '👟',
+      tier: 'uncommon',
       desc: '每个回合结束后，有 5% 的概率跳过怪物回合，直接进入下一个玩家回合。',
       apply(run){ run.relics.push('spike_shoes'); }
     },
@@ -461,6 +568,7 @@ const Data = {
       id: 'magnifier',
       name: '大眼的放大镜',
       icon: '🔍',
+      tier: 'uncommon',
       desc: '每场战斗开始时，手牌中随机 1 张牌费用变为 0（仅本回合有效）。',
       apply(run){ run.relics.push('magnifier'); }
     },
@@ -468,6 +576,7 @@ const Data = {
       id: 'iron_stomach',
       name: '大眼的鐵胃',
       icon: `<img src="/manus-storage/img_00_572k_79c2d105.png" style="width:44px;height:44px;object-fit:contain;vertical-align:middle">`,
+      tier: 'common',
       desc: '永久增加 11 点生命上限，并立即回复 11 点 HP。',
       apply(run){ run.character.maxHp+=11; run.character.hp=Math.min(run.character.hp+11,run.character.maxHp); }
     },
@@ -475,6 +584,7 @@ const Data = {
       id: 'amulet',
       name: '大眼的水晶球',
       icon: '🔮',
+      tier: 'rare',
       desc: '每局游戏第一次被致死时，以 50% 最大生命值存活（仅触发一次）。',
       apply(run){ run.relics.push('amulet'); }
     }
@@ -485,6 +595,7 @@ const Data = {
       id: 'datou_spanish_book',
       name: '大头的西班牙语书',
       icon: '📖',
+      tier: 'uncommon',
       desc: '回合结束时，若本回合造成过伤害，回复 2 点 HP',
       apply(run){ run.relics.push('datou_spanish_book'); }
     },
@@ -492,6 +603,7 @@ const Data = {
       id: 'datou_sunglasses',
       name: '大头的墨镜',
       icon: '🕶️',
+      tier: 'rare',
       desc: '每场战斗第一回合，额外抽 2 张牌并获得 1 点能量',
       apply(run){ run.relics.push('datou_sunglasses'); }
     },
@@ -499,6 +611,7 @@ const Data = {
       id: 'datou_drumstick',
       name: '大头的鼓棒',
       icon: '🥁',
+      tier: 'epic',
       desc: '打出攻击牌时，10% 概率额外释放一次',
       apply(run){ run.relics.push('datou_drumstick'); }
     },
@@ -506,6 +619,7 @@ const Data = {
       id: 'datou_hat',
       name: '大头的帽子',
       icon: '🧢',
+      tier: 'common',
       desc: '永久增加 20 点生命上限，并立即回复 20 点 HP。',
       apply(run){ run.character.maxHp += 20; run.character.hp = Math.min(run.character.hp + 20, run.character.maxHp); run.relics.push('datou_hat'); }
     },
@@ -513,6 +627,7 @@ const Data = {
       id: 'datou_whistle',
       name: '大头的哨子',
       icon: '🎺',
+      tier: 'uncommon',
       desc: '回合结束时，若本回合未打出过防御牌，获得 10 点格挡',
       apply(run){ run.relics.push('datou_whistle'); }
     },
@@ -523,6 +638,7 @@ const Data = {
       id: 'wenhao_scarf',
       name: '文豪的红领巾',
       icon: '👔',
+      tier: 'uncommon',
       desc: '每场战斗结束时，若本场战斗全程未受到任何伤害，永久增加 5 点生命上限。',
       apply(run){ run.relics.push('wenhao_scarf'); }
     },
@@ -530,6 +646,7 @@ const Data = {
       id: 'wenhao_feather',
       name: '文豪的羽毛',
       icon: '🪶',
+      tier: 'epic',
       desc: '生命首次低于最大生命值的 50% 时，立刻回复 40% 最大生命值。（全局仅触发一次；一击致死不触发）',
       apply(run){ run.relics.push('wenhao_feather'); }
     },
@@ -537,6 +654,7 @@ const Data = {
       id: 'wenhao_script',
       name: '文豪的剧本',
       icon: '📜',
+      tier: 'epic',
       desc: '获取时，免费删除至多 2 张卡牌；之后可花费 50 金币再删 1 张。（人生的剧本由你自己决定）',
       apply(run){ run.relics.push('wenhao_script'); }
     }
@@ -547,6 +665,7 @@ const Data = {
       id: 'gaoshan_sunglasses',
       name: '高山的雪镜',
       icon: '🥽',
+      tier: 'rare',
       desc: '每回合开始时，有 35% 概率获得 1 点额外能量。（期望约每3回合触发1次）',
       apply(run){ run.relics.push('gaoshan_sunglasses'); }
     },
@@ -554,6 +673,7 @@ const Data = {
       id: 'gaoshan_jacket',
       name: '高山的冲锋衣',
       icon: '🧥',
+      tier: 'rare',
       desc: '每场战斗中，第一次获得格挡时，格挡值翻倍。',
       apply(run){ run.relics.push('gaoshan_jacket'); }
     },
@@ -561,6 +681,7 @@ const Data = {
       id: 'gaoshan_compass',
       name: '高山的指南针',
       icon: '🧭',
+      tier: 'epic',
       desc: '激活后，第三层地图变为一条直路（7~10节点），难度大幅降低：精英 5%、普通战斗 35%、商店 25%、市井 35%，最后一个节点必为商店。',
       apply(run){ run.relics.push('gaoshan_compass'); }
     },
@@ -568,6 +689,7 @@ const Data = {
       id: 'gaoshan_braid',
       name: '高山的麻花辫',
       icon: '💇',
+      tier: 'uncommon',
       desc: '每场战斗开始时，随机回复 3~8 点 HP。',
       apply(run){ run.relics.push('gaoshan_braid'); }
     }
@@ -578,6 +700,7 @@ const Data = {
       id: 'wangwei_bracelet',
       name: '王微的手绳',
       icon: '📿',
+      tier: 'rare',
       desc: '每回合开始时，获得 3 点格挡（不会消失，可累计）。',
       apply(run){ run.relics.push('wangwei_bracelet'); }
     },
@@ -585,6 +708,7 @@ const Data = {
       id: 'wangwei_glasses',
       name: '王微的眼镜',
       icon: '👓',
+      tier: 'rare',
       desc: '受到伤害时，有 20% 概率减少最多 15 点伤害。',
       apply(run){ run.relics.push('wangwei_glasses'); }
     },
@@ -592,6 +716,7 @@ const Data = {
       id: 'wangwei_bowl',
       name: '王微的碗',
       icon: '🍜',
+      tier: 'common',
       desc: '每场战斗结束后，回复 5 点 HP。',
       apply(run){ run.relics.push('wangwei_bowl'); }
     },
@@ -599,6 +724,7 @@ const Data = {
       id: 'wangwei_wallet',
       name: '王微的钱包',
       icon: '👛',
+      tier: 'uncommon',
       desc: '每场战斗结束后，金币奖励额外 +25%。',
       apply(run){ run.relics.push('wangwei_wallet'); }
     },
@@ -606,6 +732,7 @@ const Data = {
       id: 'wangwei_optimism',
       name: '王微的乐观',
       icon: '🌟',
+      tier: 'uncommon',
       desc: '每场战斗开始时，随机回复 1~10 点 HP。',
       apply(run){ run.relics.push('wangwei_optimism'); }
     }
@@ -638,7 +765,7 @@ const Data = {
       id: 'susu_pocketwatch',
       name: '苏苏的怀表',
       icon: '⌚',
-      tier: 'rare',
+      tier: 'epic',
       source: 'battle',
       desc: '当你被致死时，有 5% 概率时间倒流：满血复活，并瞬间击溃当前房间所有敌人（Boss 房：仅复活）。每场冒险仅触发一次。',
       apply(run){ run.relics.push('susu_pocketwatch'); }
@@ -647,7 +774,7 @@ const Data = {
       id: 'xiaojiu_guitar',
       name: '小九的六弦琴',
       icon: null,
-      tier: 'rare',
+      tier: 'epic',
       source: 'battle',  // 可通过战斗掉落获得
       img: '/manus-storage/xiaojiu_guitar_e444f0fa.png',
       desc: '每场战斗的每个回合额外多抽 1 张牌。',
@@ -702,6 +829,10 @@ const Data = {
       'quick_upshift','forced_downshift','redline','race_instinct','full_throttle',
       'anti_skid','gear_lock','overspeed',
       'speed_rush','corner_guard','inertia_strike','speed_limit_break','speed_activate'],
+    // 拳击手专属奖励池
+    boxer: ['box_combo','box_body_blow','box_counter','box_iron_step',
+      'box_haymaker','box_rage_combo','box_taunt','box_second_wind',
+      'box_bloodlust','box_iron_will'],
     // 射手专属奖励池
     archer: ['ar_shoot','ar_dodge','ar_aim','ar_sprint','ar_charge_shot','ar_vuln_arrow',
       'ar_double_shot','ar_block_charge','ar_roll','ar_pierce','ar_swap','ar_rapid_fire','ar_wind_step','ar_focus_aim',
@@ -938,6 +1069,8 @@ const Data = {
               if (skipCandidates.length > 0) {
                 const skipNode = skipCandidates[Math.floor(Math.random() * skipCandidates.length)];
                 skipNode.done = true;
+                if(!run.travelEdges) run.travelEdges=[];
+                run.travelEdges.push(run.currentNodeId+'->'+skipNode.id);
                 run.currentNodeId = skipNode.id;
                 return { type: 'good', msg: '🚗💨 大头一脚油门，路边的世界都模糊了！你跳过了下一个房间。' };
               } else {
@@ -1338,13 +1471,28 @@ const Data = {
     strike:       { 1:{desc:'造成 <b>9</b> 点伤害。', cost:1}, 2:{desc:'造成 <b>12</b> 点伤害。', cost:1} },
     defend:       { 1:{desc:'获得 <b>8</b> 点格挡。', cost:1}, 2:{desc:'获得 <b>11</b> 点格挡。', cost:1} },
     bash:         { 1:{desc:'造成 <b>10</b> 点伤害并施加 <b>3</b> 层易伤。', cost:2}, 2:{desc:'造成 <b>10</b> 点伤害并施加 <b>3</b> 层易伤。<b>费用降为 1。</b>', cost:1} },
-    clash:        { 1:{desc:'若手牌全为攻击牌，造成 <b>18</b> 点伤害，否则 <b>8</b> 点。', cost:0}, 2:{desc:'若手牌全为攻击牌，造成 <b>22</b> 点伤害，否则 <b>10</b> 点。', cost:0} },
+    clash:        { 1:{desc:'若手牌全为攻击牌，造成 <b>16</b> 点伤害，否则 <b>7</b> 点。', cost:0}, 2:{desc:'若手牌全为攻击牌，造成 <b>20</b> 点伤害，否则 <b>9</b> 点。', cost:0} },
     pommel:       { 1:{desc:'造成 <b>9</b> 点伤害，摸 <b>2</b> 张牌。', cost:1}, 2:{desc:'造成 <b>9</b> 点伤害，摸 <b>2</b> 张牌。<b>费用降为 0。</b>', cost:0} },
     shrug:        { 1:{desc:'获得 <b>11</b> 点格挡，摸 1 张牌。', cost:1}, 2:{desc:'获得 <b>11</b> 点格挡，摸 <b>2</b> 张牌。', cost:1} },
     armaments:    { 1:{desc:'获得 <b>5</b> 点格挡，并升级手牌中 <b>1</b> 张牌（本战斗有效）。', cost:1}, 2:{desc:'获得 <b>5</b> 点格挡，并升级手牌中 <b>所有</b> 牌（本战斗有效）。', cost:1} },
     inflame:      { 1:{desc:'永久获得 <b>3</b> 层力量。', cost:1}, 2:{desc:'永久获得 <b>3</b> 层力量。<b>费用降为 0。</b>', cost:0} },
     ironwave:     { 1:{desc:'获得 <b>5+力量</b> 格挡，造成等量伤害。<b>力量加成翻倍计入。</b>', cost:1}, 2:{desc:'获得 <b>7+力量</b> 格挡，造成等量伤害。力量加成翻倍计入。', cost:1} },
     thunderclap:  { 1:{desc:'对所有敌人造成 <b>7</b> 点伤害并施加 1 层易伤。', cost:1}, 2:{desc:'对所有敌人造成 <b>7</b> 点伤害并施加 <b>2</b> 层易伤。', cost:1} },
+    // ── 拳击手卡牌升级 ──
+    box_jab:        { 1:{desc:'造成 <b>7</b> 点伤害。',            cost:1}, 2:{desc:'造成 <b>10</b> 点伤害。',                          cost:1} },
+    box_guard:      { 1:{desc:'获得 <b>8</b> 点格挡。',            cost:1}, 2:{desc:'获得 <b>11</b> 点格挡。',                          cost:1} },
+    box_cross:      { 1:{desc:'造成 <b>12</b> 点伤害。',           cost:1}, 2:{desc:'造成 <b>15</b> 点伤害。',                          cost:1} },
+    box_uppercut:   { 1:{desc:'造成 <b>26</b> 点伤害。若上回合未受到伤害，仅造成 <b>13</b> 点。', cost:2}, 2:{desc:'造成 <b>30</b> 点伤害。若上回合未受到伤害，仅造成 <b>16</b> 点。', cost:2} },
+    box_combo:      { 1:{desc:'造成 <b>3</b> 段 <b>4</b> 点伤害。', cost:1}, 2:{desc:'造成 <b>3</b> 段 <b>5</b> 点伤害。',                cost:1} },
+    box_body_blow:  { 1:{desc:'造成 <b>13</b> 点伤害，施加 1 层虚弱。', cost:1}, 2:{desc:'造成 <b>16</b> 点伤害，施加 <b>2</b> 层虚弱。', cost:1} },
+    box_counter:    { 1:{desc:'造成 <b>7</b> 点伤害。有愤怒时改为 <b>13</b> 点并消耗愤怒。', cost:1}, 2:{desc:'造成 <b>9</b> 点伤害。有愤怒时改为 <b>16</b> 点并消耗愤怒。', cost:1} },
+    box_iron_step:  { 1:{desc:'获得 <b>13</b> 点格挡。',           cost:1}, 2:{desc:'获得 <b>16</b> 点格挡。',                          cost:1} },
+    box_haymaker:   { 1:{desc:'消耗全部愤怒，每点愤怒转 <b>4</b> 伤，基础 <b>18</b> 点。', cost:2}, 2:{desc:'消耗全部愤怒，每点愤怒转 <b>5</b> 伤，基础 <b>22</b> 点。', cost:2} },
+    box_rage_combo: { 1:{desc:'愤怒 ≥ <b>2</b> 时 3 段 <b>4+愤怒</b> 伤；否则 1 段 <b>8</b> 点。', cost:1}, 2:{desc:'愤怒 ≥ <b>2</b> 时 3 段 <b>5+愤怒</b> 伤；否则 1 段 <b>10</b> 点。', cost:1} },
+    box_taunt:      { 1:{desc:'立即获得 <b>3</b> 点愤怒。打出后消耗。', cost:1}, 2:{desc:'<b>0费</b>。立即获得 <b>3</b> 点愤怒。打出后消耗。', cost:0} },
+    box_second_wind:{ 1:{desc:'回复 <b>10</b> 点 HP（HP < 50% 时改为 <b>14</b> 点）。', cost:2}, 2:{desc:'<b>1费</b>。回复 <b>12</b> 点 HP（HP < 50% 时改为 <b>16</b> 点）。', cost:1} },
+    box_bloodlust:  { 1:{desc:'<b>1费</b>。能力。HP 低于一半时每回合开始 +1 能量。', cost:1}, 2:{desc:'<b>1费</b>。能力。HP 低于一半时每回合开始 +1 能量并额外抽 <b>1</b> 张牌。', cost:1} },
+    box_iron_will:  { 1:{desc:'<b>0费</b>。能力。搏命加成翻倍（每损失 25% HP <b>+4</b>）。', cost:0}, 2:{desc:'<b>0费</b>。能力。搏命加成三倍（每损失 25% HP <b>+6</b>）。', cost:0} },
   },
 };
 
@@ -2458,14 +2606,14 @@ const MapGen = {
       dot.setAttribute('fill',act===2?`rgba(255,210,80,${op.toFixed(2)})`:`rgba(255,255,255,${op.toFixed(2)})`);svg.appendChild(dot);
     }
     const reachable=currentNodeId!=null?new Set(MapGen.getReachableNodes(map,currentNodeId).map(String)):new Set();
-    // 已走过路径集合
-    const doneNodes=new Set(map.nodes.filter(n=>n.done).map(n=>String(n.id)));
+    // 玩家实际走过的边（_enterNode 中维护的 travelEdges）
+    const travelEdges=new Set((State.run&&State.run.travelEdges)||[]);
     // 绘制路径
     map.paths.forEach(p=>{
       const a=nodePos[p.from],b=nodePos[p.to];if(!a||!b)return;
       // 只有从当前节点出发且目标可达才高亮
       const ir=String(p.from)===String(currentNodeId)&&reachable.has(String(p.to));
-      const isDone=doneNodes.has(String(p.from))&&doneNodes.has(String(p.to));
+      const isDone=travelEdges.has(p.from+'->'+p.to);
       // 贝塞尔控制点：垂直方向各 1/3 处，水平方向加入与节点位置相关的自然偏移
       // 关键改进：控制点 x 坐标向节点本身的 x 方向偏移，使曲线更「流向」节点
       const midX=(a.x+b.x)/2;
@@ -2605,6 +2753,8 @@ const Combat = {
     if(State.run?.character?.id==='racer'){ cs.gear=2; cs._shiftedUpThisTurn=false; cs._gearLocked=false; cs._fuelSaveActive=false; cs._fuelSaveAllActive=false; cs.speed=0; cs.momentum=0; cs._gearShiftCount={}; }
     // 射手：初始化蓄力系统
     if(State.run?.character?.id==='archer'){ cs.charge=0; cs.chargeMax=5; cs._archerNextAttackDiscount=0; }
+    // 拳击手：初始化愤怒系统
+    if(State.run?.character?.id==='boxer'){ cs.damageTakenThisEnemyPhase=0; cs.damageTakenLastTurn=0; if(!cs.player.buffs) cs.player.buffs={}; cs.player.buffs.fury=0; }
     // ── 升级映射：将 deck 索引升级数据转换为 {cardId: [level, level, ...]} ──
     // 每张牌可能在 deck 中有多份，upgradeMap[cardId] 是一个队列，战斗中抽牌时依次取用
     cs.upgradeMap = {};
@@ -2767,6 +2917,10 @@ const Combat = {
     if(State.run?.character?.id === 'archer' && typeof UI !== 'undefined' && UI._renderHand){
       setTimeout(()=>{ const _cs2=State.run?.combat; if(_cs2 && _cs2.phase==='player') UI._renderHand(_cs2); }, 50);
     }
+    // 拳击手：每次打牌后愤怒/血量可能变化，重渲染手牌刷新所有动态数字
+    if(State.run?.character?.id === 'boxer' && typeof UI !== 'undefined' && UI._renderHand){
+      setTimeout(()=>{ const _cs2=State.run?.combat; if(_cs2 && _cs2.phase==='player') UI._renderHand(_cs2); }, 50);
+    }
     if(def.type!=='power')cs.discardPile.push(cardId);
     // 记录能力牌的升级等级（用于遗物联动）
     if(def.type==='power' && _upgradeLevel > 0){
@@ -2805,6 +2959,12 @@ const Combat = {
   },
   endTurn(){
     const cs=State.run.combat;if(cs.phase!=='player')return;cs.phase='enemy';
+    // ── 拳击手愤怒：回合结束时清零（新值在敌方行动后写入）──
+    if(State.run?.character?.id==='boxer'){
+      cs.damageTakenLastTurn=cs.damageTakenThisEnemyPhase||0;
+      cs.damageTakenThisEnemyPhase=0;
+      if(cs.player.buffs) cs.player.buffs.fury=0;
+    }
     // ── 手牌惩罚牌：回合结束时检查手牌中的负面牌 ──
     const HAND_PENALTY = { poison_card:3, bleed_card:4 };
     let penaltyTotal = 0;
@@ -2884,6 +3044,12 @@ const Combat = {
       }
     });
     } // end spike_shoes else
+    // 拳击手愤怒计算：本轮原始来袭伤害÷3（无上限），下回合作为攻击加成
+    if(State.run?.character?.id==='boxer'){
+      const rawFury=Math.floor((cs.damageTakenThisEnemyPhase||0)/3);
+      if(!cs.player.buffs) cs.player.buffs={};
+      cs.player.buffs.fury=rawFury>0?rawFury:0;
+    }
     if(cs.player.hp<=0){
       const run2=State.run;
       // 苏苏的怀表：5% 概率满血复活并秒杀非Boss房全场敌人（每场冒险仅一次）
@@ -2938,9 +3104,9 @@ const Combat = {
       // 速度感分段解锁：检查是否突破阈值并触发解锁动画
       const _speedThresholds = [
         {val:20, name:'稳定行驶', desc:'每回合开始自动获得 1 点格挡', color:'#a8e6ff', icon:'🛡'},
-        {val:40, name:'加速中',   desc:'攻击牌伤害 +1',               color:'#f9ca24', icon:'⚡'},
+        {val:40, name:'加速中',   desc:'攻击牌伤害 +2',               color:'#f9ca24', icon:'⚡'},
         {val:60, name:'高速行驶', desc:'每次升挡额外抽 1 张牌（每回合限1次）', color:'#ff9f43', icon:'🏎️'},
-        {val:80, name:'极速状态', desc:'攻击牌伤害提升至 +3（叠加）',  color:'#ff6b6b', icon:'🔥'},
+        {val:80, name:'极速状态', desc:'攻击牌伤害提升至 +5（叠加）',  color:'#ff6b6b', icon:'🔥'},
       ];
       _speedThresholds.forEach(t=>{
         if(_prevSpeed < t.val && _newSpeed >= t.val){
@@ -3006,17 +3172,29 @@ const Combat = {
     }
     // ── 射手蓄力系统回合开始处理 ──
     if(State.run?.character?.id==='archer'){
-      // 猜手直觉：每回合开始获得 1 点蓄力
-      if((cs.player.buffs.archer_instinct||0)>0){ Combat.archerGainCharge(cs,1); }
+      // 猜手直觉：每 2 回合开始获得 1 点蓄力（削弱）
+      if((cs.player.buffs.archer_instinct||0)>0){
+        cs._instinctCounter=(cs._instinctCounter||0)+1;
+        if(cs._instinctCounter%2===0) Combat.archerGainCharge(cs,1);
+      }
       // 蓄力爆发：每回合开始若蓄力≥阈值，+1能量; +1/+2升级后阈值降为2
       if((cs.player.buffs.ar_threshold||0)>0){ const _atLv=Combat._getCardUpgradeLevel(cs,'ar_threshold'); const _atThreshold=_atLv>=1?2:4; if((cs.charge||0)>=_atThreshold){ cs.energy+=1; } }
       // 重置攻击牌费用折扣
       cs._archerNextAttackDiscount=0;
     }
+    // ── 拳击手回合开始处理 ──
+    let bloodlustExtraDraw = 0;
+    if(State.run?.character?.id==='boxer'){
+      // 嗜血本能：HP低于一半时+1能量；Lv2 额外抽1张
+      if((cs.player.buffs?.box_bloodlust||0)>0 && cs.player.hp < cs.player.maxHp/2){
+        cs.energy+=1;
+        if(Combat._getCardUpgradeLevel(cs,'box_bloodlust')>=2) bloodlustExtraDraw=1;
+      }
+    }
     // 小九的六弦琴：每回合额外多抄 1 张牌
     const guitarDraw = (State.run.relics && State.run.relics.includes('xiaojiu_guitar')) ? 1 : 0;
     const baseDrawCount = State.run.character.id==='archer' ? 6 : 5;
-    Combat.drawCards(cs, baseDrawCount + guitarDraw);
+    Combat.drawCards(cs, baseDrawCount + guitarDraw + bloodlustExtraDraw);
     State.run.character.hp=cs.player.hp;
     // 玩家回合开始时，怪物执行防御行动（格挡即时生效，玩家当回合可打破）
     cs.enemies.forEach((e,i)=>{
@@ -3032,10 +3210,12 @@ const Combat = {
     });
   },
   dealDamage(cs,targetIndex,amount){ const enemy=cs.enemies[targetIndex];if(!enemy||enemy._dead)return 0; let dmg=amount+(cs.player.buffs.strength||0);
-    // 速度感攻击加成：40-79=+1，>=80=+3
-    if(State.run?.character?.id==='racer'){ const _spd=cs.speed||0; if(_spd>=80) dmg+=3; else if(_spd>=40) dmg+=1; } if((enemy.debuffs.vulnerable||0)>0)dmg=Math.floor(dmg*1.5); if((cs.player.debuffs.weak||0)>0)dmg=Math.floor(dmg*0.75); if((cs.player.debuffs.slow||0)>0)dmg=Math.floor(dmg*0.75); const absorbed=Math.min(enemy.block,dmg);enemy.block=Math.max(0,enemy.block-absorbed);const actualDmg=dmg-absorbed;enemy.hp-=actualDmg;
+    // 速度感攻击加成：40-79=+2，>=80=+5
+    if(State.run?.character?.id==='racer'){ const _spd=cs.speed||0; if(_spd>=80) dmg+=5; else if(_spd>=40) dmg+=2; } if((enemy.debuffs.vulnerable||0)>0)dmg=Math.floor(dmg*1.5); if((cs.player.debuffs.weak||0)>0)dmg=Math.floor(dmg*0.75); if((cs.player.debuffs.slow||0)>0)dmg=Math.floor(dmg*0.75); const absorbed=Math.min(enemy.block,dmg);enemy.block=Math.max(0,enemy.block-absorbed);const actualDmg=dmg-absorbed;enemy.hp-=actualDmg;
     // 大头的西班牙语书：记录本回合是否对敌人造成过实际伤害
     if(actualDmg > 0) cs.dealtDamageThisTurn = true;
+    // 死亡判定：HP≤0 立即标记死亡并归零（修复柠檬水等绕过 playCard 的伤害源）
+    if(enemy.hp<=0 && !enemy._dead){ enemy._dead=true; enemy.hp=0; }
     return actualDmg; },
   enemyAttack(cs,enemyIndex,amount){ const enemy=cs.enemies[enemyIndex];if(!enemy||enemy._dead)return 0; let dmg=amount+(enemy.buffs.strength||0); if((enemy.debuffs.weak||0)>0)dmg=Math.floor(dmg*0.75); if((enemy.debuffs.slow||0)>0)dmg=Math.floor(dmg*0.75); if((cs.player.debuffs.vulnerable||0)>0)dmg=Math.floor(dmg*1.5);
     // 王微的眼镜：20%概率完全无视本次伤害（多段攻击中触发后，本轮后续攻击也全部跳过）
@@ -3051,6 +3231,8 @@ const Combat = {
         setTimeout(()=>tip.remove(),1800);
       },50);
     }
+    // 拳击手愤怒累计：基于原始来袭伤害（含被格挡部分），不受血量是否被扣影响
+    if(dmg>0 && State.run?.character?.id==='boxer') cs.damageTakenThisEnemyPhase=(cs.damageTakenThisEnemyPhase||0)+dmg;
     const absorbed=Math.min(cs.player.block,dmg);cs.player.block=Math.max(0,cs.player.block-absorbed);const actualPlayerDmg=dmg-absorbed;cs.player.hp-=actualPlayerDmg;
     if(actualPlayerDmg>0){
       // 超载：受到伤害时额外获得格挡（每层+1，最多3层）
@@ -3058,6 +3240,8 @@ const Combat = {
       if(overloadStacks>0){ cs.player.block=(cs.player.block||0)+overloadStacks; }
       setTimeout(()=>Audio.playHurt(),50);
       cs._tookDamageThisCombat=true;
+      // 累计本回合实际扣血，用于 endTurn 末尾统一飘字
+      cs._turnHpLost = (cs._turnHpLost||0) + actualPlayerDmg;
       // 文豪的羽毛：生命首次低于最大生命值50%时立刻回满（全局仅一次，一击致死不触发）
       if(run?.relics?.includes('wenhao_feather') && !run._featherUsed &&
          cs.player.hp > 0 && cs.player.hp < cs.player.maxHp * 0.5){
@@ -3210,17 +3394,20 @@ const Combat = {
     {
       const dropRate = node ? (node.type==='boss' ? 0.90 : node.type==='elite' ? 0.25 : 0.10) : 0;
       if(Math.random() < dropRate){
-        // 按等级权重随机：普通60% / 稀有30% / 罕见10%
+        // 按等级权重随机：普通45% / 精良30% / 稀有20% / 史诗5%
         const owned = run.relics || [];
         const tierRoll = Math.random();
-        let targetTier = tierRoll < 0.60 ? 'common' : tierRoll < 0.90 ? 'rare' : 'epic';
+        let targetTier = tierRoll < 0.45 ? 'common' : tierRoll < 0.75 ? 'uncommon' : tierRoll < 0.95 ? 'rare' : 'epic';
         // 只从 source==='battle' 的遗物中抽取（event/shop/boss 专属遗物不在此池中）
         // actRestrict 字段限制遗物只在特定 act 掉落
         const currentAct = run.act || 1;
         let pool = Data.battleRelics.filter(r => r.source === 'battle' && r.tier === targetTier && !owned.includes(r.id) && (!r.actRestrict || r.actRestrict === currentAct));
         // 若该等级无可用遗物，降级查找
-        if(pool.length === 0) pool = Data.battleRelics.filter(r => r.source === 'battle' && r.tier === 'rare' && !owned.includes(r.id) && (!r.actRestrict || r.actRestrict === currentAct));
-        if(pool.length === 0) pool = Data.battleRelics.filter(r => r.source === 'battle' && r.tier === 'common' && !owned.includes(r.id) && (!r.actRestrict || r.actRestrict === currentAct));
+        const fallbackOrder = ['epic','rare','uncommon','common'];
+        const startIdx = fallbackOrder.indexOf(targetTier);
+        for(let fi = startIdx+1; fi < fallbackOrder.length && pool.length === 0; fi++){
+          pool = Data.battleRelics.filter(r => r.source === 'battle' && r.tier === fallbackOrder[fi] && !owned.includes(r.id) && (!r.actRestrict || r.actRestrict === currentAct));
+        }
         if(pool.length > 0){
           const picked = pool[Math.floor(Math.random() * pool.length)];
           run.pendingRelic = picked.id;  // 存入待领取，在奖励界面展示
@@ -3299,6 +3486,23 @@ const Combat = {
 
   // ── 赛车手档位系统核心方法 ────────────────────────────────────────────────────────────────────────────────
   // 获取 full_throttle 的实际伤害加成（考虑升级等级）
+  // 拳击手：搏命加成（纯HP段位加成，不含愤怒）
+  _getBoxerBerserk(cs){
+    if(State.run?.character?.id!=='boxer') return 0;
+    let mult=2;
+    if((cs.player.buffs?.box_iron_will||0)>0){
+      const lv=Combat._getCardUpgradeLevel(cs,'box_iron_will');
+      mult=lv>=2?6:4;
+    }
+    const lost=1-cs.player.hp/cs.player.maxHp;
+    return Math.min(mult*3, Math.floor(lost/0.25)*mult);
+  },
+  // 拳击手：全攻击加成 = 愤怒 + 搏命
+  _getBoxerBonus(cs){
+    if(State.run?.character?.id!=='boxer') return 0;
+    const fury=cs.player.buffs?.fury||0;
+    return fury+Combat._getBoxerBerserk(cs);
+  },
   _getFtBonus(cs){
     if((cs.player.buffs.full_throttle||0) <= 0) return 0;
     const lv = Combat._getCardUpgradeLevel(cs, 'full_throttle');
@@ -3786,22 +3990,25 @@ const UI = {
     const isRacer = State.run?.character?.id === 'racer';
     if(cs && isRacer && inCombatHand){
       const g = cs.gear || 2;
-      const atkMul = [0, 0.8, 1.0, 1.3][g];
-      const blkMul = [0, 1.3, 1.0, 0.7][g];
+      const atkMul = [0, 0.8, 1.0, 1.5][g];
+      const blkMul = [0, 1.4, 1.0, 0.7][g];
       const spd = cs.speed || 0;
       const ft = (cs.player?.buffs?.full_throttle||0) > 0;
       const ftBonus = Combat._getFtBonus(cs);
+      const str = cs.player?.buffs?.strength || 0;
+      const spdAtk = spd>=80?5:(spd>=40?2:0);
+      const dmgExtra = str + spdAtk; // 力量+速度感攻击加成（在 dealDamage 里自动加）
       const gearLabel = ['','<span style="color:#7dccff">1挡</span>','<span style="color:#e0e0e0">2挡</span>','<span style="color:#ff7d7d">3挡</span>'][g];
       const RACER_CARDS = {
-        gear_strike: ()=>{ const d=Math.floor(6*atkMul)+ftBonus; return `造成 <b>${d}</b> 点伤害。<br><span style="font-size:0.78em;opacity:0.8">${gearLabel}</span>`; },
+        gear_strike: ()=>{ const d=Math.floor(6*atkMul)+ftBonus+dmgExtra; return `造成 <b>${d}</b> 点伤害。<br><span style="font-size:0.78em;opacity:0.8">${gearLabel}</span>`; },
         gear_defend: ()=>{ const d=Math.floor(5*blkMul); const rl=(cs.player?.buffs?.redline||0)>0; return `获得 <b>${rl&&g===3?5:d}</b> 点格挡。<br><span style="font-size:0.78em;opacity:0.8">${gearLabel}</span>`; },
-        gear_brake:  ()=>{ const d=Math.floor(8*atkMul)+ftBonus; const extra=g>=3?' <span style="color:#f9ca24">并施加 2 层「减速」</span>':''; return `造成 <b>${d}</b> 点伤害。${extra}<br><span style="font-size:0.78em;opacity:0.8">${gearLabel}</span>`; },
-        nitro_boost: ()=>{ const d=g>=3?16:Math.floor(12*atkMul)+ftBonus; const note=g>=3?'<span style="color:#f9ca24">已处于最高挡，改为直接造成 16 伤</span>':'<span style="opacity:0.8">升至 3 挡</span>'; return `造成 <b>${d}</b> 点伤害。${note}<br><span style="font-size:0.78em;opacity:0.8">${gearLabel}</span>`; },
-        collision_block: ()=>{ const lv=upgradeLevel||0; const blkBase=[5,6,7][lv]||5; const dmgBase=[7,9,10][lv]||7; const blk=Math.floor(blkBase*blkMul); const dmg=Math.floor(dmgBase*atkMul)+ftBonus; return `获得 <b>${blk}</b> 点格挡，造成 <b>${dmg}</b> 点伤害${lv>=2?' 并施加 1 层易伤':''}。<br><span style="font-size:0.78em;opacity:0.8">${gearLabel}</span>`; },
-        drift_charge: ()=>{ const lv=upgradeLevel||0; const base2=[6,7,7][lv]||6; const step2=[20,20,16][lv]||20; const base=Math.floor(base2*atkMul)+ftBonus; const extra=Math.min(Math.floor(spd/step2)*2,8); return `对所有敌人造成 <b>${base}</b> 点伤害，速度感加成 <b>+${extra}</b>（每满${step2}点+2，上限+8）。<br><span style="font-size:0.78em;opacity:0.8">${gearLabel}</span>`; },
-        overtake:    ()=>{ const d=Math.floor(5*atkMul)+ftBonus; const free=g>=3?'<span style="color:#7dff7d">【免费】</span>':''; return `造成 <b>${d}+${d}</b> 点伤害（两段）。${free}<br><span style="font-size:0.78em;opacity:0.8">${gearLabel}</span>`; },
-        turbo_crush: ()=>{ const d=6*g; const note=g>=3?'<span style="color:#f9ca24">降至 1 挡</span>':'<span style="color:#f9ca24">降 2 挡</span>'; return `造成 <b>${d}</b> 点伤害。${note}<br><span style="font-size:0.78em;opacity:0.8">${gearLabel}</span>`; },
-        pit_repair:  ()=>{ const d=Math.floor(10*blkMul); const heal=g<=2?'<span style="color:#7dff7d">额外回血 4 HP</span>':''; return `获得 <b>${d}</b> 点格挡。${heal}<br><span style="font-size:0.78em;opacity:0.8">${gearLabel}</span>`; },
+        gear_brake:  ()=>{ const d=Math.floor(8*atkMul)+ftBonus+dmgExtra; const extra=g>=3?' <span style="color:#f9ca24">并施加 2 层「减速」</span>':''; return `造成 <b>${d}</b> 点伤害。${extra}<br><span style="font-size:0.78em;opacity:0.8">${gearLabel}</span>`; },
+        nitro_boost: ()=>{ const d=(g>=3?18:Math.floor(14*atkMul)+ftBonus)+dmgExtra; const note=g>=3?'<span style="color:#f9ca24">已处于最高挡，改为直接造成 18 伤</span>':'<span style="opacity:0.8">升至 3 挡</span>'; return `造成 <b>${d}</b> 点伤害。${note}<br><span style="font-size:0.78em;opacity:0.8">${gearLabel}</span>`; },
+        collision_block: ()=>{ const lv=upgradeLevel||0; const blkBase=[5,6,7][lv]||5; const dmgBase=[7,9,10][lv]||7; const blk=Math.floor(blkBase*blkMul); const dmg=Math.floor(dmgBase*atkMul)+ftBonus+dmgExtra; return `获得 <b>${blk}</b> 点格挡，造成 <b>${dmg}</b> 点伤害${lv>=2?' 并施加 1 层易伤':''}。<br><span style="font-size:0.78em;opacity:0.8">${gearLabel}</span>`; },
+        drift_charge: ()=>{ const lv=upgradeLevel||0; const base2=[6,7,7][lv]||6; const step2=[20,20,16][lv]||20; const base=Math.floor(base2*atkMul)+ftBonus+dmgExtra; const extra=Math.min(Math.floor(spd/step2)*2,8); return `对所有敌人造成 <b>${base}</b> 点伤害，速度感加成 <b>+${extra}</b>（每满${step2}点+2，上限+8）。<br><span style="font-size:0.78em;opacity:0.8">${gearLabel}</span>`; },
+        overtake:    ()=>{ const d=Math.floor(5*atkMul)+ftBonus+dmgExtra; const free=g>=3?'<span style="color:#7dff7d">【免费】</span>':''; return `造成 <b>${d}+${d}</b> 点伤害（两段）。${free}<br><span style="font-size:0.78em;opacity:0.8">${gearLabel}</span>`; },
+        turbo_crush: ()=>{ const d=8*g+dmgExtra; const note=g>=3?'<span style="color:#f9ca24">降至 1 挡</span>':'<span style="color:#f9ca24">降 2 挡</span>'; return `造成 <b>${d}</b> 点伤害。${note}<br><span style="font-size:0.78em;opacity:0.8">${gearLabel}</span>`; },
+        pit_repair:  ()=>{ const d=Math.floor(10*blkMul); const heal=g<=2?'<span style="color:#7dff7d">额外回血 6 HP</span>':''; return `获得 <b>${d}</b> 点格挡。${heal}<br><span style="font-size:0.78em;opacity:0.8">${gearLabel}</span>`; },
         gear_lock:   ()=>{ const d=(cs.gear||2)*3; return `本回合挡位锁定。获得 <b>${d}</b> 点格挡。<br><span style="font-size:0.78em;opacity:0.8">${gearLabel}</span>`; },
         overspeed:   ()=>{ const d=g>=3?Math.floor(10*1.3)+ftBonus:0; return g>=3?`造成 <b>${d}</b> 点伤害并降 1 挡。消耗。<br><span style="font-size:0.78em;opacity:0.8">${gearLabel}</span>`:`<span style="color:#888">当前不在 3 挡，此牌无效果。</span>`; },
         speed_rush:  ()=>{ const lv=upgradeLevel||0; const base=[3,4,5][lv]||3; const spMult=[3,4,5][lv]||3; const d=Math.floor(base*atkMul)+ftBonus; const sp=g*spMult; return `造成 <b>${d}</b> 点伤害，获得 <b>${sp}</b> 点速度感（当前${spd}）。<br><span style="font-size:0.78em;opacity:0.8">${gearLabel}</span>`; },
@@ -3820,68 +4027,69 @@ const UI = {
       const chargeMax = cs.chargeMax || 5;
       const chargeBar = `<span style="font-size:0.72em;opacity:0.75">蓄力 ${charge}/${chargeMax}</span>`;
       const lv = upgradeLevel || 0;
+      const str = cs.player?.buffs?.strength || 0;
       const ARCHER_CARDS = {
         ar_shoot: ()=>{
           const base = lv>=1?5:3;
-          const total = base + charge*3;
-          return `造成 <b>${total}</b> 点伤害（基础${base}+蓄力${charge}×3）。消耗全部蓄力。<br>${chargeBar}`;
+          const total = base + charge*3 + str;
+          return `造成 <b>${total}</b> 点伤害（基础${base}+蓄力${charge}×3${str?'+力量'+str:''}）。消耗全部蓄力。<br>${chargeBar}`;
         },
         ar_charge_shot: ()=>{
           const base = lv>=1?6:4;
           const mult = lv>=2?4:3;
-          const total = base + charge*mult;
-          return `造成 <b>${total}</b> 点伤害（基础${base}+蓄力${charge}×${mult}）。消耗全部蓄力。<br>${chargeBar}`;
+          const total = base + charge*mult + str;
+          return `造成 <b>${total}</b> 点伤害（基础${base}+蓄力${charge}×${mult}${str?'+力量'+str:''}）。消耗全部蓄力。<br>${chargeBar}`;
         },
         ar_vuln_arrow: ()=>{
           const base = lv>=1?5:3;
           const mult = lv>=2?3:2;
           const vuln = lv>=1?2:1;
-          const total = base + charge*mult;
-          return `造成 <b>${total}</b> 点伤害（基础${base}+蓄力${charge}×${mult}），施加 ${vuln} 层易伤。消耗全部蓄力。<br>${chargeBar}`;
+          const total = base + charge*mult + str;
+          return `造成 <b>${total}</b> 点伤害（基础${base}+蓄力${charge}×${mult}${str?'+力量'+str:''}），施加 ${vuln} 层易伤。消耗全部蓄力。<br>${chargeBar}`;
         },
         ar_double_shot: ()=>{
           const base = lv>=2?5:(lv>=1?4:3);
           const mult = lv>=2?3:2;
-          const single = base + charge*mult;
+          const single = base + charge*mult + str;
           const total = single * 2;
           return `造成 <b>${single}</b> 点伤害 2 次（共 <b>${total}</b> 点）。消耗全部蓄力。<br>${chargeBar}`;
         },
         ar_pierce: ()=>{
           const base = lv>=1?10:8;
           const mult = lv>=2?4:3;
-          const total = base + charge*mult;
-          return `造成 <b>${total}</b> 点伤害（无视格挡）（基础${base}+蓄力${charge}×${mult}）。消耗全部蓄力。<br>${chargeBar}`;
+          const total = base + charge*mult + str;
+          return `造成 <b>${total}</b> 点伤害（无视格挡）（基础${base}+蓄力${charge}×${mult}${str?'+力量'+str:''}）。消耗全部蓄力。<br>${chargeBar}`;
         },
         ar_rapid_fire: ()=>{
           const base = lv>=1?5:4;
-          const single = base + charge*2;
+          const single = base + charge*2 + str;
           const total = single * 3;
           return `造成 <b>${single}</b> 点伤害 3 次（共 <b>${total}</b> 点）。消耗全部蓄力。<br>${chargeBar}`;
         },
         ar_arrow_rain: ()=>{
           const base = lv>=2?5:(lv>=1?4:3);
-          const single = base + charge*2;
+          const single = base + charge*2 + str;
           const enemyCount = (cs.enemies||[]).filter(e=>!e._dead).length || 1;
           const total = single * 2 * enemyCount;
           return `对所有敌人造成 <b>${single}</b> 点伤害 2 次（共 <b>${total}</b> 点，${enemyCount}个目标）。消耗全部蓄力。<br>${chargeBar}`;
         },
         ar_full_charge: ()=>{
           const threshold = lv>=2?4:chargeMax;
-          const dmg = lv>=1?38:30;
+          const dmg = (lv>=1?38:30) + str;
           const canFire = charge >= threshold;
           if(canFire) return `消耗全部蓄力，造成 <b>${dmg}</b> 点伤害。<br><span style="color:#f9ca24">✅ 蓄力已满足（${charge}/${threshold}）</span>`;
           return `<span style="color:#ff7d7d">❌ 需要蓄力 ≥ ${threshold}（当前 ${charge}）</span>，造成 <b>${dmg}</b> 点伤害。<br>${chargeBar}`;
         },
         ar_pierce_all: ()=>{
           const base = lv>=1?10:8;
-          const single = base + charge*3;
+          const single = base + charge*3 + str;
           const enemyCount = (cs.enemies||[]).filter(e=>!e._dead).length || 1;
           const total = single * enemyCount;
           return `对所有敌人造成 <b>${single}</b> 点伤害（共 <b>${total}</b> 点，${enemyCount}个目标）。消耗全部蓄力。<br>${chargeBar}`;
         },
         ar_ultimate: ()=>{
           const base = lv>=1?7:6;
-          const single = base + charge*3;
+          const single = base + charge*3 + str;
           const total = single * 4;
           return `造成 <b>${single}</b> 点伤害 4 次（共 <b>${total}</b> 点）。消耗全部蓄力。<br>${chargeBar}`;
         },
@@ -3944,11 +4152,57 @@ const UI = {
       };
       if(ARCHER_CARDS[cardId]) desc = ARCHER_CARDS[cardId]();
     }
+    // ── 拳击手：根据愤怒/搏命/上回合受击实时计算卡面 ──
+    const isBoxer = State.run?.character?.id === 'boxer';
+    if(cs && isBoxer && inCombatHand){
+      const fury = cs.player?.buffs?.fury || 0;
+      const berserk = Combat._getBoxerBerserk(cs);
+      const str = cs.player?.buffs?.strength || 0;
+      const bonus = fury + berserk + str;
+      const tookLast = (cs.damageTakenLastTurn||0) > 0;
+      const lv = upgradeLevel || 0;
+      const bonusTag = bonus>0?`<span style="font-size:0.72em;opacity:0.85;color:#ff9060"> (+${bonus})</span>`:'';
+      const BOXER_CARDS = {
+        box_jab:       ()=>{ const d=([5,7,10][lv]||5)+bonus; return `造成 <b>${d}</b> 点伤害。${bonusTag}`; },
+        box_cross:     ()=>{ const d=([9,12,15][lv]||9)+bonus; return `造成 <b>${d}</b> 点伤害。${bonusTag}`; },
+        box_uppercut:  ()=>{ const base=tookLast?([22,26,30][lv]||22):([10,13,16][lv]||10); const d=base+bonus; const tag=tookLast?'<span style="color:#7dff7d">已挨打</span>':'<span style="color:#888">未挨打</span>'; return `造成 <b>${d}</b> 点伤害。<br><span style="font-size:0.78em;opacity:0.85">${tag}${bonusTag}</span>`; },
+        box_combo:     ()=>{ const each=([3,4,5][lv]||3)+bonus; return `造成 3 段 <b>${each}</b> 点伤害。${bonusTag}`; },
+        box_body_blow: ()=>{ const d=([10,13,16][lv]||10)+bonus; const weak=[1,1,2][lv]||1; return `造成 <b>${d}</b> 点伤害，施加 ${weak} 层虚弱。${bonusTag}`; },
+        box_counter:   ()=>{ const has=fury>0; const d=has?([10,13,16][lv]||10)+bonus:([5,7,9][lv]||5)+bonus; const tag=has?'<span style="color:#ff9060">愤怒触发</span>':'<span style="opacity:0.7">普通</span>'; return `造成 <b>${d}</b> 点伤害。<br><span style="font-size:0.78em">${tag}${has?'（将消耗愤怒）':''}</span>`; },
+        box_haymaker:  ()=>{ const mult=[3,4,5][lv]||3; const baseD=[14,18,22][lv]||14; const d=baseD+fury*mult+berserk; return `造成 <b>${d}</b> 点伤害。<br><span style="font-size:0.78em;opacity:0.85">基础${baseD}+愤怒${fury}×${mult}+搏命${berserk}</span>`; },
+        box_rage_combo:()=>{ const thr=[3,2,2][lv]||3; if(fury>=thr){ const each=([3,4,5][lv]||3)+fury+bonus; return `3 段 <b>${each}</b> 点伤害。<br><span style="font-size:0.78em;color:#7dff7d">愤怒 ${fury} 已触发</span>`; } else { const d=([6,8,10][lv]||6)+bonus; return `1 段 <b>${d}</b> 点伤害。<br><span style="font-size:0.78em;opacity:0.7">需要愤怒 ≥ ${thr}</span>`; } },
+        box_taunt:     ()=>{ const fg=[2,3,3][lv]||2; return `获得 <b>${fg}</b> 点愤怒。消耗。<br><span style="font-size:0.78em;opacity:0.7">当前愤怒 ${fury}</span>`; },
+        box_second_wind:()=>{ const half=cs.player.maxHp/2; const heal=cs.player.hp<half?([12,14,16][lv]||12):([8,10,12][lv]||8); return `回复 <b>${heal}</b> 点 HP。<br><span style="font-size:0.78em;opacity:0.7">${cs.player.hp<half?'已触发血量加成':'血量充足时为基础值'}</span>`; },
+        box_guard:     ()=>{ const d=[6,8,11][lv]||6; return `获得 <b>${d}</b> 点格挡。`; },
+        box_iron_step: ()=>{ const d=[10,13,16][lv]||10; return `获得 <b>${d}</b> 点格挡。`; },
+      };
+      if(BOXER_CARDS[cardId]) desc = BOXER_CARDS[cardId]();
+    }
+    // ── 战士（Brute）：力量加成实时显示 ──
+    const isBrute = State.run?.character?.id === 'brute';
+    if(cs && isBrute && inCombatHand){
+      const str = cs.player?.buffs?.strength || 0;
+      const lv = upgradeLevel || 0;
+      const strTag = str>0?`<span style="font-size:0.72em;opacity:0.85;color:#ff9060"> (+力量${str})</span>`:'';
+      const BRUTE_CARDS = {
+        strike:      ()=>{ const d=([6,9,12][lv]||6)+str; return `造成 <b>${d}</b> 点伤害。${strTag}`; },
+        defend:      ()=>{ const d=[5,8,11][lv]||5; return `获得 <b>${d}</b> 点格挡。`; },
+        bash:        ()=>{ const baseD=lv>=1?10:8; const vuln=lv>=1?3:2; const d=baseD+str; return `造成 <b>${d}</b> 点伤害并施加 <b>${vuln}</b> 层易伤。${strTag}`; },
+        clash:       ()=>{ const all=cs.hand.every(id=>Data.cards[id]&&Data.cards[id].type==='attack'); const full=[12,16,20][lv]||12; const half=[5,7,9][lv]||5; const d=(all?full:half)+str; const tag=all?'<span style="color:#7dff7d">手牌全攻击</span>':'<span style="color:#888">手牌非全攻击</span>'; return `造成 <b>${d}</b> 点伤害。<br><span style="font-size:0.78em">${tag}${strTag}</span>`; },
+        pommel:      ()=>{ const d=9+str; const draw=lv>=1?2:1; return `造成 <b>${d}</b> 点伤害，摸 ${draw} 张牌。${strTag}`; },
+        shrug:       ()=>{ const blk=lv>=1?11:8; const draw=lv>=2?2:1; return `获得 <b>${blk}</b> 点格挡，摸 ${draw} 张牌。`; },
+        armaments:   ()=>{ return lv>=2?`获得 <b>5</b> 点格挡，升级手牌中<b>所有</b>牌。`:(lv>=1?`获得 <b>5</b> 点格挡，升级手牌中 1 张牌。`:`获得 <b>5</b> 点格挡。`); },
+        inflame:     ()=>{ const gain=lv>=1?3:2; return `永久获得 <b>${gain}</b> 层力量（当前 ${str}）。`; },
+        ironwave:    ()=>{ const base=lv>=2?7:5; const mult=lv>=1?2:1; const a=base+str*mult; return `获得 <b>${a}</b> 点格挡，造成 <b>${a+str}</b> 点伤害。<br><span style="font-size:0.78em;opacity:0.85">基础${base}+力量${str}×${mult}${str?', 攻击再叠 +'+str:''}</span>`; },
+        thunderclap: ()=>{ const baseD=lv>=1?7:4; const vuln=lv>=2?2:1; const d=baseD+str; return `对所有敌人造成 <b>${d}</b> 点伤害并施加 ${vuln} 层易伤。${strTag}`; },
+      };
+      if(BRUTE_CARDS[cardId]) desc = BRUTE_CARDS[cardId]();
+    }
         // 品质颜色边框和标签
     const RARITY_STYLE = {
       common:   { border:'rgba(200,200,200,0.55)', glow:'none',                          label:'',   labelColor:'' },
-      uncommon: { border:'#4caf50',               glow:'0 0 8px rgba(76,175,80,0.5)',   label:'精良', labelColor:'#4caf50' },
-      rare:     { border:'#2196f3',               glow:'0 0 10px rgba(33,150,243,0.6)', label:'稀有', labelColor:'#64b5f6' },
+      uncommon: { border:'#3b82f6',               glow:'0 0 8px rgba(59,130,246,0.55)', label:'罕见', labelColor:'#7eb6ff' },
+      rare:     { border:'#a855f7',               glow:'0 0 10px rgba(168,85,247,0.6)', label:'稀有', labelColor:'#c8a0ff' },
       epic:     { border:'#9c27b0',               glow:'0 0 14px rgba(156,39,176,0.7)', label:'史诗', labelColor:'#ce93d8' },
     };
     const rarity = def.rarity || 'common';
@@ -4200,6 +4454,12 @@ el.innerHTML=`<div class="card-type-bar"></div>${rarityTag}<div class="card-cost
     toast.textContent = `🍵 ${pData.name}：${msg}`;
     document.body.appendChild(toast);
     setTimeout(() => toast.remove(), 2000);
+    // 药水使用后检查胜利条件（柠檬水等可秒杀敌人，需立即结算）
+    if (cs && cs.enemies.every(e=>e._dead) && cs.phase!=='victory') {
+      cs.phase='victory';
+      Combat._onVictory();
+      return;
+    }
     // 重新渲染
     if (cs) {
       UI._renderCombat(cs);
@@ -4222,17 +4482,20 @@ el.innerHTML=`<div class="card-type-bar"></div>${rarityTag}<div class="card-cost
     return`<div style="display:flex;align-items:center;gap:6px;width:${width}"><div class="hp-bar-wrap" style="flex:1;height:24px;position:relative"><div class="hp-bar-fill${low?' low':''}" style="width:${hpPct}%"></div>${blkPct>0?`<div class="hp-bar-block" style="width:${blkPct}%"></div>`:''}<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:1.0rem;font-weight:800;color:#fff;letter-spacing:0.5px;text-shadow:0 0 4px rgba(0,0,0,1),0 1px 4px rgba(0,0,0,0.9),1px 1px 0 rgba(0,0,0,0.8);pointer-events:none">${current}/${max}</div></div>${blockBadge}</div>`; },
   // buff/debuff 描述字典
   _buffDescs: {
-    strength: { name: '力量', icon: '💪', desc: '每层使攻击伤害 +1' },
-    dexterity: { name: '敏捷', icon: '🏃', desc: '每层使格挡 +1' },
-    ritual: { name: '仪式', icon: '✨', desc: '每回合获得力量' },
+    strength:       { name: '力量',     icon: '💪', desc: '每层使攻击伤害 +1' },
+    dexterity:      { name: '敏捷',     icon: '🏃', desc: '每层使格挡 +1' },
+    ritual:         { name: '仪式',     icon: '✨', desc: '每回合获得力量' },
+    fury:           { name: '愤怒',     icon: '💢', desc: '上回合敌人来袭伤害总量÷3（含被格挡的部分），本回合所有攻击 +等量伤害，回合结束清零' },
+    box_bloodlust:  { name: '嗜血本能', icon: '🩸', desc: '每回合开始时，若 HP 低于一半，获得 1 点额外能量' },
+    box_iron_will:  { name: '钢铁意志', icon: '⚙️', desc: '搏命加成翻倍：每损失 25% HP 攻击 +4' },
   },
   _debuffDescs: {
     vulnerable: { name: '易伤', icon: '💔', desc: '受到的伤害增加 50%，持续到回合结束时减 1 层' },
-    weak: { name: '虚弱', icon: '😵', desc: '造成的伤害减少 25%，持续到回合结束时减 1 层' },
-    frail: { name: '脆弱', icon: '🦴', desc: '获得的格挡减少 25%，持续到回合结束时减 1 层' },
-    slow:    { name: '减速', icon: '🐢', desc: '攻击伤害减少 25%，每回合结束减 1 层' },
-    burn:    { name: '燃烧', icon: '🔥', desc: '每回合结束受到等于层数的伤害，随后层数 -1' },
-    freeze:  { name: '冻结', icon: '❄️', desc: '本回合跳过行动，回合结束层数 -1' },
+    weak:       { name: '虚弱', icon: '😵', desc: '造成的伤害减少 25%，持续到回合结束时减 1 层' },
+    frail:      { name: '脆弱', icon: '🦴', desc: '获得的格挡减少 25%，持续到回合结束时减 1 层' },
+    slow:       { name: '减速', icon: '🐢', desc: '攻击伤害减少 25%，每回合结束减 1 层' },
+    burn:       { name: '燃烧', icon: '🔥', desc: '每回合结束受到等于层数的伤害，随后层数 -1' },
+    freeze:     { name: '冻结', icon: '❄️', desc: '本回合跳过行动，回合结束层数 -1' },
   },
 
   renderBuffs(entity){
@@ -4249,21 +4512,37 @@ el.innerHTML=`<div class="card-type-bar"></div>${rarityTag}<div class="card-cost
 
   // 为 buff/debuff badge 绑定悬停 tooltip
   _bindBuffTooltips(container){
+    const showTip=(badge,evt)=>{
+      const key=badge.dataset.buffKey;
+      const type=badge.dataset.buffType;
+      const stacks=badge.dataset.buffStacks;
+      const dict=type==='buff'?UI._buffDescs:UI._debuffDescs;
+      const info=dict[key]||{name:key,icon:'',desc:type==='buff'?'增益效果':'减益效果'};
+      // 移除残留
+      document.querySelectorAll('.buff-tooltip-fixed').forEach(n=>n.remove());
+      const tt=document.createElement('div');
+      tt.className='buff-tooltip-fixed';
+      tt.innerHTML=`<div class="tt-name">${info.icon||''} ${info.name}</div><div class="tt-desc">${info.desc}</div><div class="tt-stacks">当前层数：${stacks}</div>`;
+      document.body.appendChild(tt);
+      // 视口居中夹紧
+      const br=badge.getBoundingClientRect();
+      const tw=tt.offsetWidth, th=tt.offsetHeight;
+      const vw=window.innerWidth, vh=window.innerHeight;
+      let left=br.left+br.width/2-tw/2;
+      let top=br.top-th-10;
+      if(left<8) left=8;
+      if(left+tw>vw-8) left=vw-tw-8;
+      if(top<8) top=br.bottom+10; // 上方放不下就翻到下方
+      if(top+th>vh-8) top=vh-th-8;
+      tt.style.left=left+'px';
+      tt.style.top=top+'px';
+      badge._activeTip=tt;
+    };
+    const hideTip=(badge)=>{ if(badge._activeTip){ badge._activeTip.remove(); badge._activeTip=null; } };
     container.querySelectorAll('.buff-badge, .debuff-badge').forEach(badge=>{
-      badge.addEventListener('mouseenter', ()=>{
-        const key=badge.dataset.buffKey;
-        const type=badge.dataset.buffType;
-        const stacks=badge.dataset.buffStacks;
-        const dict=type==='buff'?UI._buffDescs:UI._debuffDescs;
-        const info=dict[key]||{name:key,icon:'',desc:type==='buff'?'增益效果':'减益效果'};
-        const tt=document.createElement('div');
-        tt.className='buff-tooltip';
-        tt.innerHTML=`<div class="tt-name">${info.icon||''} ${info.name}</div><div class="tt-desc">${info.desc}</div><div class="tt-stacks">当前层数：${stacks}</div>`;
-        badge.appendChild(tt);
-      });
-      badge.addEventListener('mouseleave', ()=>{
-        badge.querySelector('.buff-tooltip')?.remove();
-      });
+      badge.addEventListener('mouseenter', (e)=>showTip(badge,e));
+      badge.addEventListener('mouseleave', ()=>hideTip(badge));
+      badge.addEventListener('touchstart', (e)=>{ e.stopPropagation(); showTip(badge,e); setTimeout(()=>hideTip(badge), 2500); });
     });
   },
 
@@ -4285,15 +4564,32 @@ el.innerHTML=`<div class="card-type-bar"></div>${rarityTag}<div class="card-cost
         color:'#ff7d7d', accent:'rgba(255,125,125,0.15)',
         sections:[
           { title:'⚙️ 档位系统', color:'#ff7d7d', rows:[
-            { icon:'↓', label:'1 挡 · 防御档', desc:'格挡效果 ×<b>1.3</b>，攻击伤害 ×<b>0.8</b><br><span style="opacity:0.65;font-size:0.82em">适合积累格挡、苟住血量</span>' },
+            { icon:'↓', label:'1 挡 · 防御档', desc:'格挡效果 ×<b>1.4</b>，攻击伤害 ×<b>0.8</b><br><span style="opacity:0.65;font-size:0.82em">适合积累格挡、苟住血量</span>' },
             { icon:'•', label:'2 挡 · 中立档', desc:'格挡效果 ×<b>1.0</b>，攻击伤害 ×<b>1.0</b><br><span style="opacity:0.65;font-size:0.82em">起手默认档位，均衡状态</span>' },
-            { icon:'↑', label:'3 挡 · 攻击档', desc:'格挡效果 ×<b>0.7</b>，攻击伤害 ×<b>1.3</b><br><span style="opacity:0.65;font-size:0.82em">全力进攻，格挡会大幅降低</span>' },
+            { icon:'↑', label:'3 挡 · 攻击档', desc:'格挡效果 ×<b>0.7</b>，攻击伤害 ×<b>1.5</b><br><span style="opacity:0.65;font-size:0.82em">全力进攻，格挡会大幅降低</span>' },
           ]},
           { title:'⚡ 速度感', color:'#f9ca24', rows:[
             { icon:'🛡', label:'≥ 20 · 稳定行驶', desc:'每回合开始自动获得 <b>1</b> 点格挡' },
-            { icon:'⚡', label:'≥ 40 · 加速中',   desc:'攻击牌造成的伤害 <b>+1</b>' },
+            { icon:'⚡', label:'≥ 40 · 加速中',   desc:'攻击牌造成的伤害 <b>+2</b>' },
             { icon:'🏎️', label:'≥ 60 · 高速行驶', desc:'每次升挡额外抽 <b>1</b> 张牌（每回合限 1 次）' },
-            { icon:'🔥', label:'≥ 80 · 极速状态', desc:'攻击牌伤害提升至 <b>+3</b>（与上方叠加）' },
+            { icon:'🔥', label:'≥ 80 · 极速状态', desc:'攻击牌伤害提升至 <b>+5</b>（与上方叠加）' },
+          ]},
+        ]
+      },
+      boxer:{
+        emoji:'🥊', name:'拳击手',
+        color:'#ff6b6b', accent:'rgba(255,107,107,0.15)',
+        sections:[
+          { title:'💢 愤怒（Fury）', color:'#ff6b6b', rows:[
+            { icon:'😤', label:'如何积累愤怒', desc:'敌人攻击阶段所有来袭伤害总量 ÷ 3（向下取整），无上限<br><span style="opacity:0.65;font-size:0.82em">被格挡吸收的部分也计入：来袭 10 伤即使全格挡也能 +3 愤怒</span>' },
+            { icon:'💢', label:'愤怒的效果', desc:'下回合所有攻击牌伤害 +愤怒点数<br><span style="opacity:0.65;font-size:0.82em">例：本回合敌人总来袭 24 点 → 下回合愤怒 = 8，每张攻击 +8</span>' },
+            { icon:'🔄', label:'愤怒的消耗', desc:'回合结束时愤怒清零，由新一轮被攻击量重新计算' },
+          ]},
+          { title:'🩸 搏命（Berserk）', color:'#ff9f43', rows:[
+            { icon:'❤️', label:'75–100% HP', desc:'无额外加成' },
+            { icon:'🟡', label:'50–74% HP',  desc:'所有攻击伤害 <b>+2</b>' },
+            { icon:'🟠', label:'25–49% HP',  desc:'所有攻击伤害 <b>+4</b>' },
+            { icon:'🔴', label:'≤ 24% HP',   desc:'所有攻击伤害 <b>+6</b>（极限暴力）' },
           ]},
         ]
       },
@@ -4398,11 +4694,12 @@ el.innerHTML=`<div class="card-type-bar"></div>${rarityTag}<div class="card-cost
   },
   menu(){
     const saves=Save.list();const hasSave=saves.some(s=>s.run!==null);
-    UI.app().innerHTML=`<div class="menu-screen slide-up"><div class="menu-title">Slay the<br>Curiosity</div><div class="menu-subtitle">一场好奇心的冒险</div><div style="display:flex;flex-direction:column;gap:12px;align-items:center;margin-top:16px"><button class="btn primary" id="btn-new">✨ 新游戏</button>${hasSave?'<button class="btn" id="btn-continue">📂 继续游戏</button>':''}<button class="btn" id="btn-saves">💾 存档管理</button><button class="btn" id="btn-tutorial" style="background:rgba(80,160,255,0.12);border-color:rgba(80,160,255,0.4);color:#90c8ff">📖 新手教程</button></div><div style="font-size:0.85rem;color:var(--ink-light);margin-top:32px">Slay the Curiosity v0.1 demo</div></div>`;
+    UI.app().innerHTML=`<div class="menu-screen slide-up"><div class="menu-title">Slay the<br>Curiosity</div><div class="menu-subtitle">一场好奇心的冒险</div><div style="display:flex;flex-direction:column;gap:12px;align-items:stretch;width:260px;margin:16px auto 0"><button class="btn primary" id="btn-new">✨ 新游戏</button>${hasSave?'<button class="btn" id="btn-continue">📂 继续游戏</button>':''}<button class="btn" id="btn-saves">💾 存档管理</button><button class="btn" id="btn-tutorial" style="background:rgba(80,160,255,0.12);border-color:rgba(80,160,255,0.4);color:#90c8ff">📖 新手教程</button><button class="btn" id="btn-database" style="background:rgba(160,90,255,0.12);border-color:rgba(160,90,255,0.4);color:#c8a0ff">📚 图鉴</button></div><div style="font-size:0.85rem;color:var(--ink-light);margin-top:32px">Slay the Curiosity v0.1 demo</div></div>`;
     document.getElementById('btn-new').onclick=()=>State.go('char-select');
     if(hasSave)document.getElementById('btn-continue').onclick=()=>UI.showSaveSlots('load');
     document.getElementById('btn-saves').onclick=()=>UI.showSaveSlots('manage');
     document.getElementById('btn-tutorial').onclick=()=>UI.tutorial();
+    document.getElementById('btn-database').onclick=()=>UI.showDatabase();
   },
 
   tutorial(){
@@ -4741,7 +5038,14 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
   },
 
   _enterNode(node){
-    const run=State.run;run.currentNodeId=node.id;run.floor=node.floor;State.saveRun(0);
+    const run=State.run;
+    // 记录实际行进过的边（用于地图高亮）
+    if(run.currentNodeId!=null && run.currentNodeId!==node.id){
+      if(!run.travelEdges) run.travelEdges=[];
+      const edgeKey=run.currentNodeId+'->'+node.id;
+      if(!run.travelEdges.includes(edgeKey)) run.travelEdges.push(edgeKey);
+    }
+    run.currentNodeId=node.id;run.floor=node.floor;State.saveRun(0);
     if(node.type==='boss'){
       const run=State.run;
       // 教程模式使用专属简单Boss
@@ -4754,8 +5058,8 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
       const run=State.run;
       let table;
       if(run.act===3){
-        // 第三层（露营周）使用act2的战斗表
-        table=node.type==='elite'?'hard2':node.floor<=3?'easy2':node.floor<=6?'medium2':'hard2';
+        // 第三层专属战斗表
+        table=node.type==='elite'?'hard3':node.floor<=3?'easy3':node.floor<=6?'medium3':'hard3';
       } else if(run.act===2){
         table=node.type==='elite'?'hard2':node.floor<=3?'easy2':node.floor<=6?'medium2':'hard2';
       } else {
@@ -4918,9 +5222,9 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
     overlay.style.cssText = 'position:fixed;inset:0;z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;background:rgba(0,0,0,0.82);pointer-events:auto;';
     const relic = Data.battleRelics.find(r => r.id === relicId);
     // 根据稀有度决定颜色和发光动画
-    const tierColor = { common:'#c0c0c0', rare:'#7ecfff', epic:'#e056fd' };
-    const tierName  = { common:'普通', rare:'稀有', epic:'罕见' };
-    const tierAnim  = { common:'relicGlowCommon', rare:'relicGlow', epic:'relicGlowEpic' };
+    const tierColor = { common:'#c0c0c0', uncommon:'#4caf50', rare:'#7ecfff', epic:'#e056fd' };
+    const tierName  = { common:'普通', uncommon:'精良', rare:'稀有', epic:'史诗' };
+    const tierAnim  = { common:'relicGlowCommon', uncommon:'relicGlowCommon', rare:'relicGlow', epic:'relicGlowEpic' };
     const tier = (relic && relic.tier) || 'common';
     const color = tierColor[tier] || '#7ecfff';
     const glowAnim = tierAnim[tier] || 'relicGlow';
@@ -5314,9 +5618,22 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
   _doEndTurn(){
     const cs=State.run.combat;if(!cs||cs.phase!=='player')return;document.getElementById('btn-end-turn')?.setAttribute('disabled','');
     const attackers=cs.enemies.map((e,i)=>({i,attacks:!e._dead&&e.currentIntent?.type==='attack'})).filter(x=>x.attacks);
-    const playerHpBefore=cs.player.hp;Combat.endTurn();
+    const playerHpBefore=cs.player.hp;
+    if(cs) cs._turnHpLost=0;
+    Combat.endTurn();
     const tookDamage=cs.player.hp<playerHpBefore;
-    if(tookDamage){Anim.flashScreenDamage();attackers.forEach(({i})=>{const fig=document.getElementById(`enemy-fig-${i}`);if(fig)Anim.lunge(fig,'left');});setTimeout(()=>{const playerFig=document.getElementById('player-figure');if(playerFig){Anim.hitFlash(playerFig);Anim.shake(playerFig);}},150);}
+    const totalHpLost=cs._turnHpLost||Math.max(0, playerHpBefore-cs.player.hp);
+    if(tookDamage){
+      Anim.flashScreenDamage();
+      attackers.forEach(({i})=>{const fig=document.getElementById(`enemy-fig-${i}`);if(fig)Anim.lunge(fig,'left');});
+      setTimeout(()=>{
+        const playerFig=document.getElementById('player-figure');
+        if(playerFig){
+          Anim.hitFlash(playerFig); Anim.shake(playerFig);
+          if(totalHpLost>0) Anim.floatNumber(`-${totalHpLost}`, playerFig, 'damage');
+        }
+      },150);
+    }
     const delay=tookDamage?280:0;setTimeout(()=>{if(cs.phase!=='dead'&&cs.phase!=='victory')UI._renderCombat();},delay);
   },
 
@@ -5327,8 +5644,8 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
     const overlay = document.createElement('div');
     overlay.className = 'overlay';
     overlay.style.cssText = 'z-index:9999';
-    const rarityNames = {common:'普通',uncommon:'精良',rare:'稀有',epic:'史诗'};
-    const rarityColors = {common:'#aaa',uncommon:'#7ecfff',rare:'#e056fd',epic:'#f9ca24'};
+    const rarityNames = {common:'普通',uncommon:'罕见',rare:'稀有',epic:'史诗'};
+    const rarityColors = {common:'#aaa',uncommon:'#7eb6ff',rare:'#c8a0ff',epic:'#f9ca24'};
     const rarity = def.rarity||'common';
     const typeNames = {attack:'攻击',skill:'技能',power:'能力'};
     const costText = def.cost===99?'无法出牌':(def.cost===0?'免费':def.cost+' 能量');
@@ -5414,7 +5731,7 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
   cardReward(){
     const run=State.run,rewardCards=Data.getRewardCards(run.deck);
     const pendingRelic = run.pendingRelic ? Data.battleRelics.find(r=>r.id===run.pendingRelic) : null;
-    const tierColor = {'common':'#aaa','rare':'#7ecfff','epic':'#e056fd'};
+    const tierColor = {'common':'#aaa','uncommon':'#4caf50','rare':'#7ecfff','epic':'#e056fd'};
     const tierName = {'common':'普通','rare':'稀有','epic':'罕见'};
     const relicSection = pendingRelic ? `
       <div id="relic-reward-section" style="margin-bottom:18px;padding:12px 18px;background:rgba(255,255,255,0.05);border:1.5px solid ${tierColor[pendingRelic.tier]||'#aaa'};border-radius:14px;display:flex;align-items:center;gap:14px;cursor:pointer;transition:background 0.2s;position:relative;" onmouseenter="this.style.background='rgba(255,255,255,0.12)'" onmouseleave="this.style.background='rgba(255,255,255,0.05)'" onclick="UI._pickRelic('${pendingRelic.id}')">
@@ -5477,7 +5794,7 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
     run.pendingRelic = null;
     State.saveRun(0);
     // 显示获得动画
-    const tierColor = {'common':'#aaa','rare':'#7ecfff','epic':'#e056fd'};
+    const tierColor = {'common':'#aaa','uncommon':'#4caf50','rare':'#7ecfff','epic':'#e056fd'};
     const toast = document.createElement('div');
     toast.style.cssText = `position:fixed;top:70px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.9);color:#fff;padding:10px 22px;border-radius:12px;font-size:1rem;z-index:9999;pointer-events:none;border:1.5px solid ${tierColor[relic.tier]||'#aaa'};animation:bounceIn 0.4s ease;`;
     toast.innerHTML = `获得遗物：<strong style="color:${tierColor[relic.tier]||'#fff'}">${relic.name}</strong> ✨`;
@@ -5601,21 +5918,33 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
   },
 
   rest(){
-    const run=State.run,char=run.character,healAmt=Math.floor(char.maxHp*0.3),canHeal=char.hp<char.maxHp;
+    const run=State.run,char=run.character;
+    // 初始化本次市井行动点（每次进入市井时重置）
+    if(run.restPoints===undefined) run.restPoints=2;
+    const healAmt=Math.floor(char.maxHp*0.18);
+    const canHeal=char.hp<char.maxHp && run.restPoints>0;
     const upgradable=run.deck.filter(id=>Data.cards[id]&&Data.cards[id].cost!==99);
-    const canLearn=upgradable.length>0;
+    const canLearn=upgradable.length>0 && run.restPoints>0;
     UI.app().innerHTML=`<div class="rest-screen slide-up">
       <div style="font-size:3rem">🏘️</div>
       <div class="rest-title">市井</div>
       <div style="color:rgba(255,255,255,0.8);font-size:1.1rem">❤️ ${char.hp} / ${char.maxHp}</div>
+      <div style="color:#f9ca24;font-size:1.05rem;font-weight:700;margin:6px 0">🪙 剩余行动点：${run.restPoints} / 2</div>
+      <div style="color:rgba(255,255,255,0.5);font-size:0.85rem;text-align:center;max-width:300px;margin-bottom:8px">每次进入市井共 2 个行动点，可自由组合：升牌 ×2 / 升牌 + 回血 / 回血 ×2</div>
       <div class="rest-options">
         <button class="btn primary" id="btn-heal" ${!canHeal?'disabled':''}>❤️ 休息<br><small>恢复 ${healAmt} HP</small></button>
         <button class="btn" id="btn-learn" ${!canLearn?'disabled':''}>📖 学习<br><small>升级一张牌</small></button>
         <button class="btn" id="btn-skip-rest">👣 继续旅程</button>
       </div>
     </div>`;
-    document.getElementById('btn-heal').onclick=()=>{if(!canHeal)return;char.hp=Math.min(char.maxHp,char.hp+healAmt);State.saveRun(0);State.go('map');};
-    document.getElementById('btn-skip-rest').onclick=()=>State.go('map');
+    document.getElementById('btn-heal').onclick=()=>{
+      if(!canHeal)return;
+      char.hp=Math.min(char.maxHp,char.hp+healAmt);
+      run.restPoints--;
+      State.saveRun(0);
+      if(run.restPoints<=0){ run.restPoints=undefined; State.go('map'); } else UI.rest();
+    };
+    document.getElementById('btn-skip-rest').onclick=()=>{ run.restPoints=undefined; State.go('map'); };
     document.getElementById('btn-learn').onclick=()=>{if(!canLearn)return;UI._showLearnOverlay();};
   },
   _showLearnOverlay(){
@@ -5665,9 +5994,11 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
           learnLastTap=0;
           if(level>=maxLevel||maxLevel===0) return;
           run.cardUpgrades[i]=(run.cardUpgrades[i]||0)+1;
+          if(run.restPoints!==undefined){ run.restPoints--; }
           State.saveRun(0);
           overlay.remove();
-          State.go('map');
+          if(run.restPoints!==undefined && run.restPoints>0){ UI.rest(); }
+          else { run.restPoints=undefined; State.go('map'); }
           return;
         }
         learnLastTap = now;
@@ -6621,6 +6952,348 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
     // 继续游戏
     overlay.querySelector('#pause-close-btn').onclick = () => overlay.remove();
     overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+    document.body.appendChild(overlay);
+  },
+
+  // ── 游戏图鉴 ──────────────────────────────────────────────────────────────
+  showDatabase() {
+    // ── 常量 ──
+    const TC = { epic:'#c084fc', rare:'#60a5fa', uncommon:'#4ade80', common:'#94a3b8' };
+    const TN = { epic:'史诗', rare:'稀有', uncommon:'非凡', common:'普通' };
+    const TE = { epic:'🔮', rare:'💠', uncommon:'🟩', common:'⬜' };
+    const TBG = { epic:'rgba(192,132,252,0.12)', rare:'rgba(96,165,250,0.12)', uncommon:'rgba(74,222,128,0.12)', common:'rgba(148,163,184,0.1)' };
+    const typeLabel = { attack:'攻击', skill:'技能', power:'能力', curse:'诅咒' };
+    const typeBg    = { attack:'rgba(220,60,60,0.3)', skill:'rgba(60,120,220,0.3)', power:'rgba(160,60,220,0.3)', curse:'rgba(80,80,80,0.4)' };
+    const typeColor = { attack:'#ff9090', skill:'#90c8ff', power:'#d090ff', curse:'#aaa' };
+
+    // ── 收集所有遗物 ──
+    const allRelics = (() => {
+      const seen = new Set(); const list = [];
+      [...(Data.dayanRelics||[]),...(Data.datouRelics||[]),...(Data.wenhaoRelics||[]),
+       ...(Data.gaoshanRelics||[]),...(Data.wangweiRelics||[]),...(Data.battleRelics||[])]
+        .forEach(r => { if (!seen.has(r.id)) { seen.add(r.id); list.push(r); } });
+      return list;
+    })();
+    const relicGroups = { epic:[], rare:[], uncommon:[], common:[] };
+    allRelics.forEach(r => { const t = r.tier||'common'; if (relicGroups[t]) relicGroups[t].push(r); });
+
+    // ── 共用：单张卡牌详情块 ──
+    function cardBlock(id) {
+      const card = Data.cards[id]; if (!card) return '';
+      const upg = Data.upgrades[id] || {};
+      const t = card.type || 'skill';
+      const costStr = card.cost === 99 ? '—' : card.cost;
+      return `<div style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.13);border-radius:12px;padding:12px 14px;width:210px;box-sizing:border-box;flex-shrink:0;">
+        <div style="display:flex;align-items:center;gap:7px;margin-bottom:7px;">
+          <span style="background:rgba(0,0,0,0.5);border:1.5px solid rgba(255,220,80,0.5);border-radius:50%;min-width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:0.85rem;font-weight:800;color:#ffe082;flex-shrink:0;">${costStr}</span>
+          <span style="font-weight:800;color:#fff;font-size:0.95rem;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${card.name}</span>
+          <span style="font-size:0.7rem;padding:2px 7px;border-radius:5px;background:${typeBg[t]};color:${typeColor[t]};flex-shrink:0;">${typeLabel[t]||t}</span>
+        </div>
+        <div style="font-size:0.82rem;color:rgba(255,255,255,0.82);line-height:1.5;">${card.description}</div>
+        ${upg[1]?`<div style="font-size:0.76rem;color:#90c8ff;border-top:1px solid rgba(255,255,255,0.1);padding-top:5px;margin-top:6px;line-height:1.45;"><b style="opacity:0.6">+1 </b>${upg[1].desc}</div>`:''}
+        ${upg[2]?`<div style="font-size:0.76rem;color:#c8a8ff;border-top:1px solid rgba(255,255,255,0.08);padding-top:4px;margin-top:4px;line-height:1.45;"><b style="opacity:0.6">+2 </b>${upg[2].desc}</div>`:''}
+      </div>`;
+    }
+
+    // ── 共用：返回按钮 ──
+    function backBtn(label, onclick) {
+      const b = document.createElement('button');
+      b.style.cssText = 'background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.22);color:rgba(255,255,255,0.75);border-radius:10px;padding:7px 18px;cursor:pointer;font-size:0.9rem;font-family:var(--font);margin-bottom:20px;display:flex;align-items:center;gap:6px;';
+      b.innerHTML = `← ${label}`;
+      b.onclick = onclick;
+      return b;
+    }
+
+    // ════════════════════════════════════════
+    // 角色卡牌：第一层大图标，第二层卡池
+    // ════════════════════════════════════════
+    function renderCards(box) {
+      box.innerHTML = '';
+      const grid = document.createElement('div');
+      grid.style.cssText = 'display:grid;grid-template-columns:repeat(2,1fr);gap:20px;padding:8px 0;';
+      Data.characters.forEach(char => {
+        const rewardIds = Data.rewardPool[char.id] || Data.rewardPool.default;
+        const totalCards = [...new Set(char.startingDeck)].length + rewardIds.length;
+        const tile = document.createElement('div');
+        tile.style.cssText = `background:${char.color}18;border:2px solid ${char.color}55;border-radius:20px;padding:32px 24px;text-align:center;cursor:pointer;transition:all 0.18s;box-sizing:border-box;`;
+        tile.innerHTML = `
+          <div style="font-size:5rem;line-height:1.1;margin-bottom:14px;">${char.emoji}</div>
+          <div style="font-size:1.4rem;font-weight:800;color:#fff;margin-bottom:6px;">${char.name}</div>
+          <div style="font-size:0.9rem;color:rgba(255,255,255,0.55);margin-bottom:12px;">${char.description}</div>
+          <div style="display:flex;justify-content:center;gap:16px;font-size:0.82rem;color:rgba(255,255,255,0.45);">
+            <span>❤️ ${char.maxHp} HP</span>
+            <span>🃏 ${totalCards} 张牌</span>
+          </div>`;
+        tile.onmouseenter = () => { tile.style.background = `${char.color}30`; tile.style.borderColor = `${char.color}aa`; tile.style.transform = 'translateY(-4px)'; };
+        tile.onmouseleave = () => { tile.style.background = `${char.color}18`; tile.style.borderColor = `${char.color}55`; tile.style.transform = ''; };
+        tile.onclick = () => renderCharDetail(box, char);
+        grid.appendChild(tile);
+      });
+      box.appendChild(grid);
+    }
+
+    function renderCharDetail(box, char) {
+      box.innerHTML = '';
+      box.appendChild(backBtn('角色卡牌', () => renderCards(box)));
+      // 角色信息条
+      const header = document.createElement('div');
+      header.style.cssText = `display:flex;align-items:center;gap:16px;padding:16px 20px;background:${char.color}20;border-radius:14px;border-left:5px solid ${char.color};margin-bottom:22px;`;
+      header.innerHTML = `<span style="font-size:3rem;">${char.emoji}</span><div><div style="font-size:1.2rem;font-weight:800;color:#fff;">${char.name}</div><div style="font-size:0.85rem;color:rgba(255,255,255,0.55);margin-top:3px;">${char.description}</div></div>`;
+      box.appendChild(header);
+
+      // ── 卡牌按稀有度 / 起始 分类 ──
+      const RC = { start:'#facc15', common:'#94a3b8', uncommon:'#3b82f6', rare:'#a855f7' };
+      const RN = { start:'起始牌组', common:'普通', uncommon:'罕见', rare:'稀有' };
+      const RE = { start:'🎴', common:'⚪', uncommon:'🔵', rare:'🟣' };
+
+      const startUniq = [...new Set(char.startingDeck)];
+      const rewardIds = Data.rewardPool[char.id] || Data.rewardPool.default;
+      const cats = {
+        start:    startUniq,
+        common:   rewardIds.filter(id => (Data.cards[id]?.rarity||'common') === 'common'),
+        uncommon: rewardIds.filter(id => Data.cards[id]?.rarity === 'uncommon'),
+        rare:     rewardIds.filter(id => Data.cards[id]?.rarity === 'rare'),
+      };
+      const catKeys = ['start','common','uncommon','rare'].filter(k => cats[k].length);
+
+      // 分类按钮行
+      const btnRow = document.createElement('div');
+      btnRow.style.cssText = 'display:flex;flex-wrap:wrap;gap:12px;margin-bottom:22px;';
+      const cardArea = document.createElement('div');
+      cardArea.style.cssText = 'display:flex;flex-wrap:wrap;gap:14px;';
+
+      const catBtns = {};
+      function selectCat(key) {
+        catKeys.forEach(k => {
+          const b = catBtns[k]; const on = k === key; const c = RC[k];
+          b.style.cssText = `cursor:pointer;border-radius:14px;padding:16px 22px;box-sizing:border-box;text-align:center;transition:all 0.15s;min-width:130px;background:${on?c+'30':'rgba(255,255,255,0.05)'};border:2px solid ${on?c+'cc':'rgba(255,255,255,0.14)'};${on?'transform:translateY(-3px);':''}`;
+        });
+        cardArea.innerHTML = cats[key].map(id => cardBlock(id)).join('');
+      }
+
+      catKeys.forEach(key => {
+        const c = RC[key];
+        const b = document.createElement('div');
+        b.innerHTML = `<div style="font-size:1.8rem;line-height:1;margin-bottom:6px;">${RE[key]}</div>
+          <div style="font-size:1rem;font-weight:800;color:${c};">${RN[key]}</div>
+          <div style="font-size:0.78rem;color:rgba(255,255,255,0.45);margin-top:3px;">${cats[key].length} 张</div>`;
+        b.onclick = () => selectCat(key);
+        b.onmouseenter = () => { if (cardArea.dataset.cur !== key) b.style.transform = 'translateY(-3px)'; };
+        b.onmouseleave = () => { if (cardArea.dataset.cur !== key) b.style.transform = ''; };
+        const origClick = b.onclick;
+        b.onclick = () => { cardArea.dataset.cur = key; origClick(); };
+        catBtns[key] = b;
+        btnRow.appendChild(b);
+      });
+
+      box.appendChild(btnRow);
+      box.appendChild(cardArea);
+      if (catKeys.length) { cardArea.dataset.cur = catKeys[0]; selectCat(catKeys[0]); }
+    }
+
+    // ════════════════════════════════════════
+    // 遗物：第一层 4 个档位大块，第二层遗物列表
+    // ════════════════════════════════════════
+    function renderRelics(box) {
+      box.innerHTML = '';
+      const grid = document.createElement('div');
+      grid.style.cssText = 'display:grid;grid-template-columns:repeat(2,1fr);gap:20px;padding:8px 0;';
+      ['epic','rare','uncommon','common'].forEach(tier => {
+        const list = relicGroups[tier];
+        if (!list.length) return;
+        const tc = TC[tier];
+        const tile = document.createElement('div');
+        tile.style.cssText = `background:${TBG[tier]};border:2px solid ${tc}55;border-radius:20px;padding:32px 24px;text-align:center;cursor:pointer;transition:all 0.18s;box-sizing:border-box;`;
+        // 展示前3个遗物图标作为预览
+        const previewIcons = list.slice(0,3).map(r => r.img
+          ? `<img src="${r.img}" style="width:36px;height:36px;object-fit:contain;vertical-align:middle;">`
+          : `<span style="font-size:2rem;">${r.icon||'❓'}</span>`).join('');
+        tile.innerHTML = `
+          <div style="font-size:3rem;margin-bottom:10px;">${TE[tier]}</div>
+          <div style="font-size:1.5rem;font-weight:800;color:${tc};margin-bottom:8px;">${TN[tier]}</div>
+          <div style="font-size:0.9rem;color:rgba(255,255,255,0.45);margin-bottom:16px;">${list.length} 件遗物</div>
+          <div style="display:flex;justify-content:center;align-items:center;gap:8px;min-height:36px;">${previewIcons}</div>`;
+        tile.onmouseenter = () => { tile.style.background = `${TBG[tier].replace('0.12','0.22')}`; tile.style.borderColor = `${tc}99`; tile.style.transform = 'translateY(-4px)'; };
+        tile.onmouseleave = () => { tile.style.background = TBG[tier]; tile.style.borderColor = `${tc}55`; tile.style.transform = ''; };
+        tile.onclick = () => renderRelicDetail(box, tier);
+        grid.appendChild(tile);
+      });
+      box.appendChild(grid);
+    }
+
+    function renderRelicDetail(box, tier) {
+      box.innerHTML = '';
+      box.appendChild(backBtn('遗物', () => renderRelics(box)));
+      const tc = TC[tier];
+      const header = document.createElement('div');
+      header.style.cssText = `display:flex;align-items:center;gap:14px;padding:14px 20px;background:${TBG[tier]};border-radius:14px;border-left:5px solid ${tc};margin-bottom:22px;`;
+      header.innerHTML = `<span style="font-size:2.5rem;">${TE[tier]}</span><div><div style="font-size:1.2rem;font-weight:800;color:${tc};">${TN[tier]}遗物</div><div style="font-size:0.85rem;color:rgba(255,255,255,0.45);margin-top:3px;">${relicGroups[tier].length} 件</div></div>`;
+      box.appendChild(header);
+      const row = document.createElement('div');
+      row.style.cssText = 'display:flex;flex-wrap:wrap;gap:14px;';
+      relicGroups[tier].forEach(r => {
+        const iconHtml = r.img
+          ? `<img src="${r.img}" style="width:48px;height:48px;object-fit:contain;flex-shrink:0;">`
+          : `<span style="font-size:2.6rem;line-height:1;flex-shrink:0;">${r.icon||'❓'}</span>`;
+        const card = document.createElement('div');
+        card.style.cssText = `background:rgba(255,255,255,0.05);border:1.5px solid ${tc}44;border-radius:14px;padding:16px 18px;width:250px;box-sizing:border-box;flex-shrink:0;`;
+        card.innerHTML = `
+          <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px;">
+            ${iconHtml}
+            <div style="font-weight:800;color:#fff;font-size:1rem;flex:1;">${r.name}</div>
+          </div>
+          <div style="font-size:0.83rem;color:rgba(255,255,255,0.75);line-height:1.55;">${r.desc||''}</div>`;
+        row.appendChild(card);
+      });
+      box.appendChild(row);
+    }
+
+    // ════════════════════════════════════════
+    // 药水：大卡片直接展示（数量少）
+    // ════════════════════════════════════════
+    function renderPotions(box) {
+      box.innerHTML = '';
+      const grid = document.createElement('div');
+      grid.style.cssText = 'display:grid;grid-template-columns:repeat(2,1fr);gap:20px;padding:8px 0;';
+      Object.values(Data.potions).forEach(p => {
+        const tier = p.tier || 'uncommon';
+        const tc = TC[tier] || '#94a3b8';
+        const imgHtml = p.img
+          ? `<img src="${p.img}" style="width:56px;height:56px;object-fit:contain;">`
+          : `<span style="font-size:3.2rem;line-height:1;">${p.emoji||'🧪'}</span>`;
+        const tile = document.createElement('div');
+        tile.style.cssText = `background:${TBG[tier]||'rgba(148,163,184,0.1)'};border:2px solid ${tc}55;border-radius:20px;padding:28px 24px;box-sizing:border-box;`;
+        tile.innerHTML = `
+          <div style="display:flex;align-items:center;gap:18px;margin-bottom:14px;">
+            ${imgHtml}
+            <div>
+              <div style="font-size:1.25rem;font-weight:800;color:#fff;margin-bottom:4px;">${p.name}</div>
+              <div style="font-size:0.8rem;color:${tc};font-weight:700;">${TN[tier]||''}</div>
+            </div>
+          </div>
+          <div style="font-size:0.88rem;color:rgba(255,255,255,0.8);line-height:1.6;">${p.desc||''}</div>`;
+        grid.appendChild(tile);
+      });
+      box.appendChild(grid);
+    }
+
+    // ════════════════════════════════════════
+    // 怪物：第一层分区大块，第二层怪物详情
+    // ════════════════════════════════════════
+    const monsterGroups = [
+      { key:'act1n',  label:'第一层 · 普通', emoji:'⚔️', color:'#64b5f6', ids:['slime','cultist','louse','jawworm'] },
+      { key:'act1b',  label:'第一层 · Boss',  emoji:'💀', color:'#ef5350', ids:['guardian'] },
+      { key:'act2n',  label:'第二层 · 普通', emoji:'⚔️', color:'#81c784', ids:['louse2','cultist2','jawworm2'] },
+      { key:'act2b',  label:'第二层 · Boss',  emoji:'💀', color:'#ef9a9a', ids:['banbu'] },
+      { key:'act3n',  label:'第三层 · 普通', emoji:'⚔️', color:'#b39ddb', ids:['ironguard','cursemage','berserker'] },
+      { key:'act3b',  label:'第三层 · Boss',  emoji:'👑', color:'#ce93d8', ids:['boge'] },
+      { key:'event',  label:'事件遭遇',        emoji:'❓', color:'#ffb74d', ids:['liuxing1','liuxing2','liuxing3'] },
+      { key:'tut',    label:'教程',             emoji:'📖', color:'#90a4ae', ids:['tutorial_boss'] },
+    ];
+
+    function getEnemyActions(enemy) {
+      const uniqueActions = [...new Set(enemy.actions||[])];
+      const typeIcons = { attack:'⚔️', defend:'🛡️', buff:'✨', debuff:'💢', pollute:'☣️' };
+      return uniqueActions.map(actionName => {
+        try {
+          const mockState = { actionIndex:0, buffs:{strength:0}, gear:2, actions:[actionName] };
+          const intents = enemy.getIntent(mockState);
+          const arr = Array.isArray(intents) ? intents : [intents];
+          const desc = arr.map(i => i.detail || i.label || '').filter(Boolean).join('，');
+          const icon = typeIcons[arr[0]?.type] || '▸';
+          return `<div style="display:flex;gap:7px;margin-bottom:5px;align-items:flex-start;"><span style="flex-shrink:0;">${icon}</span><span style="font-size:0.8rem;color:rgba(255,255,255,0.68);line-height:1.45;">${desc}</span></div>`;
+        } catch(e) { return ''; }
+      }).join('');
+    }
+
+    function renderMonsters(box) {
+      box.innerHTML = '';
+      const grid = document.createElement('div');
+      grid.style.cssText = 'display:grid;grid-template-columns:repeat(2,1fr);gap:20px;padding:8px 0;';
+      monsterGroups.forEach(g => {
+        const validIds = g.ids.filter(id => Data.enemies[id]);
+        if (!validIds.length) return;
+        const tile = document.createElement('div');
+        tile.style.cssText = `background:${g.color}15;border:2px solid ${g.color}55;border-radius:20px;padding:28px 24px;text-align:center;cursor:pointer;transition:all 0.18s;box-sizing:border-box;`;
+        const previewEmojis = validIds.slice(0,3).map(id => `<span style="font-size:2rem;">${Data.enemies[id].emoji}</span>`).join('');
+        tile.innerHTML = `
+          <div style="font-size:2.8rem;margin-bottom:10px;">${g.emoji}</div>
+          <div style="font-size:1.3rem;font-weight:800;color:${g.color};margin-bottom:6px;">${g.label}</div>
+          <div style="font-size:0.88rem;color:rgba(255,255,255,0.45);margin-bottom:14px;">${validIds.length} 种怪物</div>
+          <div style="display:flex;justify-content:center;gap:8px;">${previewEmojis}</div>`;
+        tile.onmouseenter = () => { tile.style.background = `${g.color}25`; tile.style.borderColor = `${g.color}99`; tile.style.transform = 'translateY(-4px)'; };
+        tile.onmouseleave = () => { tile.style.background = `${g.color}15`; tile.style.borderColor = `${g.color}55`; tile.style.transform = ''; };
+        tile.onclick = () => renderMonsterDetail(box, g);
+        grid.appendChild(tile);
+      });
+      box.appendChild(grid);
+    }
+
+    function renderMonsterDetail(box, g) {
+      box.innerHTML = '';
+      box.appendChild(backBtn('怪物图鉴', () => renderMonsters(box)));
+      const header = document.createElement('div');
+      header.style.cssText = `display:flex;align-items:center;gap:14px;padding:14px 20px;background:${g.color}18;border-radius:14px;border-left:5px solid ${g.color};margin-bottom:22px;`;
+      header.innerHTML = `<span style="font-size:2.2rem;">${g.emoji}</span><div><div style="font-size:1.2rem;font-weight:800;color:${g.color};">${g.label}</div><div style="font-size:0.85rem;color:rgba(255,255,255,0.45);margin-top:3px;">${g.ids.filter(id=>Data.enemies[id]).length} 种怪物</div></div>`;
+      box.appendChild(header);
+      const row = document.createElement('div');
+      row.style.cssText = 'display:flex;flex-wrap:wrap;gap:16px;';
+      g.ids.filter(id => Data.enemies[id]).forEach(id => {
+        const e = Data.enemies[id];
+        const card = document.createElement('div');
+        card.style.cssText = `background:rgba(255,255,255,0.05);border:1.5px solid ${g.color}44;border-radius:16px;padding:18px 20px;width:260px;box-sizing:border-box;flex-shrink:0;`;
+        card.innerHTML = `
+          <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
+            <span style="font-size:2.8rem;line-height:1;">${e.emoji}</span>
+            <div>
+              <div style="font-weight:800;color:#fff;font-size:1.05rem;">${e.name}</div>
+              <div style="font-size:0.78rem;color:rgba(255,255,255,0.45);margin-top:3px;">❤️ ${e.maxHp} HP</div>
+            </div>
+          </div>
+          <div style="border-top:1px solid rgba(255,255,255,0.1);padding-top:10px;">${getEnemyActions(e)}</div>`;
+        row.appendChild(card);
+      });
+      box.appendChild(row);
+    }
+
+    // ════════════════════════════════════════
+    // 组装 overlay
+    // ════════════════════════════════════════
+    const activeTabStyle = 'background:rgba(140,90,255,0.25);border:1.5px solid rgba(160,100,255,0.6);color:#c8a0ff;border-radius:10px;padding:8px 18px;cursor:pointer;font-size:0.95rem;font-weight:700;font-family:var(--font);';
+    const normalTabStyle = 'background:rgba(255,255,255,0.06);border:1.5px solid rgba(255,255,255,0.16);color:rgba(255,255,255,0.55);border-radius:10px;padding:8px 18px;cursor:pointer;font-size:0.95rem;font-family:var(--font);';
+
+    const overlay = document.createElement('div');
+    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(6,6,18,0.97);z-index:9500;display:flex;flex-direction:column;overflow:hidden;font-family:var(--font);';
+    overlay.innerHTML = `
+      <div style="display:flex;align-items:center;gap:10px;padding:14px 22px;border-bottom:1px solid rgba(255,255,255,0.1);background:rgba(0,0,0,0.35);flex-shrink:0;">
+        <div style="font-size:1.2rem;font-weight:800;color:#e8d8ff;margin-right:8px;">📚 游戏图鉴</div>
+        <button id="dbt-cards">🃏 角色卡牌</button>
+        <button id="dbt-relics">💎 遗物</button>
+        <button id="dbt-potions">🧪 药水</button>
+        <button id="dbt-monsters">👾 怪物</button>
+        <button id="db-close" style="margin-left:auto;background:rgba(255,255,255,0.08);border:1.5px solid rgba(255,255,255,0.2);color:#fff;border-radius:10px;padding:8px 18px;cursor:pointer;font-size:0.95rem;font-family:var(--font);">✕ 关闭</button>
+      </div>
+      <div id="db-content" style="flex:1;overflow-y:auto;padding:24px 28px;"></div>`;
+
+    const box  = overlay.querySelector('#db-content');
+    const btns = {
+      cards:    overlay.querySelector('#dbt-cards'),
+      relics:   overlay.querySelector('#dbt-relics'),
+      potions:  overlay.querySelector('#dbt-potions'),
+      monsters: overlay.querySelector('#dbt-monsters'),
+    };
+    const renders = { cards: renderCards, relics: renderRelics, potions: renderPotions, monsters: renderMonsters };
+
+    function switchTab(tab) {
+      box.scrollTop = 0;
+      Object.entries(btns).forEach(([k,b]) => b.style.cssText = k===tab ? activeTabStyle : normalTabStyle);
+      renders[tab](box);
+    }
+
+    Object.entries(btns).forEach(([k,b]) => b.onclick = () => switchTab(k));
+    overlay.querySelector('#db-close').onclick = () => overlay.remove();
+
+    switchTab('cards');
     document.body.appendChild(overlay);
   },
 
