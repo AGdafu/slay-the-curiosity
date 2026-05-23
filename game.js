@@ -3963,17 +3963,18 @@ const Tutorial = {
 };
 
 // ── net.js ────────────────────────────────────────────────────────────────────
-// PeerJS 联机层：房主权威模式。房主生成房间码，访客输码加入，P2P 直连。
+// MQTT 联机层：HiveMQ 公共 Broker，房主权威模式，5位房间码。
+// 无需账号，走 WSS/HTTPS，穿透任何防火墙。
 const Net = {
-  peer: null,
-  conn: null,
+  _client: null,
+  _joinTimer: null,
   isHost: false,
   connected: false,
   roomCode: null,
   _handlers: {},
-  // 房间码字符集：去掉易混淆的 0O1IL
   _CHARS: 'ABCDEFGHJKMNPQRSTUVWXYZ23456789',
-  _PREFIX: 'slaycuriosity-v1-',
+  _BROKER: 'wss://broker.hivemq.com:8884/mqtt',
+  _TP: 'slaycuriosity/v1/',   // topic prefix
 
   on(type, fn) { this._handlers[type] = fn; },
   _emit(type, data) { try { if (this._handlers[type]) this._handlers[type](data); } catch(e){ console.error('Net handler error', e); } },
@@ -3984,82 +3985,96 @@ const Net = {
     return c;
   },
 
-  _peerCfg() {
-    return {
-      config: {
-        iceServers: [
-          { urls: 'stun:stun.l.google.com:19302' },
-          { urls: 'stun:stun1.l.google.com:19302' },
-          { urls: 'stun:stun.cloudflare.com:3478' },
-          { urls: 'turn:openrelay.metered.ca:80',  username: 'openrelayproject', credential: 'openrelayproject' },
-          { urls: 'turn:openrelay.metered.ca:443', username: 'openrelayproject', credential: 'openrelayproject' },
-          { urls: 'turns:openrelay.metered.ca:443',username: 'openrelayproject', credential: 'openrelayproject' }
-        ]
+  // topic: slaycuriosity/v1/{code}
+  _topic(code) { return this._TP + (code || this.roomCode); },
+
+  _connect(code, onReady) {
+    if (typeof mqtt === 'undefined') { this._emit('error', 'MQTT 库未加载，请检查网络'); return; }
+    this.disconnect();
+    this.roomCode = code;
+    const role = this.isHost ? 'host' : 'guest';
+    const clientId = 'stc-' + role + '-' + Math.random().toString(36).slice(2, 9);
+    const client = mqtt.connect(this._BROKER, {
+      clientId,
+      clean: true,
+      connectTimeout: 12000,
+      reconnectPeriod: 0,
+    });
+    this._client = client;
+
+    client.on('connect', () => {
+      client.subscribe(this._topic(code), { qos: 1 }, err => {
+        if (err) { this._emit('error', '订阅失败：' + err.message); return; }
+        onReady();
+      });
+    });
+
+    client.on('message', (_topic, raw) => {
+      let data;
+      try { data = JSON.parse(raw.toString()); } catch(e) { return; }
+      // 忽略自己发的消息
+      if (data._from === role) return;
+
+      if (!this.connected) {
+        // 握手阶段
+        if (!this.isHost && data.t === 'join-ack') {
+          if (this._joinTimer) { clearTimeout(this._joinTimer); this._joinTimer = null; }
+          this.connected = true;
+          this._emit('connected');
+          this._pub({ t: 'hello' });
+        } else if (this.isHost && data.t === 'join') {
+          this.connected = true;
+          this._emit('connected');
+          this._pub({ t: 'join-ack' });
+          this._pub({ t: 'hello' });
+        }
+      } else {
+        // 正常消息
+        if (data.t === 'hello') { this._pub({ t: 'hello-ack' }); this._emit('message', data); }
+        else if (data.t === 'bye') { this.connected = false; this._emit('disconnected'); }
+        else { this._emit('message', data); }
       }
-    };
+    });
+
+    client.on('error', err => this._emit('error', '连接错误：' + (err.message || err)));
+    client.on('offline', () => { if (this.connected) { this.connected = false; this._emit('disconnected'); } });
+  },
+
+  _pub(msg) {
+    if (!this._client || !this.roomCode) return;
+    const role = this.isHost ? 'host' : 'guest';
+    try { this._client.publish(this._topic(), JSON.stringify({ ...msg, _from: role }), { qos: 1 }); }
+    catch(e) { console.error('Net pub error', e); }
   },
 
   // 房主：创建房间
   host() {
-    if (typeof Peer === 'undefined') { this._emit('error', 'PeerJS 未加载，请检查网络连接'); return; }
-    this.disconnect();
     this.isHost = true;
     this.connected = false;
     const code = this._genCode();
-    this.roomCode = code;
-    this.peer = new Peer(this._PREFIX + code, this._peerCfg());
-    this.peer.on('open', () => this._emit('hosted', code));
-    this.peer.on('connection', conn => {
-      // 已有连接则拒绝（固定 2 人）
-      if (this.conn && this.connected) { conn.close(); return; }
-      this.conn = conn;
-      this._bindConn(conn);
-    });
-    this.peer.on('error', err => this._emit('error', this._errMsg(err)));
+    this._connect(code, () => this._emit('hosted', code));
   },
 
   // 访客：加入房间
   join(code) {
-    if (typeof Peer === 'undefined') { this._emit('error', 'PeerJS 未加载，请检查网络连接'); return; }
-    this.disconnect();
+    code = (code || '').trim().toUpperCase();
     this.isHost = false;
     this.connected = false;
-    code = (code || '').trim().toUpperCase();
-    this.roomCode = code;
-    this.peer = new Peer(undefined, this._peerCfg());
-    this.peer.on('open', () => {
-      const conn = this.peer.connect(this._PREFIX + code, { reliable: true });
-      this.conn = conn;
-      this._bindConn(conn);
+    this._connect(code, () => {
+      this._pub({ t: 'join' });
+      this._joinTimer = setTimeout(() => {
+        if (!this.connected) this._emit('error', '连接超时（15s），请确认房间码正确且房主在线');
+      }, 15000);
     });
-    this.peer.on('error', err => this._emit('error', this._errMsg(err)));
   },
 
-  _bindConn(conn) {
-    const timer = setTimeout(() => {
-      if (!this.connected) this._emit('error', '连接超时（15s），请确认房间码正确且对方在线');
-    }, 15000);
-    conn.on('open', () => { clearTimeout(timer); this.connected = true; this._emit('connected'); });
-    conn.on('data', data => this._emit('message', data));
-    conn.on('close', () => { clearTimeout(timer); this.connected = false; this._emit('disconnected'); });
-    conn.on('error', err => { clearTimeout(timer); this._emit('error', this._errMsg(err)); });
-  },
-
-  _errMsg(err) {
-    const t = (err && err.type) || '';
-    if (t === 'peer-unavailable') return '房间不存在或已关闭，请检查房间码';
-    if (t === 'unavailable-id') return '房间码冲突，请重新创建';
-    if (t === 'network' || t === 'server-error') return '网络错误，无法连接信令服务器';
-    if (t === 'browser-incompatible') return '当前浏览器不支持联机';
-    return '连接出错：' + (t || (err && err.message) || '未知');
-  },
-
-  send(msg) { if (this.conn && this.connected) { try { this.conn.send(msg); } catch(e){ console.error('Net send error', e); } } },
+  send(msg) { if (this.connected) this._pub(msg); },
 
   disconnect() {
-    try { if (this.conn) this.conn.close(); } catch(e){}
-    try { if (this.peer) this.peer.destroy(); } catch(e){}
-    this.peer = null; this.conn = null; this.connected = false; this.roomCode = null;
+    if (this._joinTimer) { clearTimeout(this._joinTimer); this._joinTimer = null; }
+    if (this.connected) { try { this._pub({ t: 'bye' }); } catch(e){} }
+    try { if (this._client) this._client.end(true); } catch(e){}
+    this._client = null; this.connected = false; this.roomCode = null;
   },
 };
 
