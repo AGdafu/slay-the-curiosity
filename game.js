@@ -3973,7 +3973,7 @@ const Net = {
   roomCode: null,
   _handlers: {},
   _CHARS: 'ABCDEFGHJKMNPQRSTUVWXYZ23456789',
-  _BROKER: 'wss://broker.hivemq.com:8884/mqtt',
+  _BROKER: 'wss://broker.emqx.io:8084/mqtt',
   _TP: 'slaycuriosity/v1/',   // topic prefix
 
   on(type, fn) { this._handlers[type] = fn; },
@@ -3997,12 +3997,18 @@ const Net = {
     const client = mqtt.connect(this._BROKER, {
       clientId,
       clean: true,
-      connectTimeout: 12000,
+      connectTimeout: 10000,
       reconnectPeriod: 0,
     });
     this._client = client;
 
+    // broker 连接超时保险
+    const brokerTimer = setTimeout(() => {
+      if (!this.connected) this._emit('error', '无法连接服务器（10s超时），请检查网络');
+    }, 12000);
+
     client.on('connect', () => {
+      clearTimeout(brokerTimer);
       client.subscribe(this._topic(code), { qos: 1 }, err => {
         if (err) { this._emit('error', '订阅失败：' + err.message); return; }
         onReady();
@@ -4036,8 +4042,8 @@ const Net = {
       }
     });
 
-    client.on('error', err => this._emit('error', '连接错误：' + (err.message || err)));
-    client.on('offline', () => { if (this.connected) { this.connected = false; this._emit('disconnected'); } });
+    client.on('error', err => { clearTimeout(brokerTimer); this._emit('error', '连接错误：' + (err.message || err)); });
+    client.on('offline', () => { clearTimeout(brokerTimer); if (this.connected) { this.connected = false; this._emit('disconnected'); } });
   },
 
   _pub(msg) {
