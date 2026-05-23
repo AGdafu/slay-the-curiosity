@@ -4084,6 +4084,258 @@ const Net = {
   },
 };
 
+// ── coop-game.js ─────────────────────────────────────────────────────────────
+const CoopGame = {
+  _coopCs: null,
+
+  // 初始化联机战斗状态（仅房主调用）
+  init(hostCharId, guestCharId, enemyIds) {
+    const hChar = Data.characters.find(c => c.id === hostCharId);
+    const gChar = Data.characters.find(c => c.id === guestCharId);
+    const enemies = enemyIds.map(id => Data.makeEnemy(id));
+    enemies.forEach(e => {
+      const r = Data.enemies[e.id].getIntent(e);
+      e.currentIntent = Array.isArray(r) ? r : [r];
+    });
+    const coopCs = {
+      host: { hp: hChar.hp, maxHp: hChar.maxHp, block: 0, buffs: {}, debuffs: {}, charId: hChar.id, charName: hChar.name, charEmoji: hChar.emoji },
+      guest: { hp: gChar.hp, maxHp: gChar.maxHp, block: 0, buffs: {}, debuffs: {}, charId: gChar.id, charName: gChar.name, charEmoji: gChar.emoji },
+      enemies,
+      hostEnergy: 3, hostMaxEnergy: 3,
+      hostHand: [], hostDrawPile: [...hChar.startingDeck].sort(() => Math.random() - 0.5),
+      hostDiscardPile: [], hostHandUpgrades: {},
+      guestEnergy: 3, guestMaxEnergy: 3,
+      guestHand: [], guestDrawPile: [...gChar.startingDeck].sort(() => Math.random() - 0.5),
+      guestDiscardPile: [], guestHandUpgrades: {},
+      turn: 1,
+      phase: 'host-player',
+    };
+    // 房主先手，只给房主抽起始手牌；访客的牌在房主回合结束时发
+    this._drawCards(coopCs, 'host', 5);
+    this._coopCs = coopCs;
+    return coopCs;
+  },
+
+  _drawCards(coopCs, who, n) {
+    const hand = who === 'host' ? coopCs.hostHand : coopCs.guestHand;
+    const draw = who === 'host' ? coopCs.hostDrawPile : coopCs.guestDrawPile;
+    const discard = who === 'host' ? coopCs.hostDiscardPile : coopCs.guestDiscardPile;
+    for (let i = 0; i < n; i++) {
+      if (draw.length === 0) {
+        if (discard.length === 0) break;
+        const shuffled = [...discard].sort(() => Math.random() - 0.5);
+        discard.length = 0;
+        draw.push(...shuffled);
+      }
+      hand.push(draw.shift());
+    }
+  },
+
+  // 为 State.run getter 提供一个假的 run，避免在联机模式下抛出异常
+  _withFakeRun(charId, fn) {
+    const prev = State.current.run;
+    State.current.run = { character: { id: charId }, relics: [], cardUpgrades: {}, deck: [] };
+    try { return fn(); } finally { State.current.run = prev; }
+  },
+
+  // 处理玩家打牌（房主端执行）
+  playCard(coopCs, who, cardId, targetEnemyIndex, handIndex) {
+    if (coopCs.phase !== who + '-player') return false;
+    const hand = who === 'host' ? coopCs.hostHand : coopCs.guestHand;
+    const discard = who === 'host' ? coopCs.hostDiscardPile : coopCs.guestDiscardPile;
+    const player = coopCs[who];
+    const energyKey = who + 'Energy';
+
+    // 确认手牌索引
+    const idx = (handIndex !== undefined && handIndex >= 0 && handIndex < hand.length && hand[handIndex] === cardId)
+      ? handIndex : hand.indexOf(cardId);
+    if (idx === -1) return false;
+
+    const def = Data.cards[cardId];
+    if (!def) return false;
+    if (coopCs[energyKey] < def.cost) return false;
+    if (def.needsTarget) {
+      const t = coopCs.enemies[targetEnemyIndex];
+      if (!t || t.hp <= 0) return false;
+    }
+
+    coopCs[energyKey] -= def.cost;
+    hand.splice(idx, 1);
+
+    // 构造一个临时 cs 对象供 card effect 使用
+    const tempCs = this._makeTempCs(coopCs, who);
+    this._withFakeRun(player.charId, () => def.effect(tempCs, targetEnemyIndex, 0));
+    // 将 tempCs 中的变化写回 coopCs
+    this._applyTempCs(coopCs, who, tempCs);
+
+    if (def.type !== 'power') discard.push(cardId);
+
+    // 检查胜利条件
+    if (coopCs.enemies.every(e => e._dead || e.hp <= 0)) {
+      coopCs.enemies.forEach(e => { if (e.hp <= 0) { e._dead = true; e.hp = 0; } });
+      coopCs.phase = 'victory';
+    }
+    return true;
+  },
+
+  // 构造一个临时 cs 供现有 card effect 函数使用
+  _makeTempCs(coopCs, who) {
+    const player = coopCs[who];
+    return {
+      player: { hp: player.hp, maxHp: player.maxHp, block: player.block, buffs: { ...player.buffs }, debuffs: { ...player.debuffs } },
+      enemies: coopCs.enemies,
+      energy: coopCs[who + 'Energy'],
+      maxEnergy: coopCs[who + 'MaxEnergy'],
+      hand: who === 'host' ? coopCs.hostHand : coopCs.guestHand,
+      drawPile: who === 'host' ? coopCs.hostDrawPile : coopCs.guestDrawPile,
+      discardPile: who === 'host' ? coopCs.hostDiscardPile : coopCs.guestDiscardPile,
+      exhaustPile: [],
+      handUpgrades: who === 'host' ? coopCs.hostHandUpgrades : coopCs.guestHandUpgrades,
+      turn: coopCs.turn,
+      phase: 'player',
+      // stubs for single-player-only features
+      _coopWho: who,
+      _coopCs: coopCs,
+    };
+  },
+
+  // 将 tempCs 中玩家和敌人状态写回 coopCs
+  _applyTempCs(coopCs, who, tempCs) {
+    const player = coopCs[who];
+    player.hp = tempCs.player.hp;
+    player.maxHp = tempCs.player.maxHp;
+    player.block = tempCs.player.block;
+    player.buffs = tempCs.player.buffs;
+    player.debuffs = tempCs.player.debuffs;
+    coopCs[who + 'Energy'] = tempCs.energy;
+    // 敌人已是引用，不需要额外写回
+    // 如果 tempCs 抽了牌（drawCards 修改了 hand/draw/discard 数组引用），已同步
+  },
+
+  // 结束某玩家回合，推进 phase
+  endPlayerTurn(coopCs, who) {
+    if (coopCs.phase !== who + '-player') return;
+    const hand = who === 'host' ? coopCs.hostHand : coopCs.guestHand;
+    const discard = who === 'host' ? coopCs.hostDiscardPile : coopCs.guestDiscardPile;
+    // 弃牌
+    discard.push(...hand);
+    hand.length = 0;
+    // tick 该玩家 debuffs
+    this._tickDebuffs(coopCs[who]);
+
+    if (who === 'host') {
+      // 访客回合开始：清格挡、重置能量、抽5张牌
+      coopCs.guest.block = 0;
+      coopCs.phase = 'guest-player';
+      coopCs.guestEnergy = coopCs.guestMaxEnergy;
+      this._drawCards(coopCs, 'guest', 5);
+    } else {
+      // 访客回合结束 → 敌方回合
+      coopCs.phase = 'enemy';
+      this.runEnemyTurn(coopCs);
+    }
+  },
+
+  _tickDebuffs(entity) {
+    const manual = new Set(['burn', 'freeze']);
+    Object.keys(entity.debuffs || {}).forEach(k => {
+      if (!manual.has(k)) entity.debuffs[k] = Math.max(0, entity.debuffs[k] - 1);
+    });
+  },
+
+  // 敌方回合逻辑（简化版，不依赖 State.run）
+  runEnemyTurn(coopCs) {
+    // 清敌人格挡
+    coopCs.enemies.forEach(e => { if (!e._dead) e.block = 0; });
+
+    // 构造一个可以传入 Data.enemies[id].doAction 的临时 cs
+    // 敌人 doAction 会调用 Combat.enemyAttack(cs, enemyIndex, amount)
+    // 我们需要让伤害分配到双方玩家（简化：各承担一半，或随机分配一个）
+    // 简化实现：敌人攻击轮流作用于房主和访客
+    let attackTarget = 'host'; // 交替攻击
+
+    const tempCs = {
+      player: { hp: coopCs.host.hp, maxHp: coopCs.host.maxHp, block: coopCs.host.block, buffs: { ...coopCs.host.buffs }, debuffs: { ...coopCs.host.debuffs } },
+      enemies: coopCs.enemies,
+      energy: 0, maxEnergy: 0,
+      hand: [], drawPile: [], discardPile: [], exhaustPile: [],
+      handUpgrades: {},
+      turn: coopCs.turn,
+      phase: 'enemy',
+      // 标记当前受击对象
+      _coopEnemyTarget: coopCs.host,
+      _coopEnemyTargetGuest: coopCs.guest,
+      _coopEnemyAttackCount: 0,
+    };
+
+    coopCs.enemies.forEach((e, i) => {
+      if (e._dead || e.hp <= 0) return;
+      if ((e.debuffs.freeze || 0) > 0) {
+        e.debuffs.freeze = Math.max(0, e.debuffs.freeze - 1);
+        return;
+      }
+      // 替换 tempCs.player 以轮流受击
+      const targetWho = (i % 2 === 0) ? 'host' : 'guest';
+      const targetPlayer = coopCs[targetWho];
+      tempCs.player = { hp: targetPlayer.hp, maxHp: targetPlayer.maxHp, block: targetPlayer.block, buffs: { ...targetPlayer.buffs }, debuffs: { ...targetPlayer.debuffs } };
+
+      try { this._withFakeRun(coopCs.host.charId, () => Data.enemies[e.id].doAction(tempCs, i)); } catch(err) { console.error('CoopGame enemy doAction error', err); }
+
+      // 写回受击玩家状态
+      targetPlayer.hp = tempCs.player.hp;
+      targetPlayer.block = tempCs.player.block;
+      targetPlayer.buffs = tempCs.player.buffs;
+      targetPlayer.debuffs = tempCs.player.debuffs;
+
+      // 燃烧
+      const burnStacks = e.debuffs.burn || 0;
+      if (burnStacks > 0) {
+        e.hp = Math.max(0, e.hp - burnStacks);
+        e.debuffs.burn = burnStacks - 1;
+        if (e.hp <= 0) e._dead = true;
+      }
+      this._tickDebuffs(e);
+      e.actionIndex = (e.actionIndex || 0) + 1;
+    });
+
+    // 检查死亡
+    if (coopCs.host.hp <= 0) coopCs.host.hp = 0;
+    if (coopCs.guest.hp <= 0) coopCs.guest.hp = 0;
+
+    // 检查胜败
+    if (coopCs.enemies.every(e => e._dead || e.hp <= 0)) {
+      coopCs.enemies.forEach(e => { if (e.hp <= 0) { e._dead = true; e.hp = 0; } });
+      coopCs.phase = 'victory';
+      return;
+    }
+    if (coopCs.host.hp <= 0 && coopCs.guest.hp <= 0) {
+      coopCs.phase = 'defeat';
+      return;
+    }
+
+    // 下一回合：房主先手，清房主格挡，发牌
+    coopCs.turn++;
+    coopCs.phase = 'host-player';
+    coopCs.host.block = 0;
+    coopCs.hostEnergy = coopCs.hostMaxEnergy;
+    this._drawCards(coopCs, 'host', 5);
+    // 更新敌人意图
+    coopCs.enemies.forEach(e => {
+      if (!e._dead) {
+        try {
+          const r = Data.enemies[e.id].getIntent(e);
+          e.currentIntent = Array.isArray(r) ? r : [r];
+        } catch(err) {}
+      }
+    });
+  },
+
+  // 序列化（去掉函数，保留数据）
+  serialize(coopCs) {
+    return JSON.parse(JSON.stringify(coopCs, (k, v) => typeof v === 'function' ? undefined : v));
+  },
+};
+
 // ── ui.js ─────────────────────────────────────────────────────────────────────
 const DAYAN_IMG_SRC = '/manus-storage/img_03_574k_632f1438.png';
 const WANGWEI_IMG_SRC = '/manus-storage/wangwei_sprite_nobg_90111a38.png';
@@ -4827,7 +5079,9 @@ el.innerHTML=`<div class="card-type-bar"></div>${rarityTag}<div class="card-cost
 
   // ── 联机合作大厅（阶段1：PeerJS 连接 + 房间码）──────────────────────────────
   coopLobby(){
-    const C = UI._coop = { view:'choose', error:'', code:'', pingOk:false };
+    // 如果已经连接（例如从战斗返回），恢复 connected 状态
+    const initView = Net.connected ? 'connected' : 'choose';
+    const C = UI._coop = { view: initView, error:'', code: Net.roomCode||'', pingOk: Net.connected, myChar: null, oppChar: null };
 
     const leave = () => { Net.disconnect(); UI._coop=null; State.go('menu'); };
 
@@ -4869,13 +5123,28 @@ el.innerHTML=`<div class="card-type-bar"></div>${rarityTag}<div class="card-cost
         body = `<div style="font-size:1rem;color:rgba(255,255,255,0.7);margin:20px 0">🔗 连接中…</div>
           <button class="btn" id="cl-cancel" style="width:200px;margin:0 auto">取消</button>`;
       } else if (C.view === 'connected') {
+        // 阶段2：角色选择界面
+        const myChar = C.myChar;
+        const oppChar = C.oppChar;
+        const myRole = Net.isHost ? '房主' : '访客';
+        const charBtns = Data.characters.map(ch => {
+          const sel = myChar === ch.id;
+          return `<button class="btn coop-char-btn" data-char="${ch.id}" style="background:${sel?'rgba(127,224,168,0.22)':'rgba(255,255,255,0.06)'};border:${sel?'2px solid #7fe0a8':'2px solid rgba(255,255,255,0.18)'};color:${sel?'#7fe0a8':'#fff'};padding:8px 14px;display:flex;align-items:center;gap:8px;border-radius:12px;cursor:pointer;font-size:0.9rem;font-family:var(--font);transition:all 0.15s">${ch.emoji} ${ch.name}<span style="font-size:0.75rem;color:rgba(255,255,255,0.45);margin-left:4px">HP ${ch.hp}</span></button>`;
+        }).join('');
+        const waitMsg = oppChar
+          ? `<div style="font-size:0.85rem;color:#7fe0a8;margin-top:6px">对方：${Data.characters.find(c=>c.id===oppChar)?.emoji||''} ${Data.characters.find(c=>c.id===oppChar)?.name||'?'}</div>`
+          : `<div style="font-size:0.85rem;color:rgba(255,255,255,0.4);margin-top:6px">⏳ 等待对方选择…</div>`;
+        const canStart = Net.isHost && myChar && oppChar;
         body = `
-          <div style="font-size:3rem;margin:8px 0">✅</div>
-          <div style="font-size:1.3rem;font-weight:800;color:#7fe0a8;margin-bottom:6px">已连接！</div>
-          <div style="font-size:0.95rem;color:rgba(255,255,255,0.7);margin-bottom:4px">你的身份：<b style="color:#fff">${Net.isHost?'🏠 房主':'🔑 访客'}</b></div>
-          <div style="font-size:0.9rem;color:${C.pingOk?'#7fe0a8':'rgba(255,255,255,0.5)'};margin-bottom:18px">${C.pingOk?'🟢 双向通信正常':'⏳ 测试通信中…'}</div>
-          <div style="background:rgba(80,160,255,0.1);border:1px solid rgba(80,160,255,0.35);border-radius:10px;padding:10px 16px;font-size:0.86rem;color:#90c8ff;max-width:340px;margin:0 auto 18px">阶段 1 完成：联机连接已打通。<br>合作战斗（阶段 2）开发中。</div>
-          <button class="btn" id="cl-back3" style="width:220px;margin:0 auto">← 断开并返回</button>`;
+          <div style="font-size:1rem;font-weight:800;color:#7fe0a8;margin-bottom:4px">✅ 已连接 — ${myRole}</div>
+          <div style="font-size:0.85rem;color:rgba(255,255,255,0.5);margin-bottom:12px">房间码：<b style="color:#fff;font-family:monospace">${Net.roomCode||''}</b></div>
+          <div style="font-size:0.92rem;font-weight:700;color:#fff;margin-bottom:8px">选择你的角色：</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;max-width:340px;margin:0 auto 10px">${charBtns}</div>
+          ${myChar?`<div style="font-size:0.85rem;color:#fff;margin-bottom:4px">你选了：${Data.characters.find(c=>c.id===myChar)?.emoji||''} ${Data.characters.find(c=>c.id===myChar)?.name||''}</div>`:'<div style="font-size:0.85rem;color:rgba(255,255,255,0.4);margin-bottom:4px">请选择一个角色</div>'}
+          ${waitMsg}
+          ${canStart?'<button class="btn primary" id="cl-start-battle" style="margin-top:14px;width:220px">⚔️ 开始战斗</button>':''}
+          ${!Net.isHost && myChar && oppChar?'<div style="font-size:0.85rem;color:rgba(255,255,255,0.5);margin-top:12px">⏳ 等待房主开始战斗…</div>':''}
+          <button class="btn" id="cl-back3" style="width:220px;margin:14px auto 0">← 断开并返回</button>`;
       }
 
       UI.app().innerHTML = `<div class="menu-screen slide-up">
@@ -4900,23 +5169,87 @@ el.innerHTML=`<div class="card-type-bar"></div>${rarityTag}<div class="card-cost
         C.view='connecting'; C.error=''; render(); Net.join(code);
       };
       if ($('cl-code')) $('cl-code').oninput = e => { e.target.value = e.target.value.toUpperCase(); };
+      // 联机阶段2：角色选择按钮
+      document.querySelectorAll('.coop-char-btn').forEach(btn => {
+        btn.onclick = () => {
+          const charId = btn.dataset.char;
+          C.myChar = charId;
+          Net.send({ t: 'coop-pick', charId });
+          render();
+        };
+      });
+      // 开始战斗按钮（房主）
+      if ($('cl-start-battle')) {
+        $('cl-start-battle').onclick = () => {
+          if (!Net.isHost || !C.myChar || !C.oppChar) return;
+          const enemyIds = ['louse', 'jawworm'];
+          const coopCs = CoopGame.init(C.myChar, C.oppChar, enemyIds);
+          C.combatActive = true;
+          Net.send({ t: 'coop-start', hostChar: C.myChar, guestChar: C.oppChar, enemyIds });
+          // 发送初始状态给访客
+          setTimeout(() => {
+            Net.send({ t: 'coop-state', cs: CoopGame.serialize(coopCs) });
+            UI.coopCombat(coopCs);
+          }, 100);
+        };
+      }
     }
 
     // Net 事件
     Net.on('hosted', code => { if(!UI._coop) return; C.code=code; C.view='hosting'; C.error=''; render(); });
     Net.on('connected', () => {
       if(!UI._coop) return;
-      C.view='connected'; C.pingOk=false; render();
+      C.view='connected'; C.pingOk=false; C.myChar=null; C.oppChar=null; render();
       Net.send({ t:'hello', from: Net.isHost?'host':'guest' });
     });
     Net.on('message', data => {
       if(!UI._coop || !data) return;
-      if (data.t==='hello') { Net.send({ t:'hello-ack' }); C.pingOk=true; render(); }
-      else if (data.t==='hello-ack') { C.pingOk=true; render(); }
+      if (data.t==='hello') { Net.send({ t:'hello-ack' }); C.pingOk=true; if(!C.combatActive) render(); }
+      else if (data.t==='hello-ack') { C.pingOk=true; if(!C.combatActive) render(); }
+      // ── 联机阶段2消息 ──
+      else if (data.t==='coop-pick') {
+        // 对方选了角色
+        C.oppChar = data.charId;
+        // 如果我是房主并且对方选好了，通知对方我自己选好的角色（如果还没发过）
+        if (Net.isHost && C.myChar) Net.send({ t:'coop-pick', charId: C.myChar });
+        if(!C.combatActive) render();
+      }
+      else if (data.t==='coop-start') {
+        // 访客收到开始战斗消息
+        if (!Net.isHost) {
+          C.myChar = data.guestChar;
+          C.oppChar = data.hostChar;
+          C.combatActive = true;
+          // 访客等待第一个 coop-state 消息（初始状态由房主发送）
+        }
+      }
+      else if (data.t==='coop-state') {
+        // 访客收到状态同步
+        if (!Net.isHost) {
+          UI._coopGuestCs = data.cs;
+          UI.coopCombat(data.cs, true);
+        }
+      }
+      else if (data.t==='coop-card') {
+        // 房主收到访客打牌请求
+        if (Net.isHost && UI._coopCs) {
+          CoopGame.playCard(UI._coopCs, 'guest', data.cardId, data.targetEnemyIndex, data.handIndex);
+          Net.send({ t:'coop-state', cs: CoopGame.serialize(UI._coopCs) });
+          UI.coopCombat(UI._coopCs);
+        }
+      }
+      else if (data.t==='coop-end-turn') {
+        // 房主收到访客结束回合请求
+        if (Net.isHost && UI._coopCs) {
+          CoopGame.endPlayerTurn(UI._coopCs, 'guest');
+          Net.send({ t:'coop-state', cs: CoopGame.serialize(UI._coopCs) });
+          UI.coopCombat(UI._coopCs);
+        }
+      }
     });
     Net.on('disconnected', () => {
       if(!UI._coop) return;
-      C.error='对方已断开连接'; C.view='choose'; render();
+      C.error='对方已断开连接'; C.view='choose'; C.combatActive=false; render();
     });
     Net.on('error', msg => {
       if(!UI._coop) return;
@@ -7546,6 +7879,198 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
 
     switchTab('cards');
     document.body.appendChild(overlay);
+  },
+
+  // ── 联机合作战斗界面 ─────────────────────────────────────────────────────────
+  coopCombat(coopCs, isGuestView) {
+    if (!coopCs) return;
+    // 房主端保存状态引用
+    if (Net.isHost) UI._coopCs = coopCs;
+
+    const app = UI.app();
+    const isMyTurn = Net.isHost
+      ? coopCs.phase === 'host-player'
+      : coopCs.phase === 'guest-player';
+    const myRole = Net.isHost ? 'host' : 'guest';
+    const oppRole = Net.isHost ? 'guest' : 'host';
+    const myPlayer = coopCs[myRole];
+    const oppPlayer = coopCs[oppRole];
+
+    const phaseLabel = {
+      'host-player': '🏠 房主回合',
+      'guest-player': '🔑 访客回合',
+      'enemy': '👹 敌方回合',
+      'victory': '🏆 胜利！',
+      'defeat': '💀 失败',
+    }[coopCs.phase] || coopCs.phase;
+
+    // 渲染敌人
+    function renderEnemy(e, ei) {
+      if (e._dead || e.hp <= 0) return `<div style="opacity:0.3;text-align:center;font-size:2rem">💀</div>`;
+      const intentHtml = (e.currentIntent || []).map(intent => {
+        if (!intent) return '';
+        if (intent.type === 'attack') return `<span style="color:#ff9090">⚔️ ${intent.amount}</span>`;
+        if (intent.type === 'defend') return `<span style="color:#5dade2">🛡</span>`;
+        return `<span style="color:#f9ca24">${intent.type}</span>`;
+      }).join(' ');
+      return `<div class="coop-enemy-target" data-enemy-idx="${ei}" style="text-align:center;padding:10px;background:rgba(255,255,255,0.06);border-radius:12px;min-width:90px;cursor:pointer;transition:transform 0.15s" onmouseenter="this.style.transform='scale(1.06)'" onmouseleave="this.style.transform=''">
+        <div style="font-size:2.2rem">${e.emoji || '👾'}</div>
+        <div style="font-size:0.82rem;font-weight:700;color:#fff;margin:3px 0">${e.name}</div>
+        <div style="font-size:0.78rem;margin:2px 0">${UI.renderHpBar(e.hp, e.maxHp, '90px', e.block)}</div>
+        <div style="font-size:0.78rem;color:rgba(255,255,255,0.6);margin-top:3px">${intentHtml}</div>
+      </div>`;
+    }
+
+    // 渲染玩家状态栏
+    function renderPlayerBar(p, label, highlight) {
+      return `<div style="flex:1;padding:10px 12px;background:${highlight?'rgba(127,224,168,0.12)':'rgba(255,255,255,0.05)'};border:${highlight?'2px solid rgba(127,224,168,0.5)':'2px solid rgba(255,255,255,0.12)'};border-radius:12px;text-align:center">
+        <div style="font-size:1.5rem">${p.charEmoji || '?'}</div>
+        <div style="font-size:0.85rem;font-weight:700;color:${highlight?'#7fe0a8':'#fff'}">${label}</div>
+        <div style="font-size:0.82rem;color:rgba(255,255,255,0.6)">${p.charName || ''}</div>
+        <div style="margin-top:5px">${UI.renderHpBar(p.hp, p.maxHp, '110px', p.block)}</div>
+      </div>`;
+    }
+
+    // 渲染手牌（仅当前回合玩家可见自己的手牌）
+    const myHand = myRole === 'host' ? coopCs.hostHand : coopCs.guestHand;
+    const myEnergy = coopCs[myRole + 'Energy'];
+    const myMaxEnergy = coopCs[myRole + 'MaxEnergy'];
+
+    function renderHandCard(cardId, idx) {
+      const def = Data.cards[cardId];
+      if (!def) return '';
+      const canPlay = isMyTurn && myEnergy >= def.cost && (coopCs.phase === myRole + '-player');
+      return `<div class="coop-hand-card" data-card="${cardId}" data-idx="${idx}"
+        style="display:inline-flex;flex-direction:column;align-items:center;padding:8px 10px;
+        background:${canPlay?'rgba(80,200,140,0.15)':'rgba(255,255,255,0.06)'};
+        border:${canPlay?'2px solid rgba(127,224,168,0.6)':'2px solid rgba(255,255,255,0.15)'};
+        border-radius:10px;min-width:70px;cursor:${canPlay?'pointer':'default'};
+        transition:transform 0.15s;margin:3px;vertical-align:top"
+        onmouseenter="if(${canPlay})this.style.transform='translateY(-6px)'"
+        onmouseleave="this.style.transform=''"
+      >
+        <div style="font-size:1.4rem">${def.emoji || '🃏'}</div>
+        <div style="font-size:0.75rem;font-weight:700;color:#fff;text-align:center;max-width:68px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${def.name}</div>
+        <div style="font-size:0.78rem;color:#f5c518;font-weight:800">${def.cost} 能量</div>
+        <div style="font-size:0.68rem;color:rgba(255,255,255,0.45);text-align:center;max-width:68px;margin-top:2px">${def.type}</div>
+      </div>`;
+    }
+
+    const enemiesHtml = coopCs.enemies.map((e, ei) => renderEnemy(e, ei)).join('');
+    const hostBarHtml = renderPlayerBar(coopCs.host, '🏠 房主', Net.isHost);
+    const guestBarHtml = renderPlayerBar(coopCs.guest, '🔑 访客', !Net.isHost);
+    const handHtml = myHand.map(renderHandCard).join('');
+
+    const endTurnEnabled = isMyTurn && (coopCs.phase === myRole + '-player');
+    const resultHtml = coopCs.phase === 'victory'
+      ? `<div style="text-align:center;padding:18px;background:rgba(80,200,140,0.18);border:2px solid #7fe0a8;border-radius:14px;margin:14px 0">
+          <div style="font-size:2.5rem">🏆</div>
+          <div style="font-size:1.4rem;font-weight:900;color:#7fe0a8">胜利！所有敌人已击败！</div>
+          <button class="btn primary" id="coop-back-lobby" style="margin-top:14px;width:200px">← 返回大厅</button>
+        </div>`
+      : coopCs.phase === 'defeat'
+      ? `<div style="text-align:center;padding:18px;background:rgba(231,76,60,0.15);border:2px solid rgba(231,76,60,0.5);border-radius:14px;margin:14px 0">
+          <div style="font-size:2.5rem">💀</div>
+          <div style="font-size:1.4rem;font-weight:900;color:#ff9b8f">战斗失败！双方均已阵亡。</div>
+          <button class="btn" id="coop-back-lobby" style="margin-top:14px;width:200px">← 返回大厅</button>
+        </div>`
+      : '';
+
+    app.innerHTML = `
+      <div style="min-height:100vh;background:var(--bg,#0c0c1a);padding:16px;box-sizing:border-box;font-family:var(--font);color:#fff;display:flex;flex-direction:column;gap:12px;max-width:700px;margin:0 auto">
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:rgba(255,255,255,0.05);border-radius:10px">
+          <div style="font-size:1rem;font-weight:800;color:#7fe0a8">🤝 联机合作战斗</div>
+          <div style="font-size:0.9rem;font-weight:700;color:#f9ca24">${phaseLabel}</div>
+          <div style="font-size:0.82rem;color:rgba(255,255,255,0.5)">第 ${coopCs.turn} 回合</div>
+        </div>
+        ${resultHtml}
+        <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center">
+          ${enemiesHtml}
+        </div>
+        <div style="display:flex;gap:10px">
+          ${hostBarHtml}
+          ${guestBarHtml}
+        </div>
+        <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:12px">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+            <div style="font-size:0.85rem;font-weight:700;color:rgba(255,255,255,0.6)">${isMyTurn ? '你的手牌：' : '等待对方出牌…'}</div>
+            ${isMyTurn ? `<div style="background:rgba(245,197,24,0.18);border:1.5px solid rgba(245,197,24,0.5);border-radius:8px;padding:2px 10px;font-size:0.88rem;font-weight:800;color:#f5c518">${myEnergy}/${myMaxEnergy} 能量</div>` : ''}
+            ${isMyTurn ? `<button class="btn" id="coop-end-turn" style="margin-left:auto;padding:6px 16px;font-size:0.88rem">结束回合</button>` : ''}
+          </div>
+          <div style="display:flex;flex-wrap:wrap;gap:4px;min-height:90px" id="coop-hand-area">
+            ${isMyTurn ? handHtml : `<div style="color:rgba(255,255,255,0.25);font-size:0.85rem;align-self:center;padding:12px">${phaseLabel}</div>`}
+          </div>
+        </div>
+        ${coopCs.phase !== 'victory' && coopCs.phase !== 'defeat' ? `<div style="font-size:0.75rem;color:rgba(255,255,255,0.2);text-align:center">你是：${Net.isHost ? '🏠 房主' : '🔑 访客'}</div>` : ''}
+      </div>`;
+
+    // 绑定事件
+    document.getElementById('coop-back-lobby')?.addEventListener('click', () => {
+      UI._coopCs = null;
+      State.go('coop-lobby');
+    });
+
+    document.getElementById('coop-end-turn')?.addEventListener('click', () => {
+      if (Net.isHost) {
+        // 房主直接结束自己回合
+        CoopGame.endPlayerTurn(UI._coopCs, 'host');
+        Net.send({ t: 'coop-state', cs: CoopGame.serialize(UI._coopCs) });
+        UI.coopCombat(UI._coopCs);
+      } else {
+        Net.send({ t: 'coop-end-turn' });
+      }
+    });
+
+    // 手牌点击（需要选中攻击牌再点目标）
+    if (isMyTurn) {
+      let selectedCard = null;
+      let selectedIdx = null;
+
+      document.querySelectorAll('.coop-hand-card').forEach(el => {
+        el.addEventListener('click', () => {
+          const cardId = el.dataset.card;
+          const idx = parseInt(el.dataset.idx);
+          const def = Data.cards[cardId];
+          if (!def) return;
+          if (def.needsTarget) {
+            // 标记选中，等待点击敌人
+            selectedCard = cardId;
+            selectedIdx = idx;
+            document.querySelectorAll('.coop-hand-card').forEach(c => c.style.outline = '');
+            el.style.outline = '2px solid #f5c518';
+          } else {
+            // 直接打出
+            if (Net.isHost) {
+              const ok = CoopGame.playCard(UI._coopCs, 'host', cardId, 0, idx);
+              if (ok) {
+                Net.send({ t: 'coop-state', cs: CoopGame.serialize(UI._coopCs) });
+                UI.coopCombat(UI._coopCs);
+              }
+            } else {
+              Net.send({ t: 'coop-card', cardId, targetEnemyIndex: 0, handIndex: idx });
+            }
+          }
+        });
+      });
+
+      // 绑定敌人点击（选中牌后点目标）
+      document.querySelectorAll('.coop-enemy-target').forEach(el => {
+        el.addEventListener('click', () => {
+          if (selectedCard === null) return;
+          const ti = parseInt(el.dataset.enemyIdx);
+          if (Net.isHost) {
+            const ok = CoopGame.playCard(UI._coopCs, 'host', selectedCard, ti, selectedIdx);
+            if (ok) {
+              Net.send({ t: 'coop-state', cs: CoopGame.serialize(UI._coopCs) });
+              UI.coopCombat(UI._coopCs);
+            }
+          } else {
+            Net.send({ t: 'coop-card', cardId: selectedCard, targetEnemyIndex: ti, handIndex: selectedIdx });
+          }
+          selectedCard = null; selectedIdx = null;
+        });
+      });
+    }
   },
 
 };
