@@ -3586,7 +3586,31 @@ const Combat = {
     UI._renderCombat && setTimeout(()=>UI._renderCombat(),50);
   },
 
+  // coop 私有交互守卫：返回 true 表示本地不应弹出 modal（对方触发或纯访客端）
+  // 仅在 coop 模式下使用；触发方（拥有 cs._coopWho 角色）才弹 modal。
+  _coopBlockModal(cs, label){
+    if (!(typeof Net !== 'undefined' && Net.connected)) return false;
+    if (!cs || !cs._coopCs) return false;
+    const who = cs._coopWho;
+    if (!who) return false;
+    const myRole = Net.isHost ? 'host' : 'guest';
+    // 标记房主端权威 cs 上 pendingInteraction（供广播给对方）
+    if (Net.isHost && cs._coopCs) {
+      cs._coopCs.pendingInteraction = { who, label: label || '操作中…' };
+    }
+    // 如果不是我触发的卡 → 本地不渲染 modal
+    if (who !== myRole) return true;
+    return false;
+  },
+  _coopClearModal(cs){
+    if (!(typeof Net !== 'undefined' && Net.connected)) return;
+    if (cs && cs._coopCs && Net.isHost) {
+      cs._coopCs.pendingInteraction = null;
+    }
+  },
+
   _gearShiftInteractive(cs, cardId){
+    if (Combat._coopBlockModal(cs, '🔧 换挡选择')) return;
     // 记录本卡本轮使用次数
     if(!cs._gearShiftCount) cs._gearShiftCount={};
     const key = cardId||'gear_shift';
@@ -3613,19 +3637,20 @@ const Combat = {
       btn.onclick=()=>{ overlay.remove(); onClick(); };
       return btn;
     };
-    if(canUp) overlay.appendChild(makeBtn(`↑ 升1档（→${g+1}挡）`,'#ff7d7d',()=>{ cs._gearShiftCount[key]=(cs._gearShiftCount[key]||0)+1; Combat._changeGear(cs,1); }));
+    if(canUp) overlay.appendChild(makeBtn(`↑ 升1档（→${g+1}挡）`,'#ff7d7d',()=>{ cs._gearShiftCount[key]=(cs._gearShiftCount[key]||0)+1; Combat._changeGear(cs,1); Combat._coopClearModal(cs); }));
     const cancelBtn=document.createElement('button');
     cancelBtn.style.cssText='background:rgba(20,20,40,0.97);color:#888;font-size:1rem;font-weight:700;padding:12px 24px;border-radius:12px;border:1.5px solid #555;cursor:pointer;';
     cancelBtn.textContent='取消';
-    cancelBtn.onclick=()=>overlay.remove();
+    cancelBtn.onclick=()=>{ overlay.remove(); Combat._coopClearModal(cs); };
     overlay.appendChild(cancelBtn);
-    if(canDown) overlay.appendChild(makeBtn(`↓ 降1档（→${g-1}挡）`,'#7dccff',()=>{ cs._gearShiftCount[key]=(cs._gearShiftCount[key]||0)+1; Combat._changeGear(cs,-1); }));
+    if(canDown) overlay.appendChild(makeBtn(`↓ 降1档（→${g-1}挡）`,'#7dccff',()=>{ cs._gearShiftCount[key]=(cs._gearShiftCount[key]||0)+1; Combat._changeGear(cs,-1); Combat._coopClearModal(cs); }));
     document.body.appendChild(overlay);
   },
 
   _racePredictInteractive(cs){
+    if (Combat._coopBlockModal(cs, '🏁 赛线预判')) return;
     const top3=[...cs.drawPile.slice(0,3)];
-    if(top3.length===0){ Combat.drawCards(cs,1); return; }
+    if(top3.length===0){ Combat.drawCards(cs,1); Combat._coopClearModal(cs); return; }
     const overlay=document.createElement('div');
     overlay.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:8000;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;';
     const title=document.createElement('div');
@@ -3658,6 +3683,7 @@ const Combat = {
       // 将调整后的顺序写回牌堆顶
       for(let i=0;i<order.length;i++) cs.drawPile[i]=order[i];
       Combat.drawCards(cs,1);
+      Combat._coopClearModal(cs);
     };
     overlay.appendChild(confirmBtn);
     document.body.appendChild(overlay);
@@ -3676,12 +3702,14 @@ const Combat = {
   },
 
   _arSwapInteractive(cs, lv=0){
+    if (Combat._coopBlockModal(cs, '🔄 换箭选择')) return;
     const drawAmt = lv>=2 ? 3 : 2;
     const chargeAmt = lv>=1 ? 2 : 1;
     // 手牌为空时直接抽牌+蓄力
     if(cs.hand.length === 0){
       Combat.drawCards(cs, drawAmt);
       Combat.archerGainCharge(cs, chargeAmt);
+      Combat._coopClearModal(cs);
       return;
     }
     const overlay = document.createElement('div');
@@ -3706,6 +3734,7 @@ const Combat = {
         if(realIdx !== -1) cs.discardPile.push(cs.hand.splice(realIdx, 1)[0]);
         Combat.drawCards(cs, drawAmt);
         Combat.archerGainCharge(cs, chargeAmt);
+        Combat._coopClearModal(cs);
         UI._renderCombat && UI._renderCombat();
       };
       cardRow.appendChild(el);
@@ -4089,29 +4118,45 @@ const CoopGame = {
   _coopCs: null,
 
   // 初始化联机战斗状态（仅房主调用）
-  init(hostCharId, guestCharId, enemyIds) {
+  init(hostCharId, guestCharId, enemyIds, opts) {
+    opts = opts || {};
     const hChar = Data.characters.find(c => c.id === hostCharId);
     const gChar = Data.characters.find(c => c.id === guestCharId);
     const enemies = enemyIds.map(id => Data.makeEnemy(id));
+    // 双人模式敌人 HP × 1.8（伤害保持不变）
+    enemies.forEach(e => {
+      const newMax = Math.round(e.maxHp * 1.8);
+      e.maxHp = newMax;
+      e.hp = newMax;
+    });
     enemies.forEach(e => {
       const r = Data.enemies[e.id].getIntent(e);
       e.currentIntent = Array.isArray(r) ? r : [r];
     });
+    // 持续 run 数据：HP 在战斗外保留，deck 持久
+    const hostDeck = opts.hostDeck ? [...opts.hostDeck] : [...hChar.startingDeck];
+    const guestDeck = opts.guestDeck ? [...opts.guestDeck] : [...gChar.startingDeck];
+    const hostHp = (opts.hostHp != null) ? opts.hostHp : hChar.hp;
+    const hostMaxHp = (opts.hostMaxHp != null) ? opts.hostMaxHp : hChar.maxHp;
+    const guestHp = (opts.guestHp != null) ? opts.guestHp : gChar.hp;
+    const guestMaxHp = (opts.guestMaxHp != null) ? opts.guestMaxHp : gChar.maxHp;
     const coopCs = {
-      host: { hp: hChar.hp, maxHp: hChar.maxHp, block: 0, buffs: {}, debuffs: {}, charId: hChar.id, charName: hChar.name, charEmoji: hChar.emoji },
-      guest: { hp: gChar.hp, maxHp: gChar.maxHp, block: 0, buffs: {}, debuffs: {}, charId: gChar.id, charName: gChar.name, charEmoji: gChar.emoji },
+      host: { hp: hostHp, maxHp: hostMaxHp, block: 0, buffs: {}, debuffs: {}, charId: hChar.id, charName: hChar.name, charEmoji: hChar.emoji },
+      guest: { hp: guestHp, maxHp: guestMaxHp, block: 0, buffs: {}, debuffs: {}, charId: gChar.id, charName: gChar.name, charEmoji: gChar.emoji },
       enemies,
       hostEnergy: 3, hostMaxEnergy: 3,
-      hostHand: [], hostDrawPile: [...hChar.startingDeck].sort(() => Math.random() - 0.5),
+      hostHand: [], hostDrawPile: [...hostDeck].sort(() => Math.random() - 0.5),
       hostDiscardPile: [], hostHandUpgrades: {},
       guestEnergy: 3, guestMaxEnergy: 3,
-      guestHand: [], guestDrawPile: [...gChar.startingDeck].sort(() => Math.random() - 0.5),
+      guestHand: [], guestDrawPile: [...guestDeck].sort(() => Math.random() - 0.5),
       guestDiscardPile: [], guestHandUpgrades: {},
       turn: 1,
       // 同时行动模式：双方都在 'player' 阶段同时打牌，各自点结束回合后才进入 'enemy'
       phase: 'player',
       hostEnded: false,
       guestEnded: false,
+      // 私有交互（赛车手换挡/赛线预判等）— 触发方设置，对方屏幕显示等待 banner
+      pendingInteraction: null, // { who: 'host'|'guest', label: '换挡选择' }
     };
     // 同时行动：双方各自抽 5 张起始手牌
     this._drawCards(coopCs, 'host', 5);
@@ -4138,7 +4183,7 @@ const CoopGame = {
   // 为 State.run getter 提供一个假的 run，避免在联机模式下抛出异常
   _withFakeRun(charId, fn) {
     const prev = State.current.run;
-    State.current.run = { character: { id: charId }, relics: [], cardUpgrades: {}, deck: [] };
+    State.current.run = { character: { id: charId }, relics: [], cardUpgrades: {}, deck: [], mode: 'coop' };
     try { return fn(); } finally { State.current.run = prev; }
   },
 
@@ -5202,19 +5247,21 @@ el.innerHTML=`<div class="card-type-bar"></div>${rarityTag}<div class="card-cost
           render();
         };
       });
-      // 开始战斗按钮（房主）
+      // 开始战斗按钮（房主）— 改为启动完整 run
       if ($('cl-start-battle')) {
         $('cl-start-battle').onclick = () => {
           if (!Net.isHost || !C.myChar || !C.oppChar) return;
-          const enemyIds = ['louse', 'jawworm'];
-          const coopCs = CoopGame.init(C.myChar, C.oppChar, enemyIds);
           C.combatActive = true;
-          Net.send({ t: 'coop-start', hostChar: C.myChar, guestChar: C.oppChar, enemyIds });
-          // 发送初始状态给访客
+          // 初始化 coop run
+          UI._coopStartRun(C.myChar, C.oppChar);
+          // 广播 run 数据给访客 + 切屏到地图
+          Net.send({ t: 'coop-run-start', hostChar: C.myChar, guestChar: C.oppChar });
           setTimeout(() => {
-            Net.send({ t: 'coop-state', cs: CoopGame.serialize(coopCs) });
-            UI.coopCombat(coopCs);
-          }, 100);
+            Net.send({ t: 'coop-run-state', run: UI._coopSerializeRun() });
+            Net.send({ t: 'coop-screen', screen: 'map' });
+            State.current.screen = 'coop-map';
+            UI.coopMap();
+          }, 60);
         };
       }
     }
@@ -5239,16 +5286,37 @@ el.innerHTML=`<div class="card-type-bar"></div>${rarityTag}<div class="card-cost
         if(!C.combatActive) render();
       }
       else if (data.t==='coop-start') {
-        // 访客收到开始战斗消息
+        // 旧版兼容：访客收到开始战斗消息
         if (!Net.isHost) {
           C.myChar = data.guestChar;
           C.oppChar = data.hostChar;
           C.combatActive = true;
-          // 访客等待第一个 coop-state 消息（初始状态由房主发送）
+        }
+      }
+      else if (data.t==='coop-run-start') {
+        // 访客收到开始 run
+        if (!Net.isHost) {
+          C.myChar = data.guestChar;
+          C.oppChar = data.hostChar;
+          C.combatActive = true;
+        }
+      }
+      else if (data.t==='coop-run-state') {
+        // 访客收到 run 全量同步
+        if (!Net.isHost) {
+          UI._coopRunGuest = data.run;
+          UI._coopRun = data.run; // 访客端共用同一份只读副本
+        }
+      }
+      else if (data.t==='coop-screen') {
+        // 访客切屏
+        if (!Net.isHost) {
+          if (data.screen === 'map') { State.current.screen = 'coop-map'; UI.coopMap(); }
+          else if (data.screen === 'combat') { /* 等下个 coop-state */ }
         }
       }
       else if (data.t==='coop-state') {
-        // 访客收到状态同步
+        // 访客收到战斗状态同步
         if (!Net.isHost) {
           UI._coopGuestCs = data.cs;
           UI.coopCombat(data.cs, true);
@@ -5257,7 +5325,8 @@ el.innerHTML=`<div class="card-type-bar"></div>${rarityTag}<div class="card-cost
       else if (data.t==='coop-card') {
         // 房主收到访客打牌请求
         if (Net.isHost && UI._coopCs) {
-          CoopGame.playCard(UI._coopCs, 'guest', data.cardId, data.targetEnemyIndex, data.handIndex);
+          const ok = CoopGame.playCard(UI._coopCs, 'guest', data.cardId, data.targetEnemyIndex, data.handIndex);
+          if (UI._coopCs.phase === 'victory') UI._coopEnterReward(UI._coopCs);
           Net.send({ t:'coop-state', cs: CoopGame.serialize(UI._coopCs) });
           UI.coopCombat(UI._coopCs);
         }
@@ -5268,15 +5337,33 @@ el.innerHTML=`<div class="card-type-bar"></div>${rarityTag}<div class="card-cost
           const bothEnded = CoopGame.markEnded(UI._coopCs, 'guest');
           if (bothEnded) {
             CoopGame.runEnemyTurn(UI._coopCs);
+            if (UI._coopCs.phase === 'victory') UI._coopEnterReward(UI._coopCs);
           }
           Net.send({ t:'coop-state', cs: CoopGame.serialize(UI._coopCs) });
           UI.coopCombat(UI._coopCs);
         }
       }
+      else if (data.t==='coop-reward-pick') {
+        // 访客挑了奖励卡
+        if (Net.isHost && UI._coopCs) {
+          UI._coopCs.guestRewardPicked = data.cardId;
+          UI._coopApplyReward(UI._coopCs, 'guest');
+          Net.send({ t:'coop-state', cs: CoopGame.serialize(UI._coopCs) });
+          UI.coopCombat(UI._coopCs);
+        }
+      }
+      else if (data.t==='coop-reward-continue') {
+        // 访客点了"前往地图"按钮
+        if (Net.isHost && UI._coopCs) {
+          UI._coopGoToMap(UI._coopCs);
+        }
+      }
     });
     Net.on('disconnected', () => {
       if(!UI._coop) return;
-      C.error='对方已断开连接'; C.view='choose'; C.combatActive=false; render();
+      C.error='对方已断开连接'; C.view='choose'; C.combatActive=false;
+      UI._coopRun = null; UI._coopRunGuest = null; UI._coopCs = null; UI._coopGuestCs = null;
+      render();
     });
     Net.on('error', msg => {
       if(!UI._coop) return;
@@ -7909,10 +7996,13 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
   },
 
   // ── 联机合作战斗界面（同时行动模式）─────────────────────────────────────────
+  // UI 参照单人 _renderCombat：复用 renderCard / renderHpBar / renderBuffs，
+  // 玩家区域同时显示两个角色（房主+访客）
   coopCombat(coopCs, isGuestView) {
     if (!coopCs) return;
     // 房主端保存状态引用
     if (Net.isHost) UI._coopCs = coopCs;
+    UI._coopGuestCs = coopCs; // 访客端也存一份，给修复 modal 等使用
 
     const app = UI.app();
     const myRole = Net.isHost ? 'host' : 'guest';
@@ -7924,50 +8014,59 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
     const myEnded = !!coopCs[myEndedKey];
     const oppEnded = !!coopCs[oppEndedKey];
     const isPlayerPhase = coopCs.phase === 'player';
-    // 在玩家阶段、未点结束、且自己还活着 → 可操作
-    const canAct = isPlayerPhase && !myEnded && myPlayer.hp > 0;
+    // 私有交互 banner（对方正在操作时本地等待）
+    const pi = coopCs.pendingInteraction;
+    const piActive = pi && pi.who && pi.who !== myRole;
+    // 在玩家阶段、未点结束、自己还活着、且没有对方在私有交互 → 可操作
+    const canAct = isPlayerPhase && !myEnded && myPlayer.hp > 0 && !piActive;
 
     const phaseLabel = {
       'player': `回合 ${coopCs.turn} · 进行中`,
       'enemy': '👹 敌方回合',
       'victory': '🏆 胜利！',
       'defeat': '💀 失败',
+      'reward': '🎁 战斗奖励',
     }[coopCs.phase] || coopCs.phase;
 
-    // 渲染敌人
+    // 渲染敌人（接近单人 _renderEnemies 样式）
     function renderEnemy(e, ei) {
-      if (e._dead || e.hp <= 0) return `<div style="opacity:0.3;text-align:center;font-size:2rem">💀</div>`;
-      const intentHtml = (e.currentIntent || []).map(intent => {
-        if (!intent) return '';
-        if (intent.type === 'attack') return `<span style="color:#ff9090">⚔️ ${intent.amount}</span>`;
-        if (intent.type === 'defend') return `<span style="color:#5dade2">🛡</span>`;
-        return `<span style="color:#f9ca24">${intent.type}</span>`;
-      }).join(' ');
-      return `<div class="coop-enemy-target" data-enemy-idx="${ei}" style="text-align:center;padding:10px;background:rgba(255,255,255,0.06);border-radius:12px;min-width:90px;cursor:pointer;transition:transform 0.15s" onmouseenter="this.style.transform='scale(1.06)'" onmouseleave="this.style.transform=''">
-        <div style="font-size:2.2rem">${e.emoji || '👾'}</div>
-        <div style="font-size:0.82rem;font-weight:700;color:#fff;margin:3px 0">${e.name}</div>
-        <div style="font-size:0.78rem;margin:2px 0">${UI.renderHpBar(e.hp, e.maxHp, '90px', e.block)}</div>
-        <div style="font-size:0.78rem;color:rgba(255,255,255,0.6);margin-top:3px">${intentHtml}</div>
+      if (e._dead || e.hp <= 0) return `<div class="enemy-card" style="opacity:0.25;text-align:center;font-size:2rem;padding:14px">💀</div>`;
+      const intentArr = Array.isArray(e.currentIntent) ? e.currentIntent : (e.currentIntent ? [e.currentIntent] : []);
+      const visible = intentArr.filter(it => it && it.type !== 'defend');
+      const intentHtml = visible.map(it => {
+        return `<span class="intent-badge ${it.type||'unknown'}">${it.label||''}<span style="font-size:0.95em">${it.num||''}</span></span>`;
+      }).join('');
+      return `<div class="enemy-card coop-enemy-target" data-enemy-idx="${ei}" style="cursor:${canAct?'pointer':'default'}">
+        <div class="enemy-intent">${intentHtml}</div>
+        <div class="enemy-figure" id="coop-enemy-fig-${ei}">${e.emoji || '👾'}</div>
+        <div style="width:130px">${UI.renderHpBar(e.hp, e.maxHp, '130px', e.block)}</div>
+        <div style="font-size:1.05rem;font-weight:700;color:#e8e8f0">${e.name}</div>
+        <div style="font-size:0.92rem;color:rgba(255,255,255,0.8)">${e.hp}/${e.maxHp} HP${e.block>0?` · 🛡${e.block}`:''}</div>
+        <div class="enemy-buffs" style="display:flex;gap:4px;flex-wrap:wrap;justify-content:center">${UI.renderBuffs(e)}</div>
       </div>`;
     }
 
     // 渲染玩家状态栏（同时行动模式：双方都常驻显示完整信息）
+    // 参考单人 .player-area 样式，做成大头像+HP条+buff
     function renderPlayerBar(p, role, label, isSelf) {
       const energy = coopCs[role + 'Energy'];
       const maxEnergy = coopCs[role + 'MaxEnergy'];
       const handCount = role === 'host' ? coopCs.hostHand.length : coopCs.guestHand.length;
       const ended = !!coopCs[role + 'Ended'];
       const dead = p.hp <= 0;
-      const energyFontSize = isSelf ? '1.05rem' : '0.85rem';
-      return `<div style="flex:1;padding:10px 12px;background:${isSelf?'rgba(127,224,168,0.12)':'rgba(255,255,255,0.05)'};border:${isSelf?'2px solid rgba(127,224,168,0.5)':'2px solid rgba(255,255,255,0.12)'};border-radius:12px;text-align:center;position:relative;${dead?'opacity:0.55;':''}">
+      const ring = isSelf ? '2px solid rgba(127,224,168,0.55)' : '2px solid rgba(255,255,255,0.12)';
+      const bg = isSelf ? 'rgba(127,224,168,0.1)' : 'rgba(255,255,255,0.05)';
+      return `<div class="player-area coop-player-area" style="flex:1;padding:12px 10px;background:${bg};border:${ring};border-radius:14px;text-align:center;position:relative;display:flex;flex-direction:column;align-items:center;gap:6px;${dead?'opacity:0.55;':''}">
         ${ended && !dead ? `<div style="position:absolute;top:6px;right:8px;font-size:0.7rem;font-weight:800;color:#7fe0a8;background:rgba(127,224,168,0.18);border:1px solid rgba(127,224,168,0.5);border-radius:6px;padding:1px 6px">已结束 ✓</div>` : ''}
         ${dead ? `<div style="position:absolute;top:6px;right:8px;font-size:0.7rem;font-weight:800;color:#ff9b8f">已阵亡</div>` : ''}
-        <div style="font-size:1.5rem">${p.charEmoji || '?'}</div>
-        <div style="font-size:0.85rem;font-weight:700;color:${isSelf?'#7fe0a8':'#fff'}">${label}${isSelf?' (你)':''}</div>
+        <div class="player-figure" style="font-size:2.6rem;line-height:1">${p.charEmoji || '?'}</div>
+        <div style="font-size:0.88rem;font-weight:800;color:${isSelf?'#7fe0a8':'#fff'}">${label}${isSelf?' (你)':''}</div>
         <div style="font-size:0.78rem;color:rgba(255,255,255,0.6)">${p.charName || ''}</div>
-        <div style="margin-top:5px">${UI.renderHpBar(p.hp, p.maxHp, '110px', p.block)}</div>
-        <div style="display:flex;justify-content:center;gap:8px;margin-top:6px;font-size:0.78rem">
-          <span style="color:#f5c518;font-weight:800;font-size:${energyFontSize}">⚡ ${ended?0:energy}/${maxEnergy}</span>
+        <div style="width:130px">${UI.renderHpBar(p.hp, p.maxHp, '130px', p.block)}</div>
+        <div style="font-size:0.95rem;color:#e8e8f0;font-weight:600">${p.hp}/${p.maxHp} HP${p.block>0?` · <span style='color:#5dade2'>🛡${p.block}</span>`:''}</div>
+        <div style="display:flex;gap:3px;flex-wrap:wrap;justify-content:center">${UI.renderBuffs(p)}</div>
+        <div style="display:flex;justify-content:center;gap:10px;font-size:0.82rem;margin-top:2px">
+          <span style="color:#f5c518;font-weight:800">⚡ ${ended?0:energy}/${maxEnergy}</span>
           <span style="color:rgba(255,255,255,0.6)">🂠 ${handCount}</span>
         </div>
       </div>`;
@@ -7975,162 +8074,534 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
 
     // 自己的手牌、能量
     const myHand = myRole === 'host' ? coopCs.hostHand : coopCs.guestHand;
+    const myDraw = myRole === 'host' ? coopCs.hostDrawPile : coopCs.guestDrawPile;
+    const myDiscard = myRole === 'host' ? coopCs.hostDiscardPile : coopCs.guestDiscardPile;
     const myEnergy = coopCs[myRole + 'Energy'];
     const myMaxEnergy = coopCs[myRole + 'MaxEnergy'];
-
-    function renderHandCard(cardId, idx) {
-      const def = Data.cards[cardId];
-      if (!def) return '';
-      const canPlay = canAct && myEnergy >= def.cost;
-      return `<div class="coop-hand-card" data-card="${cardId}" data-idx="${idx}"
-        style="display:inline-flex;flex-direction:column;align-items:center;padding:8px 10px;
-        background:${canPlay?'rgba(80,200,140,0.15)':'rgba(255,255,255,0.06)'};
-        border:${canPlay?'2px solid rgba(127,224,168,0.6)':'2px solid rgba(255,255,255,0.15)'};
-        border-radius:10px;min-width:70px;cursor:${canPlay?'pointer':'default'};
-        transition:transform 0.15s;margin:3px;vertical-align:top;${canPlay?'':'opacity:0.6;'}"
-        onmouseenter="if(${canPlay})this.style.transform='translateY(-6px)'"
-        onmouseleave="this.style.transform=''"
-      >
-        <div style="font-size:1.4rem">${def.emoji || '🃏'}</div>
-        <div style="font-size:0.75rem;font-weight:700;color:#fff;text-align:center;max-width:68px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${def.name}</div>
-        <div style="font-size:0.78rem;color:#f5c518;font-weight:800">${def.cost} 能量</div>
-        <div style="font-size:0.68rem;color:rgba(255,255,255,0.45);text-align:center;max-width:68px;margin-top:2px">${def.type}</div>
-      </div>`;
-    }
 
     const enemiesHtml = coopCs.enemies.map((e, ei) => renderEnemy(e, ei)).join('');
     const hostBarHtml = renderPlayerBar(coopCs.host, 'host', '🏠 房主', Net.isHost);
     const guestBarHtml = renderPlayerBar(coopCs.guest, 'guest', '🔑 访客', !Net.isHost);
-    const handHtml = myHand.map(renderHandCard).join('');
 
     // 手牌区状态文本
     let handAreaStatus;
     if (coopCs.phase === 'enemy') handAreaStatus = '👹 敌方行动中…';
+    else if (coopCs.phase === 'reward') handAreaStatus = '🎁 战斗胜利，选择奖励';
+    else if (piActive) handAreaStatus = `⏳ ${pi.label||'对方正在操作…'}（${pi.who==='host'?'🏠 房主':'🔑 访客'}），请等待`;
     else if (myEnded) handAreaStatus = `✓ 已结束回合，等待对方${oppEnded?'':''}…`;
     else if (myPlayer.hp <= 0) handAreaStatus = '💀 你已阵亡';
     else handAreaStatus = '';
 
-    const resultHtml = coopCs.phase === 'victory'
-      ? `<div style="text-align:center;padding:18px;background:rgba(80,200,140,0.18);border:2px solid #7fe0a8;border-radius:14px;margin:14px 0">
-          <div style="font-size:2.5rem">🏆</div>
-          <div style="font-size:1.4rem;font-weight:900;color:#7fe0a8">胜利！所有敌人已击败！</div>
-          <button class="btn primary" id="coop-back-lobby" style="margin-top:14px;width:200px">← 返回大厅</button>
-        </div>`
-      : coopCs.phase === 'defeat'
-      ? `<div style="text-align:center;padding:18px;background:rgba(231,76,60,0.15);border:2px solid rgba(231,76,60,0.5);border-radius:14px;margin:14px 0">
-          <div style="font-size:2.5rem">💀</div>
-          <div style="font-size:1.4rem;font-weight:900;color:#ff9b8f">战斗失败！双方均已阵亡。</div>
-          <button class="btn" id="coop-back-lobby" style="margin-top:14px;width:200px">← 返回大厅</button>
-        </div>`
+    // 战斗结果（胜利/失败）— 控制流转到地图或返回大厅
+    const isFinalDefeat = coopCs.phase === 'defeat';
+    const isReward = coopCs.phase === 'reward';
+    const resultHtml = isReward
+      ? '' // 奖励界面单独渲染
+      : isFinalDefeat
+        ? `<div style="text-align:center;padding:18px;background:rgba(231,76,60,0.15);border:2px solid rgba(231,76,60,0.5);border-radius:14px;margin:14px 0">
+            <div style="font-size:2.5rem">💀</div>
+            <div style="font-size:1.4rem;font-weight:900;color:#ff9b8f">战斗失败！双方均已阵亡。</div>
+            <button class="btn" id="coop-back-lobby" style="margin-top:14px;width:200px">← 返回大厅</button>
+          </div>`
+        : '';
+
+    // 私有交互 banner
+    const banner = piActive
+      ? `<div style="background:rgba(168,90,255,0.18);border:1.5px solid rgba(168,90,255,0.55);border-radius:10px;padding:8px 14px;text-align:center;color:#d8b8ff;font-weight:700">${pi.label||'对方正在操作…'} — ${pi.who==='host'?'🏠 房主':'🔑 访客'} 操作中，请等待…</div>`
       : '';
 
     app.innerHTML = `
-      <div style="min-height:100vh;background:var(--bg,#0c0c1a);padding:16px;box-sizing:border-box;font-family:var(--font);color:#fff;display:flex;flex-direction:column;gap:12px;max-width:700px;margin:0 auto">
-        <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:rgba(255,255,255,0.05);border-radius:10px">
-          <div style="font-size:1rem;font-weight:800;color:#7fe0a8">🤝 联机合作战斗</div>
-          <div style="font-size:0.9rem;font-weight:700;color:#f9ca24">${phaseLabel}</div>
-          <div style="font-size:0.82rem;color:rgba(255,255,255,0.5)">第 ${coopCs.turn} 回合</div>
+      <div class="combat-screen">
+        <div class="combat-topbar">
+          <div style="display:flex;align-items:center;gap:10px;flex:1;flex-wrap:wrap">
+            <span style="font-size:1.1rem;font-weight:800;color:#7fe0a8">🤝 联机合作</span>
+            <span style="font-size:0.9rem;color:rgba(255,255,255,0.6)">第 ${coopCs.turn} 回合</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:6px">
+            <span style="font-size:0.9rem;color:#f9ca24;font-weight:700">${phaseLabel}</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;flex:1;justify-content:flex-end">
+            <button id="coop-leave" style="font-size:0.85rem;padding:4px 12px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.2);border-radius:8px;color:#fff;cursor:pointer">← 返回大厅</button>
+          </div>
         </div>
+        ${banner}
         ${resultHtml}
-        <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center">
-          ${enemiesHtml}
+        <div class="combat-field" style="display:flex;flex-direction:column;gap:12px">
+          <div class="enemies-area" id="enemies-area" style="display:flex;gap:14px;justify-content:center;flex-wrap:wrap">
+            ${enemiesHtml}
+          </div>
+          <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
+            ${hostBarHtml}
+            ${guestBarHtml}
+          </div>
         </div>
-        <div style="display:flex;gap:10px">
-          ${hostBarHtml}
-          ${guestBarHtml}
-        </div>
-        <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:12px">
-          <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;flex-wrap:wrap">
-            <div style="font-size:0.85rem;font-weight:700;color:rgba(255,255,255,0.6)">你的手牌：</div>
-            <div style="background:rgba(245,197,24,0.18);border:1.5px solid rgba(245,197,24,0.5);border-radius:8px;padding:2px 10px;font-size:0.88rem;font-weight:800;color:#f5c518">${myEnded?0:myEnergy}/${myMaxEnergy} 能量</div>
+        <div class="combat-hand-area">
+          <div class="combat-controls" style="margin-left:24px;flex-direction:column;align-items:center;gap:8px">
+            <div class="pile" id="coop-draw-pile" title="摸牌堆">
+              <div class="pile-icon">🃏</div>
+              <div class="pile-count">${myDraw.length}</div>
+              <div class="pile-label">摸牌堆</div>
+            </div>
+            <div class="energy-orb" id="energy-orb">${myEnded?0:myEnergy}<div class="energy-label">能量</div></div>
+          </div>
+          <div class="hand-cards" id="coop-hand-cards" style="min-height:140px;display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:6px">
+            ${handAreaStatus ? `<div style="color:rgba(255,255,255,0.55);font-size:0.95rem;padding:14px">${handAreaStatus}</div>` : ''}
+          </div>
+          <div class="combat-controls" style="flex-direction:column;gap:10px;align-items:center">
+            <div class="pile discard" id="coop-discard-pile" title="弃牌堆">
+              <div class="pile-icon">🗑️</div>
+              <div class="pile-count">${myDiscard.length}</div>
+              <div class="pile-label">弃牌堆</div>
+            </div>
             ${isPlayerPhase ? (
               myEnded
-                ? `<button class="btn" id="coop-end-turn" disabled style="margin-left:auto;padding:6px 16px;font-size:0.88rem;opacity:0.55;cursor:not-allowed">✓ 已结束（等待对方${oppEnded?'':''}）</button>`
+                ? `<button class="btn end-turn-btn" id="coop-end-turn" disabled>✓ 已结束</button>`
                 : (myPlayer.hp <= 0
-                    ? `<button class="btn" id="coop-end-turn" disabled style="margin-left:auto;padding:6px 16px;font-size:0.88rem;opacity:0.55;cursor:not-allowed">💀 已阵亡</button>`
-                    : `<button class="btn primary" id="coop-end-turn" style="margin-left:auto;padding:6px 16px;font-size:0.88rem">⏳ 结束回合</button>`)
+                    ? `<button class="btn end-turn-btn" id="coop-end-turn" disabled>💀 已阵亡</button>`
+                    : `<button class="btn end-turn-btn" id="coop-end-turn" ${piActive?'disabled':''}>结束回合</button>`)
             ) : ''}
           </div>
-          <div style="display:flex;flex-wrap:wrap;gap:4px;min-height:90px" id="coop-hand-area">
-            ${handAreaStatus ? `<div style="color:rgba(255,255,255,0.45);font-size:0.85rem;align-self:center;padding:12px">${handAreaStatus}</div>` : ''}
-            ${handHtml}
-          </div>
         </div>
-        ${coopCs.phase !== 'victory' && coopCs.phase !== 'defeat' ? `<div style="font-size:0.75rem;color:rgba(255,255,255,0.2);text-align:center">你是：${Net.isHost ? '🏠 房主' : '🔑 访客'}</div>` : ''}
+        <div id="coop-reward-area"></div>
       </div>`;
+
+    // 用 UI.renderCard 渲染手牌（在 fake-run 上下文内，让 racer 描述正确）
+    const handEl = document.getElementById('coop-hand-cards');
+    if (handEl && !handAreaStatus) {
+      handEl.innerHTML = '';
+      const fakeRunPrev = State.current.run;
+      State.current.run = { character: { id: myPlayer.charId }, relics: [], cardUpgrades: {}, deck: [], mode: 'coop', combat: null };
+      try {
+        myHand.forEach((cardId, idx) => {
+          const def = Data.cards[cardId];
+          if (!def) return;
+          const cardEl = UI.renderCard(cardId, undefined, 0, false);
+          cardEl.dataset.handIdx = String(idx);
+          const canPlay = canAct && myEnergy >= def.cost;
+          if (!canPlay) cardEl.classList.add('unplayable');
+          cardEl.classList.add('card-draw-anim');
+          cardEl.style.animationDelay = `${idx*40}ms`;
+          if (canPlay) cardEl.addEventListener('click', () => UI._coopOnCardClick(cardId, cardEl, idx));
+          handEl.appendChild(cardEl);
+        });
+      } finally {
+        State.current.run = fakeRunPrev;
+      }
+    }
+
+    // 战斗奖励界面（胜利后进入 reward 阶段）
+    if (isReward) {
+      const rewardArea = document.getElementById('coop-reward-area');
+      if (rewardArea) UI._coopRenderReward(coopCs, rewardArea);
+    }
 
     // 绑定事件
     document.getElementById('coop-back-lobby')?.addEventListener('click', () => {
       UI._coopCs = null;
+      UI._coopGuestCs = null;
+      State.go('coop-lobby');
+    });
+    document.getElementById('coop-leave')?.addEventListener('click', () => {
+      if (!confirm('确定退出当前合作 run？')) return;
+      UI._coopCs = null;
+      UI._coopGuestCs = null;
       State.go('coop-lobby');
     });
 
     document.getElementById('coop-end-turn')?.addEventListener('click', () => {
       if (!canAct) return;
       if (Net.isHost) {
-        // 房主端：打 ended 标记；若双方都已结束，立刻跑敌方回合
         const bothEnded = CoopGame.markEnded(UI._coopCs, 'host');
         if (bothEnded) {
           CoopGame.runEnemyTurn(UI._coopCs);
+          // 战斗胜利 → 进入 reward 阶段（如果有奖励）
+          if (UI._coopCs.phase === 'victory') UI._coopEnterReward(UI._coopCs);
         }
         Net.send({ t: 'coop-state', cs: CoopGame.serialize(UI._coopCs) });
         UI.coopCombat(UI._coopCs);
       } else {
-        // 访客端：发请求；本地先乐观更新一下 UI，等 coop-state 回来再权威同步
         Net.send({ t: 'coop-end-turn' });
       }
     });
 
-    // 手牌点击（需要选中攻击牌再点目标）
+    // 敌人点击：仅当某张需要选目标的卡被选中时才生效
     if (canAct) {
-      let selectedCard = null;
-      let selectedIdx = null;
-
-      document.querySelectorAll('.coop-hand-card').forEach(el => {
-        el.addEventListener('click', () => {
-          const cardId = el.dataset.card;
-          const idx = parseInt(el.dataset.idx);
-          const def = Data.cards[cardId];
-          if (!def) return;
-          if (def.needsTarget) {
-            // 标记选中，等待点击敌人
-            selectedCard = cardId;
-            selectedIdx = idx;
-            document.querySelectorAll('.coop-hand-card').forEach(c => c.style.outline = '');
-            el.style.outline = '2px solid #f5c518';
-          } else {
-            // 直接打出
-            if (Net.isHost) {
-              const ok = CoopGame.playCard(UI._coopCs, 'host', cardId, 0, idx);
-              if (ok) {
-                Net.send({ t: 'coop-state', cs: CoopGame.serialize(UI._coopCs) });
-                UI.coopCombat(UI._coopCs);
-              }
-            } else {
-              Net.send({ t: 'coop-card', cardId, targetEnemyIndex: 0, handIndex: idx });
-            }
-          }
-        });
-      });
-
-      // 绑定敌人点击（选中牌后点目标）
       document.querySelectorAll('.coop-enemy-target').forEach(el => {
         el.addEventListener('click', () => {
-          if (selectedCard === null) return;
           const ti = parseInt(el.dataset.enemyIdx);
-          if (Net.isHost) {
-            const ok = CoopGame.playCard(UI._coopCs, 'host', selectedCard, ti, selectedIdx);
-            if (ok) {
-              Net.send({ t: 'coop-state', cs: CoopGame.serialize(UI._coopCs) });
-              UI.coopCombat(UI._coopCs);
-            }
-          } else {
-            Net.send({ t: 'coop-card', cardId: selectedCard, targetEnemyIndex: ti, handIndex: selectedIdx });
-          }
-          selectedCard = null; selectedIdx = null;
+          if (UI._coopSelectedCard == null) return;
+          UI._coopPlaySelectedCard(ti);
         });
       });
+    } else {
+      UI._coopSelectedCard = null;
+      UI._coopSelectedIdx = null;
     }
+  },
+
+  // 选中/打出手牌（自己角度）
+  _coopOnCardClick(cardId, cardEl, idx) {
+    const def = Data.cards[cardId];
+    if (!def) return;
+    if (def.needsTarget) {
+      UI._coopSelectedCard = cardId;
+      UI._coopSelectedIdx = idx;
+      document.querySelectorAll('#coop-hand-cards .card').forEach(c => c.classList.remove('selected'));
+      cardEl.classList.add('selected');
+      document.querySelectorAll('.coop-enemy-target').forEach(e => e.classList.add('targeted'));
+    } else {
+      UI._coopSendPlayCard(cardId, undefined, idx);
+    }
+  },
+  _coopPlaySelectedCard(targetIdx) {
+    const cardId = UI._coopSelectedCard;
+    const idx = UI._coopSelectedIdx;
+    UI._coopSelectedCard = null;
+    UI._coopSelectedIdx = null;
+    document.querySelectorAll('.coop-enemy-target').forEach(e => e.classList.remove('targeted'));
+    UI._coopSendPlayCard(cardId, targetIdx, idx);
+  },
+  _coopSendPlayCard(cardId, targetIdx, handIdx) {
+    if (Net.isHost && UI._coopCs) {
+      const ok = CoopGame.playCard(UI._coopCs, 'host', cardId, targetIdx==null?0:targetIdx, handIdx);
+      if (ok) {
+        if (UI._coopCs.phase === 'victory') UI._coopEnterReward(UI._coopCs);
+        Net.send({ t: 'coop-state', cs: CoopGame.serialize(UI._coopCs) });
+        UI.coopCombat(UI._coopCs);
+      }
+    } else {
+      Net.send({ t: 'coop-card', cardId, targetEnemyIndex: targetIdx==null?0:targetIdx, handIndex: handIdx });
+    }
+  },
+
+  // 战斗胜利 → 进入奖励阶段：双方各自从 3 张候选里选 1 加入自己牌组
+  _coopEnterReward(coopCs) {
+    // 只有房主端调用（权威）
+    if (!Net.isHost) return;
+    coopCs.phase = 'reward';
+    coopCs.hostRewardCards = UI._coopRollCardChoices(coopCs.host.charId);
+    coopCs.guestRewardCards = UI._coopRollCardChoices(coopCs.guest.charId);
+    coopCs.hostRewardPicked = null;
+    coopCs.guestRewardPicked = null;
+    coopCs.rewardGold = 8 + Math.floor(Math.random()*8); // 共享金币池
+    coopCs.pendingInteraction = null;
+  },
+  // 简化版：从该角色 + 通用池里抽 3 张候选卡
+  _coopRollCardChoices(charId) {
+    const pool = [];
+    const charPrefixMap = { boxer:'box_', brute:'', racer:'gear_', archer:'ar_' };
+    Object.keys(Data.cards).forEach(cid => {
+      const c = Data.cards[cid];
+      if (!c) return;
+      // 跳过初始牌（起始牌池中的）
+      const isStarter = Data.characters.some(ch => ch.startingDeck.includes(cid));
+      if (isStarter) return;
+      // 粗糙过滤：能匹配角色前缀或者是通用卡
+      const prefix = charPrefixMap[charId];
+      if (prefix === undefined) return;
+      if (prefix && !cid.startsWith(prefix)) return;
+      pool.push(cid);
+    });
+    if (pool.length < 3) {
+      // 兜底：用任意通用卡填充
+      Object.keys(Data.cards).slice(0, 30).forEach(cid => { if (pool.indexOf(cid)===-1) pool.push(cid); });
+    }
+    // 随机取 3
+    const out = [];
+    const used = new Set();
+    while (out.length < 3 && used.size < pool.length) {
+      const i = Math.floor(Math.random() * pool.length);
+      if (!used.has(i)) { used.add(i); out.push(pool[i]); }
+    }
+    return out;
+  },
+  // 渲染战斗奖励 UI（双方各自挑卡，挑完才能继续到地图）
+  _coopRenderReward(coopCs, container) {
+    const myRole = Net.isHost ? 'host' : 'guest';
+    const myPicked = coopCs[myRole + 'RewardPicked'];
+    const oppPicked = coopCs[(myRole==='host'?'guest':'host') + 'RewardPicked'];
+    const myChoices = coopCs[myRole + 'RewardCards'] || [];
+    const fakeRunPrev = State.current.run;
+    container.innerHTML = `
+      <div style="background:rgba(80,200,140,0.1);border:2px solid rgba(127,224,168,0.5);border-radius:14px;padding:16px;margin-top:14px">
+        <div style="text-align:center;font-size:1.4rem;font-weight:900;color:#7fe0a8;margin-bottom:6px">🏆 战斗胜利！</div>
+        <div style="text-align:center;color:#f5c518;font-size:0.95rem;margin-bottom:14px">+${coopCs.rewardGold||0} 金币 · 选 1 张卡加入你的牌组</div>
+        <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap" id="coop-reward-cards"></div>
+        <div style="text-align:center;margin-top:14px;font-size:0.9rem;color:rgba(255,255,255,0.7)">
+          ${myPicked ? `<span style="color:#7fe0a8">✓ 你已选 ${Data.cards[myPicked]?.name||myPicked}</span>` : '请选择一张'}
+          · ${oppPicked ? `<span style="color:#7fe0a8">✓ 对方已选</span>` : '对方还未选'}
+        </div>
+        ${myPicked && oppPicked ? `<button class="btn primary" id="coop-reward-continue" style="display:block;margin:14px auto 0;width:240px">前往地图 →</button>` : ''}
+      </div>`;
+    const cardsRow = container.querySelector('#coop-reward-cards');
+    if (cardsRow) {
+      State.current.run = { character: { id: coopCs[myRole].charId }, relics: [], cardUpgrades: {}, deck: [], mode: 'coop', combat: null };
+      try {
+        myChoices.forEach(cid => {
+          const el = UI.renderCard(cid);
+          el.style.cursor = myPicked ? 'default' : 'pointer';
+          if (myPicked && myPicked === cid) el.classList.add('selected');
+          if (!myPicked) {
+            el.addEventListener('click', () => {
+              if (Net.isHost) {
+                UI._coopCs.hostRewardPicked = cid;
+                // 立刻加入房主牌组
+                UI._coopApplyReward(UI._coopCs, 'host');
+                Net.send({ t: 'coop-state', cs: CoopGame.serialize(UI._coopCs) });
+                UI.coopCombat(UI._coopCs);
+              } else {
+                Net.send({ t: 'coop-reward-pick', cardId: cid });
+              }
+            });
+          }
+          cardsRow.appendChild(el);
+        });
+      } finally {
+        State.current.run = fakeRunPrev;
+      }
+    }
+    container.querySelector('#coop-reward-continue')?.addEventListener('click', () => {
+      if (Net.isHost) {
+        UI._coopGoToMap(UI._coopCs);
+      } else {
+        Net.send({ t: 'coop-reward-continue' });
+      }
+    });
+  },
+  // 把房主/访客的奖励选择写回 deck
+  _coopApplyReward(coopCs, who) {
+    const picked = coopCs[who + 'RewardPicked'];
+    if (!picked) return;
+    const runState = UI._coopRun;
+    if (!runState) return;
+    const deckKey = who + 'Deck';
+    if (!runState[deckKey]) runState[deckKey] = [];
+    runState[deckKey].push(picked);
+    if (who === 'host') runState.gold = (runState.gold||0) + (coopCs.rewardGold||0);
+  },
+
+  // 合作 run：初始化（房主调用）
+  // 数据结构：UI._coopRun = { hostChar, guestChar, hostDeck, guestDeck, hostHp, hostMaxHp, guestHp, guestMaxHp,
+  //                          map, currentNodeId, act, gold }
+  _coopStartRun(hostCharId, guestCharId) {
+    const hChar = Data.characters.find(c => c.id === hostCharId);
+    const gChar = Data.characters.find(c => c.id === guestCharId);
+    const map = MapGen.generate ? MapGen.generate(1) : (MapGen.generateCompass ? MapGen.generateCompass() : {nodes:[],paths:[]});
+    const startNode = (map.nodes||[]).find(n => n.floor === 0);
+    UI._coopRun = {
+      hostCharId, guestCharId,
+      hostDeck: [...hChar.startingDeck],
+      guestDeck: [...gChar.startingDeck],
+      hostHp: hChar.hp, hostMaxHp: hChar.maxHp,
+      guestHp: gChar.hp, guestMaxHp: gChar.maxHp,
+      map,
+      currentNodeId: startNode ? startNode.id : null,
+      act: 1,
+      gold: 0,
+    };
+    return UI._coopRun;
+  },
+
+  // 序列化 run（去掉 function）
+  _coopSerializeRun() {
+    if (!UI._coopRun) return null;
+    return JSON.parse(JSON.stringify(UI._coopRun, (k, v) => typeof v === 'function' ? undefined : v));
+  },
+
+  // 战斗结束 → 回到地图（房主调用）
+  _coopGoToMap(coopCs) {
+    if (!Net.isHost) return;
+    // 把战斗结束时的 HP 写回 run
+    if (coopCs && UI._coopRun) {
+      UI._coopRun.hostHp = coopCs.host.hp;
+      UI._coopRun.guestHp = coopCs.guest.hp;
+    }
+    // 检查刚刚是不是 boss 节点 → 推进幕
+    const map = UI._coopRun?.map;
+    const curId = UI._coopRun?.currentNodeId;
+    const curNode = map?.nodes.find(n => n.id === curId);
+    if (curNode && curNode.type === 'boss') {
+      UI._coopAdvanceAct();
+      if (!UI._coopRun) return; // 已通关
+    }
+    UI._coopCs = null;
+    Net.send({ t: 'coop-run-state', run: UI._coopSerializeRun() });
+    Net.send({ t: 'coop-screen', screen: 'map' });
+    UI.coopMap();
+  },
+
+  // 合作地图视图：参考单人 UI.map 简化版
+  // 房主可点击下一个可达节点；访客只读
+  coopMap() {
+    const runState = UI._coopRun || UI._coopRunGuest;
+    if (!runState) { State.go('coop-lobby'); return; }
+    const app = UI.app();
+    const myRole = Net.isHost ? 'host' : 'guest';
+    const hChar = Data.characters.find(c => c.id === runState.hostCharId) || {};
+    const gChar = Data.characters.find(c => c.id === runState.guestCharId) || {};
+    const map = runState.map;
+    const curId = runState.currentNodeId;
+    const curNode = map.nodes.find(n => n.id === curId);
+    // 可达节点：从当前节点出发的 path 终点
+    const reachableIds = new Set();
+    (map.paths||[]).forEach(p => { if (p.from === curId) reachableIds.add(p.to); });
+
+    // 节点类型 emoji
+    const NODE_EMOJI = {start:'🚪', combat:'⚔️', enemy:'⚔️', elite:'💀', boss:'👑', question:'❓', shop:'🛒', rest:'🏘️', treasure:'💎', event:'❓'};
+    const nodeColor = (t, reachable) => {
+      if (!reachable) return 'rgba(255,255,255,0.25)';
+      return { combat:'#ff9090', enemy:'#ff9090', elite:'#ffb060', boss:'#e056fd', question:'#90e0ff', shop:'#ffd060', rest:'#80ff80', event:'#90e0ff', start:'#fff' }[t] || '#fff';
+    };
+
+    // 按层分组
+    const byFloor = {};
+    map.nodes.forEach(n => { (byFloor[n.floor] = byFloor[n.floor] || []).push(n); });
+    const floors = Object.keys(byFloor).map(Number).sort((a,b)=>a-b);
+
+    const floorsHtml = floors.map(f => {
+      const nodes = byFloor[f];
+      return `<div style="display:flex;gap:10px;justify-content:center;margin:6px 0">
+        ${nodes.map(n => {
+          const reachable = reachableIds.has(n.id);
+          const isCur = n.id === curId;
+          const done = n.done;
+          const color = nodeColor(n.type, reachable || isCur);
+          const clickable = Net.isHost && reachable;
+          return `<div class="coop-map-node ${clickable?'clickable':''}" data-node-id="${n.id}" style="
+            min-width:64px;padding:10px;border-radius:14px;text-align:center;
+            background:${isCur?'rgba(127,224,168,0.25)':(reachable?'rgba(255,255,255,0.06)':'rgba(255,255,255,0.02)')};
+            border:2px solid ${isCur?'#7fe0a8':(reachable?color:'rgba(255,255,255,0.1)')};
+            color:${color};opacity:${done?0.4:1};
+            cursor:${clickable?'pointer':'default'};transition:transform 0.15s;
+          " onmouseenter="if(${clickable})this.style.transform='scale(1.08)'" onmouseleave="this.style.transform=''">
+            <div style="font-size:1.6rem">${NODE_EMOJI[n.type]||'?'}</div>
+            <div style="font-size:0.68rem;font-weight:700">${n.type||''}</div>
+            ${isCur?'<div style="font-size:0.65rem;color:#7fe0a8;margin-top:2px">当前</div>':''}
+          </div>`;
+        }).join('')}
+      </div>`;
+    }).join('');
+
+    app.innerHTML = `
+      <div style="min-height:100vh;background:var(--bg,#0c0c1a);padding:18px;font-family:var(--font);color:#fff;max-width:780px;margin:0 auto">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+          <div style="font-size:1.1rem;font-weight:800;color:#7fe0a8">🤝 合作 · 第 ${runState.act||1} 幕</div>
+          <div style="font-size:0.92rem">💰 ${runState.gold||0}</div>
+          <div style="font-size:0.85rem;color:rgba(255,255,255,0.5)">${Net.isHost?'🏠 房主（操控）':'🔑 访客（只读）'}</div>
+        </div>
+        <div style="display:flex;gap:14px;justify-content:center;margin-bottom:14px">
+          <div style="padding:10px 14px;background:rgba(127,224,168,0.1);border:1.5px solid rgba(127,224,168,0.5);border-radius:12px;text-align:center;flex:1;max-width:220px">
+            <div style="font-size:1.4rem">${hChar.emoji||'?'} 🏠 房主</div>
+            <div style="font-size:0.85rem;color:rgba(255,255,255,0.65);margin:3px 0">${hChar.name||''}</div>
+            <div>${UI.renderHpBar(runState.hostHp, runState.hostMaxHp, '160px')}</div>
+            <div style="font-size:0.78rem;color:rgba(255,255,255,0.55);margin-top:4px">${runState.hostHp}/${runState.hostMaxHp} HP · 牌组 ${(runState.hostDeck||[]).length}</div>
+          </div>
+          <div style="padding:10px 14px;background:rgba(80,160,255,0.1);border:1.5px solid rgba(80,160,255,0.5);border-radius:12px;text-align:center;flex:1;max-width:220px">
+            <div style="font-size:1.4rem">${gChar.emoji||'?'} 🔑 访客</div>
+            <div style="font-size:0.85rem;color:rgba(255,255,255,0.65);margin:3px 0">${gChar.name||''}</div>
+            <div>${UI.renderHpBar(runState.guestHp, runState.guestMaxHp, '160px')}</div>
+            <div style="font-size:0.78rem;color:rgba(255,255,255,0.55);margin-top:4px">${runState.guestHp}/${runState.guestMaxHp} HP · 牌组 ${(runState.guestDeck||[]).length}</div>
+          </div>
+        </div>
+        <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:14px;padding:14px;max-height:60vh;overflow-y:auto">
+          <div style="font-size:0.85rem;color:rgba(255,255,255,0.55);text-align:center;margin-bottom:8px">${Net.isHost?'点击高亮节点前进':'等待房主选择节点…'}</div>
+          ${floorsHtml}
+        </div>
+        <div style="text-align:center;margin-top:12px">
+          <button class="btn" id="coop-map-leave" style="width:200px">← 退出 run</button>
+        </div>
+      </div>`;
+
+    document.querySelectorAll('.coop-map-node.clickable').forEach(el => {
+      el.addEventListener('click', () => {
+        const nid = parseInt(el.dataset.nodeId);
+        UI._coopEnterNode(nid);
+      });
+    });
+    document.getElementById('coop-map-leave').addEventListener('click', () => {
+      if (!confirm('确定退出当前合作 run？')) return;
+      UI._coopRun = null; UI._coopRunGuest = null; UI._coopCs = null;
+      State.go('coop-lobby');
+    });
+  },
+
+  // 房主进入节点：根据类型分发
+  _coopEnterNode(nodeId) {
+    if (!Net.isHost || !UI._coopRun) return;
+    const map = UI._coopRun.map;
+    const node = map.nodes.find(n => n.id === nodeId);
+    if (!node) return;
+    // 标记当前节点
+    if (UI._coopRun.currentNodeId != null) {
+      const prev = map.nodes.find(n => n.id === UI._coopRun.currentNodeId);
+      if (prev) prev.done = true;
+    }
+    UI._coopRun.currentNodeId = nodeId;
+
+    if (node.type === 'combat' || node.type === 'enemy' || node.type === 'elite' || node.type === 'boss') {
+      // 启动战斗
+      let enemyIds;
+      // 默认敌人池（兜底，保证至少能跑）
+      const easyIds = ['louse', 'jawworm', 'cultist', 'redslime', 'greenslime'].filter(id => Data.enemies[id]);
+      const eliteIds = ['jawworm', 'sentry', 'gremlin_nob'].filter(id => Data.enemies[id]);
+      const bossIds = ['boss_sky', 'slime_boss', 'hexa'].filter(id => Data.enemies[id]);
+      if (node.type === 'boss') enemyIds = bossIds.length ? [bossIds[0]] : [easyIds[0]];
+      else if (node.type === 'elite') enemyIds = eliteIds.length ? [eliteIds[Math.floor(Math.random()*eliteIds.length)]] : [easyIds[0]];
+      else enemyIds = [easyIds[Math.floor(Math.random()*Math.max(1,easyIds.length))]];
+      // 尝试用现有的敌人选择逻辑（如果存在）
+      try {
+        if (Data.pickEnemyIds) {
+          const got = Data.pickEnemyIds(UI._coopRun.act||1, node.type);
+          if (Array.isArray(got) && got.length > 0) enemyIds = got;
+        }
+      } catch(e){}
+      // 兜底：确保 ids 存在于 Data.enemies
+      enemyIds = enemyIds.filter(id => Data.enemies[id]);
+      if (enemyIds.length === 0) enemyIds = Object.keys(Data.enemies).slice(0, 1);
+
+      const coopCs = CoopGame.init(UI._coopRun.hostCharId, UI._coopRun.guestCharId, enemyIds, {
+        hostDeck: UI._coopRun.hostDeck,
+        guestDeck: UI._coopRun.guestDeck,
+        hostHp: UI._coopRun.hostHp, hostMaxHp: UI._coopRun.hostMaxHp,
+        guestHp: UI._coopRun.guestHp, guestMaxHp: UI._coopRun.guestMaxHp,
+      });
+      Net.send({ t: 'coop-run-state', run: UI._coopSerializeRun() });
+      Net.send({ t: 'coop-start', hostChar: UI._coopRun.hostCharId, guestChar: UI._coopRun.guestCharId, enemyIds });
+      setTimeout(() => {
+        Net.send({ t: 'coop-state', cs: CoopGame.serialize(coopCs) });
+        Net.send({ t: 'coop-screen', screen: 'combat' });
+        UI.coopCombat(coopCs);
+      }, 80);
+    } else {
+      // 非战斗节点（休息/商店/问号）当前阶段简化：直接跳过，回血 5 HP
+      if (UI._coopRun) {
+        UI._coopRun.hostHp = Math.min(UI._coopRun.hostMaxHp, UI._coopRun.hostHp + 5);
+        UI._coopRun.guestHp = Math.min(UI._coopRun.guestMaxHp, UI._coopRun.guestHp + 5);
+      }
+      // 检查 boss 节点之外没有可达节点 → 推进幕
+      const stillReachable = (map.paths||[]).some(p => p.from === nodeId);
+      if (!stillReachable) UI._coopAdvanceAct();
+      Net.send({ t: 'coop-run-state', run: UI._coopSerializeRun() });
+      Net.send({ t: 'coop-screen', screen: 'map' });
+      UI.coopMap();
+    }
+  },
+
+  // 多幕推进（Boss 后自动）
+  _coopAdvanceAct() {
+    if (!UI._coopRun) return;
+    if ((UI._coopRun.act||1) >= 3) {
+      // 全部 3 幕通关
+      alert('🎉 三幕通关！恭喜！');
+      UI._coopRun = null; UI._coopRunGuest = null; UI._coopCs = null;
+      State.go('coop-lobby');
+      return;
+    }
+    UI._coopRun.act = (UI._coopRun.act||1) + 1;
+    const newMap = MapGen.generate ? MapGen.generate(UI._coopRun.act) : (MapGen.generateCompass ? MapGen.generateCompass() : {nodes:[],paths:[]});
+    const startNode = (newMap.nodes||[]).find(n => n.floor === 0);
+    UI._coopRun.map = newMap;
+    UI._coopRun.currentNodeId = startNode ? startNode.id : null;
   },
 
 };
@@ -8140,6 +8611,7 @@ window.addEventListener('DOMContentLoaded', () => {
   const screens = {
     'menu':        () => UI.menu(),
     'coop-lobby':  () => UI.coopLobby(),
+    'coop-map':    () => UI.coopMap(),
     'char-select': () => UI.characterSelect(),
     'map':         () => UI.map(),
     'combat':      () => UI.combat(),
