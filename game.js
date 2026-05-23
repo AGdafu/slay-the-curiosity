@@ -3984,6 +3984,18 @@ const Net = {
     return c;
   },
 
+  _peerCfg() {
+    return {
+      config: {
+        iceServers: [
+          { urls: 'stun:stun.l.google.com:19302' },
+          { urls: 'stun:stun1.l.google.com:19302' },
+          { urls: 'stun:stun.cloudflare.com:3478' }
+        ]
+      }
+    };
+  },
+
   // 房主：创建房间
   host() {
     if (typeof Peer === 'undefined') { this._emit('error', 'PeerJS 未加载，请检查网络连接'); return; }
@@ -3992,7 +4004,7 @@ const Net = {
     this.connected = false;
     const code = this._genCode();
     this.roomCode = code;
-    this.peer = new Peer(this._PREFIX + code);
+    this.peer = new Peer(this._PREFIX + code, this._peerCfg());
     this.peer.on('open', () => this._emit('hosted', code));
     this.peer.on('connection', conn => {
       // 已有连接则拒绝（固定 2 人）
@@ -4011,7 +4023,7 @@ const Net = {
     this.connected = false;
     code = (code || '').trim().toUpperCase();
     this.roomCode = code;
-    this.peer = new Peer();
+    this.peer = new Peer(undefined, this._peerCfg());
     this.peer.on('open', () => {
       const conn = this.peer.connect(this._PREFIX + code, { reliable: true });
       this.conn = conn;
@@ -4021,10 +4033,13 @@ const Net = {
   },
 
   _bindConn(conn) {
-    conn.on('open', () => { this.connected = true; this._emit('connected'); });
+    const timer = setTimeout(() => {
+      if (!this.connected) this._emit('error', '连接超时（15s），请确认房间码正确且对方在线');
+    }, 15000);
+    conn.on('open', () => { clearTimeout(timer); this.connected = true; this._emit('connected'); });
     conn.on('data', data => this._emit('message', data));
-    conn.on('close', () => { this.connected = false; this._emit('disconnected'); });
-    conn.on('error', err => this._emit('error', this._errMsg(err)));
+    conn.on('close', () => { clearTimeout(timer); this.connected = false; this._emit('disconnected'); });
+    conn.on('error', err => { clearTimeout(timer); this._emit('error', this._errMsg(err)); });
   },
 
   _errMsg(err) {
