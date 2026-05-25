@@ -372,9 +372,9 @@ const Data = {
       effect(cs){ cs.player.buffs.box_iron_will=(cs.player.buffs.box_iron_will||0)+1; } },
 
     // ── 拳击手扩池：补充 12 张 ─────────────────────────────────────────────────────────
-    box_quick_jab:    { id:'box_quick_jab',    rarity:'common',   name:'刺拳连发', cost:1, type:'attack', emoji:'🥊', needsTarget:true,
+    box_quick_jab:    { id:'box_quick_jab',    rarity:'common',   name:'刺拳连发', cost:0, type:'attack', emoji:'🥊', needsTarget:true,
       description:'造成 <b>3</b> 段 <b>2</b> 点伤害。',
-      effect(cs,ti,lv=0){ const base=[2,3,3][lv]||2; const hits=[3,3,4][lv]||3; const bonus=Combat._getBoxerBonus(cs); for(let i=0;i<hits;i++) Combat.dealDamage(cs,ti,base+bonus); } },
+      effect(cs,ti,lv=0){ const base=[2,2,3][lv]||2; const hits=[3,3,3][lv]||3; const bonus=Combat._getBoxerBonus(cs); for(let i=0;i<hits;i++) Combat.dealDamage(cs,ti,base+bonus); } },
     box_low_kick:     { id:'box_low_kick',     rarity:'common',   name:'低扫腿',   cost:1, type:'attack', emoji:'🦵', needsTarget:true,
       description:'造成 <b>7</b> 点伤害，施加 <b>1</b> 层减速。',
       effect(cs,ti,lv=0){ const base=[7,9,11][lv]||7; const slow=[1,2,2][lv]||1; Combat.dealDamage(cs,ti,base+Combat._getBoxerBonus(cs)); Combat.applyDebuff(cs.enemies[ti],'slow',slow); } },
@@ -433,8 +433,8 @@ const Data = {
       effect(cs,ti,lv=0){ const base=[9,12,15][lv]||9; const v=[2,3,3][lv]||2; const str=cs.player.buffs?.strength||0; Combat.dealDamage(cs,ti,base+str); Combat.applyDebuff(cs.enemies[ti],'vulnerable',v); } },
     // 透支：原创设计 — 弃手牌换能量（不掉血，区别于 STS 的 Bloodletting）
     br_bloodletting:  { id:'br_bloodletting',  rarity:'uncommon', name:'透支',     cost:0, type:'skill',  emoji:'⚡', needsTarget:false,
-      description:'弃掉 <b>2</b> 张手牌（自动从最右开始）；获得 <b>3</b> 点能量。',
-      effect(cs,ti,lv=0){ const n=[2,1,1][lv]||2; for(let i=0;i<n && cs.hand.length>0;i++){ const c=cs.hand.pop(); cs.discardPile.push(c); } cs.energy=(cs.energy||0)+([3,3,4][lv]||3); } },
+      description:'弃掉 <b>2</b> 张手牌（自动从最右开始）；获得 <b>2</b> 点能量。',
+      effect(cs,ti,lv=0){ const n=[2,2,1][lv]||2; for(let i=0;i<n && cs.hand.length>0;i++){ const c=cs.hand.pop(); cs.discardPile.push(c); } cs.energy=(cs.energy||0)+([2,3,3][lv]||2); } },
     // 紧逼：原创 — 越多攻击越狠（鼓励攻击堆叠，简单 combo）
     br_pommel_smash:  { id:'br_pommel_smash',  rarity:'uncommon', name:'紧逼',     cost:1, type:'attack', emoji:'👊', needsTarget:true,
       description:'造成 <b>6</b> 点伤害；本回合每打过 1 张攻击牌额外造成 <b>2</b> 伤害（最高 +8）。',
@@ -449,12 +449,12 @@ const Data = {
       } },
     // 硬抗：原创 — 简单防御 buff（区别于纯格挡）
     br_grit:          { id:'br_grit',          rarity:'uncommon', name:'硬抗',     cost:1, type:'skill',  emoji:'🛡️', needsTarget:false,
-      description:'获得 <b>6</b> 点格挡；本回合受到的所有伤害额外 <b>-2</b>。',
-      effect(cs,ti,lv=0){ const b=[6,8,10][lv]||6; const r=[2,3,3][lv]||2; Combat.gainBlock(cs,b,true); cs.player.buffs.gritReduce=(cs.player.buffs.gritReduce||0)+r; } },
-    // 肉搏战：原创 — AOE 但自损（鲁莽风格，区别于 STS 的 Whirlwind）
+      description:'获得 <b>8</b> 点格挡；本回合受到的所有伤害额外 <b>-2</b>。',
+      effect(cs,ti,lv=0){ const b=[8,10,12][lv]||8; const r=[2,3,3][lv]||2; Combat.gainBlock(cs,b,true); cs.player.buffs.gritReduce=(cs.player.buffs.gritReduce||0)+r; } },
+    // 肉搏战：原创 — 高强度 AOE，无自损（卡名保留但机制改）
     br_iron_swing:    { id:'br_iron_swing',    rarity:'rare',     name:'肉搏战',   cost:2, type:'attack', emoji:'💪', needsTarget:false,
-      description:'对所有敌人造成 <b>9</b> 点伤害；自己受到 <b>3</b> 点伤害（不被格挡阻挡）。',
-      effect(cs,ti,lv=0){ const base=[9,12,15][lv]||9; const self=[3,3,2][lv]||3; const str=cs.player.buffs?.strength||0; cs.enemies.forEach((en,j)=>{ if(!en._dead) Combat.dealDamage(cs,j,base+str); }); cs.player.hp=Math.max(1,cs.player.hp-self); State.run.character.hp=cs.player.hp; } },
+      description:'对所有敌人造成 <b>14</b> 点伤害。',
+      effect(cs,ti,lv=0){ const base=[14,18,22][lv]||14; const str=cs.player.buffs?.strength||0; cs.enemies.forEach((en,j)=>{ if(!en._dead) Combat.dealDamage(cs,j,base+str); }); } },
     // 压制：原创 — 利用自己施加的 debuff 做爆发（鼓励 combo）
     br_overwhelm:     { id:'br_overwhelm',     rarity:'rare',     name:'压制',     cost:1, type:'attack', emoji:'🥊', needsTarget:true,
       description:'造成 <b>7</b> 点伤害；目标每有 1 层易伤或虚弱，额外造成 <b>3</b> 伤害（最高 +12）。',
