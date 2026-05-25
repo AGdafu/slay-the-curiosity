@@ -169,8 +169,8 @@ const Data = {
 
     // ── 技能牌（8张）────────────────────────────────────────────────────────────────────────────────
     // 7. 进站维修：1费 技能 10格挡，1/2挡时+4回血
-    pit_repair: { id:'pit_repair', rarity:'uncommon', name:'进站维修', cost:1, type:'skill', emoji:'🔧', description:'获得 <b>10</b> 点格挡（含档位倍率）。非 3 挡时额外恢复 <b>6</b> 点生命。', needsTarget:false,
-      effect(cs){ const g=cs.gear||2; const blkMult=[0,1.4,1.0,0.7][g]; Combat.gainBlock(cs,Math.floor(10*blkMult),true); if(g<=2){ cs.player.hp=Math.min(cs.player.hp+6,cs.player.maxHp); State.run.character.hp=cs.player.hp; } } },
+    pit_repair: { id:'pit_repair', rarity:'uncommon', name:'进站维修', cost:1, type:'skill', emoji:'🔧', description:'获得 <b>10</b> 点格挡（含档位倍率）。非 3 挡时额外恢复 <b>3</b> 点生命。', needsTarget:false,
+      effect(cs,ti,lv=0){ const g=cs.gear||2; const blkMult=[0,1.4,1.0,0.7][g]; const blk=lv>=1?12:10; const heal=[3,4,5][lv]||3; Combat.gainBlock(cs,Math.floor(blk*blkMult),true); if(g<=2){ cs.player.hp=Math.min(cs.player.hp+heal,cs.player.maxHp); State.run.character.hp=cs.player.hp; } } },
     // 8. 换挡时机（起始牌已包含）
     // 9. 赛线预判：1费 技能 看牌堆顶3张，可重新排列，再抄±1张
     race_predict: { id:'race_predict', rarity:'uncommon', name:'赛线预判', cost:1, type:'skill', emoji:'🔮', description:'查看牌堆顶 3 张牌，可重新排列顺序，再抄 1 张牌。', needsTarget:false,
@@ -362,8 +362,8 @@ const Data = {
       description:'立即获得 <b>2</b> 点愤怒。打出后消耗。',
       effect(cs,ti,lv=0){ if(!cs.player.buffs) cs.player.buffs={}; cs.player.buffs.fury=(cs.player.buffs.fury||0)+([2,3,3][lv]||2); const i=cs.discardPile.lastIndexOf('box_taunt'); if(i!==-1) cs.discardPile.splice(i,1); cs.exhaustPile.push('box_taunt'); } },
     box_second_wind:{ id:'box_second_wind',rarity:'uncommon', name:'第二春',   cost:2, type:'skill',  emoji:'💚', needsTarget:false,
-      description:'回复 <b>8</b> 点 HP。血量低于一半时改为回复 <b>12</b> 点。',
-      effect(cs,ti,lv=0){ const half=cs.player.maxHp/2; const heal=cs.player.hp<half?([12,14,16][lv]||12):([8,10,12][lv]||8); cs.player.hp=Math.min(cs.player.hp+heal,cs.player.maxHp); State.run.character.hp=cs.player.hp; } },
+      description:'回复 <b>4</b> 点 HP。血量低于一半时改为回复 <b>7</b> 点。',
+      effect(cs,ti,lv=0){ const half=cs.player.maxHp/2; const heal=cs.player.hp<half?([7,9,11][lv]||7):([4,6,8][lv]||4); cs.player.hp=Math.min(cs.player.hp+heal,cs.player.maxHp); State.run.character.hp=cs.player.hp; } },
 
     // 史诗能力牌
     box_bloodlust:{ id:'box_bloodlust',rarity:'epic',     name:'嗜血本能', cost:2, type:'power',  emoji:'🩸', needsTarget:false,
@@ -378,8 +378,8 @@ const Data = {
       description:'造成 <b>3</b> 段 <b>2</b> 点伤害。',
       effect(cs,ti,lv=0){ const base=[2,2,3][lv]||2; const hits=[3,3,3][lv]||3; const bonus=Combat._getBoxerBonus(cs); for(let i=0;i<hits;i++) Combat.dealDamage(cs,ti,base+bonus); } },
     box_low_kick:     { id:'box_low_kick',     rarity:'uncommon', name:'低扫腿',   cost:1, type:'attack', emoji:'🦵', needsTarget:true,
-      description:'造成 <b>7</b> 点伤害，施加 <b>1</b> 层减速。',
-      effect(cs,ti,lv=0){ const base=[7,9,11][lv]||7; const slow=[1,2,2][lv]||1; Combat.dealDamage(cs,ti,base+Combat._getBoxerBonus(cs)); Combat.applyDebuff(cs.enemies[ti],'slow',slow); } },
+      description:'造成 <b>7</b> 点伤害，施加 <b>2</b> 层虚弱。',
+      effect(cs,ti,lv=0){ const base=[7,9,11][lv]||7; const w=[2,3,3][lv]||2; Combat.dealDamage(cs,ti,base+Combat._getBoxerBonus(cs)); Combat.applyDebuff(cs.enemies[ti],'weak',w); } },
     box_dodge_punch:  { id:'box_dodge_punch',  rarity:'uncommon', name:'闪避反击', cost:1, type:'attack', emoji:'🥷', needsTarget:true,
       description:'获得 <b>4</b> 点格挡，造成 <b>6</b> 点伤害。',
       effect(cs,ti,lv=0){ const blk=[4,6,8][lv]||4; const base=[6,8,10][lv]||6; Combat.gainBlock(cs,blk,true); Combat.dealDamage(cs,ti,base+Combat._getBoxerBonus(cs)); } },
@@ -1541,7 +1541,7 @@ const Data = {
     gear_shift:     { 1:{desc:'0费。升1挡或降1挡，本轮最多 <b>3</b> 次。', cost:0}, 2:{desc:'0费。升1挡或降1挡，本轮最多 <b>3</b> 次，首次使用后抽 <b>1</b> 张牌。', cost:0} },
     gear_brake:     { 1:{desc:'造成 <b>10</b> 点伤害（含档位倍率）。3挡时额外施加 2 层减速。', cost:1}, 2:{desc:'<b>0费</b>。造成 <b>8</b> 点固定伤害。3挡时额外施加 2 层减速。', cost:0} },
     overspeed:      { 1:{desc:'处于3挡时造成 <b>16</b> 点伤害并降1挡。消耗。', cost:0}, 2:{desc:'处于3挡时造成 <b>16</b> 点伤害并降1挡。<b>去除消耗。</b>', cost:0} },
-    pit_repair:     { 1:{desc:'获得 <b>12</b> 点格挡。1/2挡时额外回血 <b>5</b> HP。', cost:1}, 2:{desc:'<b>0费</b>。获得 <b>10</b> 点格挡。1/2挡时额外回血 4 HP。', cost:0} },
+    pit_repair:     { 1:{desc:'获得 <b>12</b> 点格挡。1/2挡时额外回血 <b>4</b> HP。', cost:1}, 2:{desc:'<b>0费</b>。获得 <b>10</b> 点格挡。1/2挡时额外回血 5 HP。', cost:0} },
     race_predict:   { 1:{desc:'查看牌堆顶 <b>4</b> 张，自由排序，抽 1 张。', cost:1}, 2:{desc:'查看牌堆顶 <b>4</b> 张，自由排序，抽 <b>2</b> 张。', cost:1} },
     forced_downshift:{ 1:{desc:'0费。降2挡，对敌人施加减速×降幅×<b>2</b>。消耗。', cost:0}, 2:{desc:'0费。降2挡，对敌人施加减速×降幅×<b>2</b>。<b>去除消耗。</b>', cost:0} },
     quick_upshift:  { 1:{desc:'升2挡（上限3挡），抽 <b>2</b> 张牌。', cost:1}, 2:{desc:'<b>0费</b>。升2挡（上限3挡），抽 1 张牌。', cost:0} },
@@ -1619,7 +1619,7 @@ const Data = {
     box_haymaker:   { 1:{desc:'消耗全部愤怒，每点愤怒转 <b>4</b> 伤，基础 <b>18</b> 点。', cost:2}, 2:{desc:'消耗全部愤怒，每点愤怒转 <b>5</b> 伤，基础 <b>22</b> 点。', cost:2} },
     box_rage_combo: { 1:{desc:'愤怒 ≥ <b>2</b> 时 3 段 <b>4+愤怒</b> 伤；否则 1 段 <b>8</b> 点。', cost:1}, 2:{desc:'愤怒 ≥ <b>2</b> 时 3 段 <b>5+愤怒</b> 伤；否则 1 段 <b>10</b> 点。', cost:1} },
     box_taunt:      { 1:{desc:'立即获得 <b>3</b> 点愤怒。打出后消耗。', cost:1}, 2:{desc:'<b>0费</b>。立即获得 <b>3</b> 点愤怒。打出后消耗。', cost:0} },
-    box_second_wind:{ 1:{desc:'回复 <b>10</b> 点 HP（HP < 50% 时改为 <b>14</b> 点）。', cost:2}, 2:{desc:'<b>1费</b>。回复 <b>12</b> 点 HP（HP < 50% 时改为 <b>16</b> 点）。', cost:1} },
+    box_second_wind:{ 1:{desc:'回复 <b>6</b> 点 HP（HP < 50% 时改为 <b>9</b> 点）。', cost:2}, 2:{desc:'<b>1费</b>。回复 <b>8</b> 点 HP（HP < 50% 时改为 <b>11</b> 点）。', cost:1} },
     box_bloodlust:  { 1:{desc:'<b>1费</b>。能力。HP 低于一半时每回合开始 +1 能量。', cost:1}, 2:{desc:'<b>1费</b>。能力。HP 低于一半时每回合开始 +1 能量并额外抽 <b>1</b> 张牌。', cost:1} },
     box_iron_will:  { 1:{desc:'<b>0费</b>。能力。搏命加成翻倍（每损失 25% HP <b>+4</b>）。', cost:0}, 2:{desc:'<b>0费</b>。能力。搏命加成三倍（每损失 25% HP <b>+6</b>）。', cost:0} },
   },
@@ -3369,13 +3369,13 @@ const Combat = {
   },
   dealDamage(cs,targetIndex,amount){ const enemy=cs.enemies[targetIndex];if(!enemy||enemy._dead)return 0; let dmg=amount+(cs.player.buffs.strength||0);
     // 速度感攻击加成：40-79=+2，>=80=+5
-    if(State.run?.character?.id==='racer'){ const _spd=cs.speed||0; if(_spd>=80) dmg+=5; else if(_spd>=40) dmg+=2; } if((enemy.debuffs.vulnerable||0)>0)dmg=Math.floor(dmg*1.5); if((cs.player.debuffs.weak||0)>0)dmg=Math.floor(dmg*0.75); if((cs.player.debuffs.slow||0)>0)dmg=Math.floor(dmg*0.75); const absorbed=Math.min(enemy.block,dmg);enemy.block=Math.max(0,enemy.block-absorbed);const actualDmg=dmg-absorbed;enemy.hp-=actualDmg;
+    if(State.run?.character?.id==='racer'){ const _spd=cs.speed||0; if(_spd>=80) dmg+=5; else if(_spd>=40) dmg+=2; } if((enemy.debuffs.vulnerable||0)>0)dmg=Math.floor(dmg*1.5); if((cs.player.debuffs.weak||0)>0)dmg=Math.floor(dmg*0.75); if((cs.player.debuffs.slow||0)>0)dmg=Math.floor(dmg*0.70); const absorbed=Math.min(enemy.block,dmg);enemy.block=Math.max(0,enemy.block-absorbed);const actualDmg=dmg-absorbed;enemy.hp-=actualDmg;
     // 大头的西班牙语书：记录本回合是否对敌人造成过实际伤害
     if(actualDmg > 0) cs.dealtDamageThisTurn = true;
     // 死亡判定：HP≤0 立即标记死亡并归零（修复柠檬水等绕过 playCard 的伤害源）
     if(enemy.hp<=0 && !enemy._dead){ enemy._dead=true; enemy.hp=0; }
     return actualDmg; },
-  enemyAttack(cs,enemyIndex,amount){ const enemy=cs.enemies[enemyIndex];if(!enemy||enemy._dead)return 0; let dmg=amount+(enemy.buffs.strength||0); if((enemy.debuffs.weak||0)>0)dmg=Math.floor(dmg*0.75); if((enemy.debuffs.slow||0)>0)dmg=Math.floor(dmg*0.75); if((cs.player.debuffs.vulnerable||0)>0)dmg=Math.floor(dmg*1.5);
+  enemyAttack(cs,enemyIndex,amount){ const enemy=cs.enemies[enemyIndex];if(!enemy||enemy._dead)return 0; let dmg=amount+(enemy.buffs.strength||0); if((enemy.debuffs.weak||0)>0)dmg=Math.floor(dmg*0.75); if((enemy.debuffs.slow||0)>0)dmg=Math.floor(dmg*0.70); if((cs.player.debuffs.vulnerable||0)>0)dmg=Math.floor(dmg*1.5);
     // 拳击手「铁下巴」：所有受到的伤害 -1（最低 0）
     if((cs.player.buffs?.box_iron_chin||0)>0){ dmg=Math.max(0, dmg - cs.player.buffs.box_iron_chin); }
     // 战士「硬抗」：本回合受到的所有伤害额外 -N（最低 0）
@@ -5122,7 +5122,7 @@ el.innerHTML=`<div class="card-type-bar"></div>${rarityTag}<div class="card-cost
     vulnerable: { name: '易伤', icon: '💔', desc: '受到的伤害增加 50%，持续到回合结束时减 1 层' },
     weak:       { name: '虚弱', icon: '😵', desc: '造成的伤害减少 25%，持续到回合结束时减 1 层' },
     frail:      { name: '脆弱', icon: '🦴', desc: '获得的格挡减少 25%，持续到回合结束时减 1 层' },
-    slow:       { name: '减速', icon: '🐢', desc: '攻击伤害减少 25%，每回合结束减 1 层' },
+    slow:       { name: '减速', icon: '🐢', desc: '赛车手专属：攻击伤害减少 30%，每回合结束减 1 层' },
     burn:       { name: '燃烧', icon: '🔥', desc: '每回合结束受到等于层数的伤害，随后层数 -1' },
     freeze:     { name: '冻结', icon: '❄️', desc: '本回合跳过行动，回合结束层数 -1' },
   },
@@ -6303,13 +6303,13 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
       const _modDmg=(v)=>{
         let d=v;
         if(_hasWeak) d=Math.floor(d*0.75);
-        if(_hasSlow) d=Math.floor(d*0.75);
+        if(_hasSlow) d=Math.floor(d*0.70);
         if(_hasVuln) d=Math.floor(d*1.5);
         return d;
       };
       const intentHtml=visibleIntentArr.map(it=>{
         const glassesTag=(_hasGlasses&&it.type==='attack')?`<span style="font-size:0.7em;margin-left:2px;opacity:0.85;vertical-align:middle" title="👓 王微的眼镜：20% 概率减少最多 15 点伤害">👓</span>`:'';
-        const slowTag=(_hasSlow&&it.type==='attack')?`<span style="font-size:0.7em;margin-left:2px;opacity:0.85;vertical-align:middle" title="🐢 减速：攻击伤害 -25%">🐢</span>`:'';
+        const slowTag=(_hasSlow&&it.type==='attack')?`<span style="font-size:0.7em;margin-left:2px;opacity:0.85;vertical-align:middle" title="🐢 减速（赛车手专属）：攻击伤害 -30%">🐢</span>`:'';
         const weakTag=(_hasWeak&&it.type==='attack')?`<span style="font-size:0.7em;margin-left:2px;opacity:0.85;vertical-align:middle" title="💧 虚弱：怪物攻击伤害 -25%">💧</span>`:'';
         const vulnTag=(_hasVuln&&it.type==='attack')?`<span style="font-size:0.7em;margin-left:2px;opacity:0.85;vertical-align:middle" title="💥 易伤：你受到的伤害 +50%">💥</span>`:'';
         // 攻击意图数值实时换算成玩家实际会承受的伤害（支持单段与「×N(每段)」多段格式）
