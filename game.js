@@ -553,10 +553,10 @@ const Data = {
       getIntent(s){
         const a=s.actions[s.actionIndex%s.actions.length];
         const str=s.buffs?.strength||0;
-        if(a==='buff') return [{type:'buff',label:'✨',num:'鼓舞',detail:'获得 2 层【力量】和 15 点格挡'}];
-        if(a==='heavy') return [{type:'attack',val:20+str,label:'⚔️',num:String(20+str),detail:'沉重一击'}];
-        if(a==='ultimate') return [{type:'attack',val:10+str,label:'⚔️',num:`×3(${10+str})`,detail:'连环三连击'}];
-        return [{type:'attack',val:12+str,label:'⚔️',num:String(12+str),detail:'快速斩击'}];
+        if(a==='buff') return [{type:'buff',label:'✨',num:'鼓舞',detail:'鼓舞：自身 +2 力量、+15 格挡'}];
+        if(a==='heavy') return [{type:'attack',val:20+str,label:'⚔️',num:String(20+str),detail:`沉重一击：造成 ${20+str} 点伤害（单次重击）`}];
+        if(a==='ultimate') return [{type:'attack',val:10+str,label:'⚔️',num:`×3(${10+str})`,detail:`连环三连击：造成 ${10+str} 点伤害 × 3 次（共 ${(10+str)*3} 点）`}];
+        return [{type:'attack',val:12+str,label:'⚔️',num:String(12+str),detail:`快速斩击：造成 ${12+str} 点伤害`}];
       },
       doAction(cs,si){
         const s=cs.enemies[si], a=s.actions[s.actionIndex%s.actions.length];
