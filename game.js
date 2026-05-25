@@ -105,8 +105,10 @@ const Data = {
     clash:    { id:'clash',    rarity:'common',   name:'冲撞',   cost:0, type:'attack', emoji:'💢', description:'若手牌全为攻击牌，造成 12 点伤害，否则 5 点。', needsTarget:true, effect(cs,ti,lv=0){ const a=cs.hand.every(id=>Data.cards[id]&&Data.cards[id].type==='attack'); const dmgFull=[12,16,20][lv]||12; const dmgElse=[5,7,9][lv]||5; Combat.dealDamage(cs,ti,a?dmgFull:dmgElse); } },
     pommel:   { id:'pommel',   rarity:'uncommon', name:'剑柄击', cost:1, type:'attack', emoji:'🗡', description:'造成 9 点伤害，摸 1 张牌。',                needsTarget:true,  effect(cs,ti,lv=0){ Combat.dealDamage(cs,ti,9); Combat.drawCards(cs,lv>=1?2:1); } },
     shrug:    { id:'shrug',    rarity:'uncommon', name:'耸肩',   cost:1, type:'skill',  emoji:'🤷', description:'获得 8 点格挡，摸 1 张牌。',                needsTarget:false, effect(cs,ti,lv=0){ const blk=lv>=1?11:8; const draw=lv>=2?2:1; Combat.gainBlock(cs,blk,true); Combat.drawCards(cs,draw); } },
-    armaments:{ id:'armaments',rarity:'uncommon', name:'武装',   cost:1, type:'skill',  emoji:'⚒', description:'获得 5 点格挡。',                          needsTarget:false, effect(cs,ti,lv=0){
+    armaments:{ id:'armaments',rarity:'uncommon', name:'武装',   cost:1, type:'skill',  emoji:'⚒', description:'获得 5 点格挡。下回合开始时额外获得 1 点能量。',                          needsTarget:false, effect(cs,ti,lv=0){
       Combat.gainBlock(cs,5,true);
+      // 下回合 +1 能量（升级后 +2）
+      cs._extraEnergyNextTurn = (cs._extraEnergyNextTurn||0) + (lv>=1?2:1);
       if(lv>=1 && cs.hand.length>0){
         if(!cs.handUpgrades) cs.handUpgrades={};
         if(lv>=2){
@@ -375,7 +377,7 @@ const Data = {
     box_quick_jab:    { id:'box_quick_jab',    rarity:'common',   name:'刺拳连发', cost:0, type:'attack', emoji:'🥊', needsTarget:true,
       description:'造成 <b>3</b> 段 <b>2</b> 点伤害。',
       effect(cs,ti,lv=0){ const base=[2,2,3][lv]||2; const hits=[3,3,3][lv]||3; const bonus=Combat._getBoxerBonus(cs); for(let i=0;i<hits;i++) Combat.dealDamage(cs,ti,base+bonus); } },
-    box_low_kick:     { id:'box_low_kick',     rarity:'common',   name:'低扫腿',   cost:1, type:'attack', emoji:'🦵', needsTarget:true,
+    box_low_kick:     { id:'box_low_kick',     rarity:'uncommon', name:'低扫腿',   cost:1, type:'attack', emoji:'🦵', needsTarget:true,
       description:'造成 <b>7</b> 点伤害，施加 <b>1</b> 层减速。',
       effect(cs,ti,lv=0){ const base=[7,9,11][lv]||7; const slow=[1,2,2][lv]||1; Combat.dealDamage(cs,ti,base+Combat._getBoxerBonus(cs)); Combat.applyDebuff(cs.enemies[ti],'slow',slow); } },
     box_dodge_punch:  { id:'box_dodge_punch',  rarity:'uncommon', name:'闪避反击', cost:1, type:'attack', emoji:'🥷', needsTarget:true,
@@ -388,7 +390,7 @@ const Data = {
       description:'造成 <b>9</b> 点伤害。',
       effect(cs,ti,lv=0){ const base=[9,12,15][lv]||9; Combat.dealDamage(cs,ti,base+Combat._getBoxerBonus(cs)); } },
     box_clinch:       { id:'box_clinch',       rarity:'uncommon', name:'缠抱',     cost:1, type:'skill',  emoji:'🫂', needsTarget:false,
-      description:'获得 <b>5</b> 点格挡，敌方下回合 <b>所有攻击伤害 -2</b>。',
+      description:'获得 <b>5</b> 点格挡，对所有敌人施加 <b>1</b> 层虚弱。',
       effect(cs,ti,lv=0){ const blk=[5,7,9][lv]||5; Combat.gainBlock(cs,blk,true); cs.enemies.forEach(e=>{ if(!e._dead) Combat.applyDebuff(e,'weak',[1,2,2][lv]||1); }); } },
     box_furious_strike:{ id:'box_furious_strike',rarity:'rare',  name:'怒火出拳', cost:1, type:'attack', emoji:'😡', needsTarget:true,
       description:'造成 <b>8</b> 点伤害。HP 越低，伤害越高（每损失 <b>20%</b> 最大 HP 额外 <b>+3</b>）。',
@@ -399,7 +401,7 @@ const Data = {
     box_break_guard:  { id:'box_break_guard',  rarity:'rare',     name:'破防',     cost:2, type:'attack', emoji:'💢', needsTarget:true,
       description:'造成 <b>12</b> 点伤害（无视目标格挡）。',
       effect(cs,ti,lv=0){ const base=[12,15,18][lv]||12; const e=cs.enemies[ti]; const ob=e.block; e.block=0; Combat.dealDamage(cs,ti,base+Combat._getBoxerBonus(cs)); e.block=ob; } },
-    box_iron_chin:    { id:'box_iron_chin',    rarity:'rare',     name:'铁下巴',   cost:1, type:'power',  emoji:'🦷', needsTarget:false,
+    box_iron_chin:    { id:'box_iron_chin',    rarity:'rare',     name:'铁下巴',   cost:0, type:'power',  emoji:'🦷', needsTarget:false,
       description:'能力。本场战斗内，所有受到的伤害 <b>-1</b>（最低 0）。',
       effect(cs){ cs.player.buffs.box_iron_chin=(cs.player.buffs.box_iron_chin||0)+1; } },
     box_knockout:     { id:'box_knockout',     rarity:'epic',     name:'KO 一击',  cost:3, type:'attack', emoji:'💥', needsTarget:true,
@@ -455,18 +457,16 @@ const Data = {
     br_iron_swing:    { id:'br_iron_swing',    rarity:'rare',     name:'肉搏战',   cost:2, type:'attack', emoji:'💪', needsTarget:false,
       description:'对所有敌人造成 <b>14</b> 点伤害。',
       effect(cs,ti,lv=0){ const base=[14,18,22][lv]||14; const str=cs.player.buffs?.strength||0; cs.enemies.forEach((en,j)=>{ if(!en._dead) Combat.dealDamage(cs,j,base+str); }); } },
-    // 压制：原创 — 利用自己施加的 debuff 做爆发（鼓励 combo）
+    // 压制：原创「以强欺弱」— 当你 HP 比敌人多时狠狠地揍他
     br_overwhelm:     { id:'br_overwhelm',     rarity:'rare',     name:'压制',     cost:1, type:'attack', emoji:'🥊', needsTarget:true,
-      description:'造成 <b>7</b> 点伤害；目标每有 1 层易伤或虚弱，额外造成 <b>3</b> 伤害（最高 +12）。',
+      description:'造成 <b>9</b> 点伤害；若你当前 HP <b>高于</b>目标当前 HP，伤害<b>翻倍</b>。',
       effect(cs,ti,lv=0){
-        const base=[7,10,13][lv]||7;
-        const per=[3,3,4][lv]||3;
-        const cap=[12,15,18][lv]||12;
+        const base=[9,13,17][lv]||9;
         const e=cs.enemies[ti];
-        const stacks=(e.debuffs?.vulnerable||0)+(e.debuffs?.weak||0);
-        const bonus=Math.min(stacks*per, cap);
+        const dom=cs.player.hp > e.hp;
         const str=cs.player.buffs?.strength||0;
-        Combat.dealDamage(cs,ti,base+bonus+str);
+        const dmg=dom?(base+str)*2:(base+str);
+        Combat.dealDamage(cs,ti,dmg);
       } },
   },
   enemies: {
@@ -3216,6 +3216,12 @@ const Combat = {
       }
     }
     cs.turn++;cs.phase='player';cs.energy=cs.maxEnergy;
+    // 武装：下回合 +N 能量
+    if((cs._extraEnergyNextTurn||0)>0){
+      cs.energy+=cs._extraEnergyNextTurn;
+      const _aTip=document.createElement('div');_aTip.style.cssText='position:fixed;top:46%;left:50%;transform:translate(-50%,-50%);background:rgba(20,20,40,0.95);color:#f5c518;font-size:1rem;font-weight:800;padding:8px 20px;border-radius:10px;border:1.5px solid #f5c518;z-index:9999;pointer-events:none;';_aTip.textContent=`⚒ 武装：+${cs._extraEnergyNextTurn} 能量！`;document.body.appendChild(_aTip);setTimeout(()=>_aTip.remove(),1200);
+      cs._extraEnergyNextTurn=0;
+    }
     // 刘行的头巾：上一回合触发后，本回合+1能量
     if((cs._liuxingPendingEnergy||0)>0){ cs.energy+=cs._liuxingPendingEnergy; cs._liuxingPendingEnergy=0;
       const _leTip=document.createElement('div');_leTip.style.cssText='position:fixed;top:44%;left:50%;transform:translate(-50%,-50%);background:rgba(20,20,40,0.95);color:#f5c518;font-size:1rem;font-weight:800;padding:8px 20px;border-radius:10px;border:1.5px solid #f5c518;z-index:9999;pointer-events:none;';_leTip.textContent='🧣 头巾能量！本回合+1能量！';document.body.appendChild(_leTip);setTimeout(()=>_leTip.remove(),1200);
