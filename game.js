@@ -5323,13 +5323,55 @@ el.innerHTML=`<div class="card-type-bar"></div>${rarityTag}<div class="card-cost
   },
   menu(){
     const saves=Save.list();const hasSave=saves.some(s=>s.run!==null);
-    UI.app().innerHTML=`<div class="menu-screen slide-up"><div class="menu-title">Slay the<br>Curiosity</div><div class="menu-subtitle">一场好奇心的冒险</div><div style="display:flex;flex-direction:column;gap:12px;align-items:stretch;width:260px;margin:16px auto 0"><button class="btn primary" id="btn-new">✨ 新游戏</button>${hasSave?'<button class="btn" id="btn-continue">📂 继续游戏</button>':''}<button class="btn" id="btn-coop" style="background:rgba(80,200,140,0.14);border-color:rgba(80,200,140,0.45);color:#7fe0a8">🤝 联机合作</button><button class="btn" id="btn-saves">💾 存档管理</button><button class="btn" id="btn-tutorial" style="background:rgba(80,160,255,0.12);border-color:rgba(80,160,255,0.4);color:#90c8ff">📖 新手教程</button><button class="btn" id="btn-database" style="background:rgba(160,90,255,0.12);border-color:rgba(160,90,255,0.4);color:#c8a0ff">📚 图鉴</button></div><div style="font-size:0.85rem;color:var(--ink-light);margin-top:32px">Slay the Curiosity v0.1 demo</div></div>`;
+    UI.app().innerHTML=`<div class="menu-screen slide-up"><div class="menu-title">Slay the<br>Curiosity</div><div class="menu-subtitle">一场好奇心的冒险</div><div style="display:flex;flex-direction:column;gap:12px;align-items:stretch;width:260px;margin:16px auto 0"><button class="btn primary" id="btn-new">✨ 新游戏</button>${hasSave?'<button class="btn" id="btn-continue">📂 继续游戏</button>':''}<button class="btn" id="btn-coop" style="background:rgba(80,200,140,0.14);border-color:rgba(80,200,140,0.45);color:#7fe0a8">🤝 联机合作</button><button class="btn" id="btn-saves">💾 存档管理</button><button class="btn" id="btn-tutorial" style="background:rgba(80,160,255,0.12);border-color:rgba(80,160,255,0.4);color:#90c8ff">📖 新手教程</button><button class="btn" id="btn-database" style="background:rgba(160,90,255,0.12);border-color:rgba(160,90,255,0.4);color:#c8a0ff">📚 图鉴</button><button class="btn" id="btn-debug" style="background:rgba(255,200,80,0.12);border-color:rgba(255,200,80,0.4);color:#ffd060;font-size:0.85rem">🧪 测试面板</button></div><div style="font-size:0.85rem;color:var(--ink-light);margin-top:32px">Slay the Curiosity v0.1 demo</div></div>`;
     document.getElementById('btn-new').onclick=()=>State.go('char-select');
     if(hasSave)document.getElementById('btn-continue').onclick=()=>UI.showSaveSlots('load');
     document.getElementById('btn-coop').onclick=()=>State.go('coop-lobby');
     document.getElementById('btn-saves').onclick=()=>UI.showSaveSlots('manage');
     document.getElementById('btn-tutorial').onclick=()=>UI.tutorial();
     document.getElementById('btn-database').onclick=()=>UI.showDatabase();
+    document.getElementById('btn-debug').onclick=()=>UI.showDebugPanel();
+  },
+
+  // ── 测试面板：触发各种特效动画，无需进游戏 ───────────────────────
+  showDebugPanel(){
+    const overlay=document.createElement('div');
+    overlay.style.cssText='position:fixed;inset:0;background:rgba(8,8,18,0.96);z-index:9000;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding:40px 20px;overflow-y:auto;font-family:var(--font);';
+    overlay.innerHTML=`
+      <div style="max-width:720px;width:100%">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px">
+          <h2 style="color:#ffd060;margin:0;font-size:1.6rem">🧪 测试面板</h2>
+          <button id="dbg-close" style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.2);color:#fff;border-radius:8px;padding:6px 14px;cursor:pointer">✕ 关闭</button>
+        </div>
+        <div style="background:rgba(255,255,255,0.04);border:1.5px solid rgba(255,255,255,0.12);border-radius:14px;padding:18px;margin-bottom:14px">
+          <div style="color:#e8d8ff;font-weight:800;font-size:1.05rem;margin-bottom:10px">⌚ 苏苏的怀表</div>
+          <div style="font-size:0.85rem;color:rgba(255,255,255,0.55);margin-bottom:12px">效果：被致死时 5% 概率满血复活并秒杀全场（Boss 房仅复活）。这里直接跳过概率与触发条件，**直接播放动画**。</div>
+          <div style="display:flex;gap:10px;flex-wrap:wrap">
+            <button class="dbg-btn" data-test="pocketwatch-normal" style="background:rgba(127,224,168,0.15);border:1.5px solid rgba(127,224,168,0.45);color:#a9f0c5;border-radius:8px;padding:8px 16px;cursor:pointer;font-weight:700">▶ 普通房间版（含秒杀）</button>
+            <button class="dbg-btn" data-test="pocketwatch-boss" style="background:rgba(240,150,150,0.15);border:1.5px solid rgba(240,150,150,0.45);color:#ff9b8f;border-radius:8px;padding:8px 16px;cursor:pointer;font-weight:700">▶ Boss 房间版（仅复活）</button>
+          </div>
+        </div>
+        <div style="background:rgba(255,255,255,0.04);border:1.5px solid rgba(255,255,255,0.12);border-radius:14px;padding:18px;margin-bottom:14px;opacity:0.5">
+          <div style="color:#e8d8ff;font-weight:800;font-size:1.05rem;margin-bottom:10px">🔜 其他特效（待添加）</div>
+          <div style="font-size:0.85rem;color:rgba(255,255,255,0.55)">护身符复活、第二/三幕过场、Boss 击杀动画等可以陆续加入此面板</div>
+        </div>
+      </div>`;
+    document.body.appendChild(overlay);
+
+    overlay.querySelector('#dbg-close').onclick=()=>overlay.remove();
+    overlay.addEventListener('click',(e)=>{ if(e.target===overlay) overlay.remove(); });
+    overlay.querySelectorAll('.dbg-btn').forEach(btn=>{
+      btn.onclick=()=>{
+        const t=btn.dataset.test;
+        if(t==='pocketwatch-normal'){
+          overlay.remove();
+          UI._triggerPocketWatch(false, ()=>UI.menu());
+        } else if(t==='pocketwatch-boss'){
+          overlay.remove();
+          UI._triggerPocketWatch(true, ()=>UI.menu());
+        }
+      };
+    });
   },
 
   // ── 联机合作大厅（阶段1：PeerJS 连接 + 房间码）──────────────────────────────
