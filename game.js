@@ -4232,6 +4232,8 @@ const CoopGame = {
   // 构造一个临时 cs 供现有 card effect 函数使用
   _makeTempCs(coopCs, who) {
     const player = coopCs[who];
+    const isRacer = player.charId === 'racer';
+    const isArcher = player.charId === 'archer';
     return {
       player: { hp: player.hp, maxHp: player.maxHp, block: player.block, buffs: { ...player.buffs }, debuffs: { ...player.debuffs } },
       enemies: coopCs.enemies,
@@ -4244,6 +4246,12 @@ const CoopGame = {
       handUpgrades: who === 'host' ? coopCs.hostHandUpgrades : coopCs.guestHandUpgrades,
       turn: coopCs.turn,
       phase: 'player',
+      // 角色专属字段（赛车手 / 射手）
+      gear: isRacer ? (coopCs[who+'Gear'] != null ? coopCs[who+'Gear'] : 2) : undefined,
+      speed: isRacer ? (coopCs[who+'Speed'] || 0) : undefined,
+      momentum: isRacer ? (coopCs[who+'Momentum'] || 0) : undefined,
+      charge: isArcher ? (coopCs[who+'Charge'] || 0) : undefined,
+      chargeMax: isArcher ? (coopCs[who+'ChargeMax'] || 5) : undefined,
       // stubs for single-player-only features
       _coopWho: who,
       _coopCs: coopCs,
@@ -4259,6 +4267,12 @@ const CoopGame = {
     player.buffs = tempCs.player.buffs;
     player.debuffs = tempCs.player.debuffs;
     coopCs[who + 'Energy'] = tempCs.energy;
+    // 写回角色专属字段
+    if (tempCs.gear !== undefined) coopCs[who+'Gear'] = tempCs.gear;
+    if (tempCs.speed !== undefined) coopCs[who+'Speed'] = tempCs.speed;
+    if (tempCs.momentum !== undefined) coopCs[who+'Momentum'] = tempCs.momentum;
+    if (tempCs.charge !== undefined) coopCs[who+'Charge'] = tempCs.charge;
+    if (tempCs.chargeMax !== undefined) coopCs[who+'ChargeMax'] = tempCs.chargeMax;
     // 敌人已是引用，不需要额外写回
     // 如果 tempCs 抽了牌（drawCards 修改了 hand/draw/discard 数组引用），已同步
   },
@@ -5313,6 +5327,9 @@ el.innerHTML=`<div class="card-type-bar"></div>${rarityTag}<div class="card-cost
         if (!Net.isHost) {
           if (data.screen === 'map') { State.current.screen = 'coop-map'; UI.coopMap(); }
           else if (data.screen === 'combat') { /* 等下个 coop-state */ }
+          else if (data.screen === 'coop-rest') { State.current.screen = 'coop-rest'; UI.coopRest(); }
+          else if (data.screen === 'coop-shop') { State.current.screen = 'coop-shop'; UI.coopShop(); }
+          else if (data.screen === 'coop-question') { State.current.screen = 'coop-question'; UI.coopQuestion(); }
         }
       }
       else if (data.t==='coop-state') {
@@ -5356,6 +5373,30 @@ el.innerHTML=`<div class="card-type-bar"></div>${rarityTag}<div class="card-cost
         // 访客点了"前往地图"按钮
         if (Net.isHost && UI._coopCs) {
           UI._coopGoToMap(UI._coopCs);
+        }
+      }
+      else if (data.t==='coop-rest-choice') {
+        // 访客提交休息选择
+        if (Net.isHost && UI._coopRun) {
+          UI._coopApplyRest('guest', data.choice);
+          Net.send({ t: 'coop-run-state', run: UI._coopSerializeRun() });
+          if (State.current.screen === 'coop-rest') UI.coopRest();
+        }
+      }
+      else if (data.t==='coop-shop-buy') {
+        // 访客购买
+        if (Net.isHost && UI._coopRun) {
+          UI._coopApplyShopBuy('guest', data.idx);
+          Net.send({ t: 'coop-run-state', run: UI._coopSerializeRun() });
+          if (State.current.screen === 'coop-shop') UI.coopShop();
+        }
+      }
+      else if (data.t==='coop-shop-leave') {
+        // 访客离开商店
+        if (Net.isHost && UI._coopRun) {
+          UI._coopApplyShopLeave('guest');
+          Net.send({ t: 'coop-run-state', run: UI._coopSerializeRun() });
+          if (State.current.screen === 'coop-shop') UI.coopShop();
         }
       }
     });
@@ -8392,8 +8433,12 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
       hostCharId, guestCharId,
       hostDeck: [...hChar.startingDeck],
       guestDeck: [...gChar.startingDeck],
+      hostUpgrades: {}, // index → level
+      guestUpgrades: {},
       hostHp: hChar.hp, hostMaxHp: hChar.maxHp,
       guestHp: gChar.hp, guestMaxHp: gChar.maxHp,
+      sharedRelics: [],   // 共享遗物
+      potions: [null,null,null], // 共享药水
       map,
       currentNodeId: startNode ? startNode.id : null,
       act: 1,
@@ -8572,19 +8617,435 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
         Net.send({ t: 'coop-screen', screen: 'combat' });
         UI.coopCombat(coopCs);
       }, 80);
+    } else if (node.type === 'rest') {
+      // 休息篝火：双方各自选治疗 / 升牌
+      UI._coopRun.restChoices = { host: null, guest: null };
+      Net.send({ t: 'coop-run-state', run: UI._coopSerializeRun() });
+      Net.send({ t: 'coop-screen', screen: 'coop-rest' });
+      State.current.screen = 'coop-rest';
+      UI.coopRest();
+    } else if (node.type === 'shop') {
+      // 商店：生成库存（按双方角色），共享金币
+      UI._coopRun.shopInv = UI._coopGenShopInventory();
+      UI._coopRun.shopSold = {};   // idx → 'host'|'guest'
+      UI._coopRun.shopLeft = { host:false, guest:false };
+      Net.send({ t: 'coop-run-state', run: UI._coopSerializeRun() });
+      Net.send({ t: 'coop-screen', screen: 'coop-shop' });
+      State.current.screen = 'coop-shop';
+      UI.coopShop();
+    } else if (node.type === 'question' || node.type === 'event') {
+      // 问号事件：房主操作，访客只读
+      const pool = (Data.questionEvents || []).filter(e => {
+        if (e.relicId && (UI._coopRun.sharedRelics||[]).includes(e.relicId)) return false;
+        return true;
+      });
+      const evt = pool.length ? pool[Math.floor(Math.random()*pool.length)] : (Data.questionEvents||[])[0];
+      UI._coopRun.questionEventId = evt ? evt.id : null;
+      UI._coopRun.questionResult = null;
+      UI._coopRun.questionResolvedBy = null;
+      Net.send({ t: 'coop-run-state', run: UI._coopSerializeRun() });
+      Net.send({ t: 'coop-screen', screen: 'coop-question' });
+      State.current.screen = 'coop-question';
+      UI.coopQuestion();
     } else {
-      // 非战斗节点（休息/商店/问号）当前阶段简化：直接跳过，回血 5 HP
+      // 未知类型兜底：直接小回血走人
       if (UI._coopRun) {
         UI._coopRun.hostHp = Math.min(UI._coopRun.hostMaxHp, UI._coopRun.hostHp + 5);
         UI._coopRun.guestHp = Math.min(UI._coopRun.guestMaxHp, UI._coopRun.guestHp + 5);
       }
-      // 检查 boss 节点之外没有可达节点 → 推进幕
       const stillReachable = (map.paths||[]).some(p => p.from === nodeId);
       if (!stillReachable) UI._coopAdvanceAct();
       Net.send({ t: 'coop-run-state', run: UI._coopSerializeRun() });
       Net.send({ t: 'coop-screen', screen: 'map' });
       UI.coopMap();
     }
+  },
+
+  // 商店库存生成：双方角色各 3 张（按单人 getShopInventory 但分别按角色）
+  _coopGenShopInventory() {
+    const result = [];
+    const _genFor = (charId, role) => {
+      const out = [];
+      const prevRun = State.current.run;
+      State.current.run = { character: { id: charId } };
+      try {
+        const all = (Data.getShopInventory && Data.getShopInventory([])) || [];
+        for (const item of all) {
+          if (out.length >= 3) break;
+          if (item && item.id) out.push({ id: item.id, price: item.price, role });
+        }
+      } catch(e) {}
+      finally { State.current.run = prevRun; }
+      return out;
+    };
+    const hostItems = _genFor(UI._coopRun.hostCharId, 'host');
+    const guestItems = _genFor(UI._coopRun.guestCharId, 'guest');
+    return [...hostItems, ...guestItems];
+  },
+
+  // ── 合作 · 休息篝火 ──
+  coopRest() {
+    const run = UI._coopRun || UI._coopRunGuest;
+    if (!run) { State.go('coop-lobby'); return; }
+    if (!run.restChoices) run.restChoices = { host:null, guest:null };
+    const app = UI.app();
+    const myRole = Net.isHost ? 'host' : 'guest';
+    const oppRole = myRole === 'host' ? 'guest' : 'host';
+    const myDone = !!run.restChoices[myRole];
+    const oppDone = !!run.restChoices[oppRole];
+    const hChar = Data.characters.find(c => c.id === run.hostCharId) || {};
+    const gChar = Data.characters.find(c => c.id === run.guestCharId) || {};
+    const myMaxHp = myRole==='host'?run.hostMaxHp:run.guestMaxHp;
+    const myHp = myRole==='host'?run.hostHp:run.guestHp;
+    const myDeck = myRole==='host'?(run.hostDeck||[]):(run.guestDeck||[]);
+    const healAmt = Math.floor(myMaxHp * 0.30);
+    app.innerHTML = `
+      <div style="min-height:100vh;background:var(--bg,#0c0c1a);padding:24px;color:#fff;font-family:var(--font);max-width:760px;margin:0 auto;">
+        <div style="text-align:center;font-size:3rem">🏘️</div>
+        <h2 style="text-align:center;color:#7fe0a8;margin:6px 0 4px">联机 · 休息篝火</h2>
+        <div style="text-align:center;color:rgba(255,255,255,0.55);font-size:0.9rem;margin-bottom:18px">双方各自选择，不互相干扰；都做完后进入下一个节点。</div>
+        <div style="display:flex;gap:14px;justify-content:center;margin-bottom:16px">
+          <div style="flex:1;max-width:260px;padding:10px;background:rgba(127,224,168,0.08);border:1.5px solid rgba(127,224,168,0.45);border-radius:12px;text-align:center">
+            <div style="font-size:1.4rem">${hChar.emoji||'?'} 🏠 房主</div>
+            <div style="font-size:0.85rem;color:rgba(255,255,255,0.6)">${run.hostHp}/${run.hostMaxHp} HP · 牌组 ${(run.hostDeck||[]).length}</div>
+            <div style="font-size:0.85rem;margin-top:6px;color:${run.restChoices.host?'#7fe0a8':'rgba(255,255,255,0.5)'}">${run.restChoices.host?('✓ 已完成：'+UI._coopRestLabel(run.restChoices.host)):'未选择'}</div>
+          </div>
+          <div style="flex:1;max-width:260px;padding:10px;background:rgba(80,160,255,0.08);border:1.5px solid rgba(80,160,255,0.45);border-radius:12px;text-align:center">
+            <div style="font-size:1.4rem">${gChar.emoji||'?'} 🔑 访客</div>
+            <div style="font-size:0.85rem;color:rgba(255,255,255,0.6)">${run.guestHp}/${run.guestMaxHp} HP · 牌组 ${(run.guestDeck||[]).length}</div>
+            <div style="font-size:0.85rem;margin-top:6px;color:${run.restChoices.guest?'#7fe0a8':'rgba(255,255,255,0.5)'}">${run.restChoices.guest?('✓ 已完成：'+UI._coopRestLabel(run.restChoices.guest)):'未选择'}</div>
+          </div>
+        </div>
+        <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:14px;padding:14px;text-align:center">
+          ${myDone
+            ? `<div style="font-size:0.95rem;color:#7fe0a8;margin-bottom:10px">✓ 你已选择：${UI._coopRestLabel(run.restChoices[myRole])}</div><div style="color:rgba(255,255,255,0.6);font-size:0.9rem">${oppDone?'双方都已完成':'等待对方选择…'}</div>`
+            : `<div style="margin-bottom:10px;color:#f5c518;font-weight:700">你的回合：选 1 项</div>
+               <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
+                 <button class="btn primary" id="coop-rest-heal" ${myHp>=myMaxHp?'disabled':''}>❤️ 治疗<br><small>恢复 ${healAmt} HP</small></button>
+                 <button class="btn" id="coop-rest-learn" ${myDeck.length===0?'disabled':''}>📖 升级一张牌</button>
+                 <button class="btn" id="coop-rest-skip">👣 跳过</button>
+               </div>`}
+        </div>
+        ${(myDone && oppDone && Net.isHost) ? '<div style="text-align:center;margin-top:14px"><button class="btn primary" id="coop-rest-continue" style="width:240px">前往地图 →</button></div>' : ''}
+      </div>`;
+    document.getElementById('coop-rest-heal')?.addEventListener('click', () => UI._coopSubmitRest({ type:'heal' }));
+    document.getElementById('coop-rest-skip')?.addEventListener('click', () => UI._coopSubmitRest({ type:'skip' }));
+    document.getElementById('coop-rest-learn')?.addEventListener('click', () => {
+      UI._coopShowLearnOverlay(myRole, myDeck, choice => {
+        UI._coopSubmitRest({ type:'learn', deckIndex: choice });
+      });
+    });
+    document.getElementById('coop-rest-continue')?.addEventListener('click', () => {
+      if (!Net.isHost) return;
+      // 推进到地图
+      Net.send({ t: 'coop-run-state', run: UI._coopSerializeRun() });
+      Net.send({ t: 'coop-screen', screen: 'map' });
+      State.current.screen = 'coop-map';
+      UI.coopMap();
+    });
+  },
+  _coopRestLabel(c) {
+    if (!c) return '';
+    if (c.type==='heal') return '治疗';
+    if (c.type==='learn') return '升级';
+    if (c.type==='skip') return '跳过';
+    return c.type;
+  },
+  _coopShowLearnOverlay(role, deck, onPick) {
+    const overlay = document.createElement('div');
+    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px';
+    const panel = document.createElement('div');
+    panel.style.cssText = 'background:#16213e;border:2px solid #e2b96a;border-radius:14px;padding:18px;max-width:85vw;max-height:80vh;overflow:auto';
+    panel.innerHTML = '<h3 style="margin:0 0 12px;text-align:center;color:#e2b96a">📖 选择一张牌升级</h3>';
+    const grid = document.createElement('div');
+    grid.style.cssText = 'display:flex;flex-wrap:wrap;gap:8px;justify-content:center';
+    // 用 fake-run 上下文渲染卡牌（让 renderCard 不报错）
+    const prevRun = State.current.run;
+    State.current.run = { character: { id: role==='host'?UI._coopRun?.hostCharId:UI._coopRun?.guestCharId }, deck:[], cardUpgrades:{}, relics:[], mode:'coop', combat:null };
+    try {
+      deck.forEach((cardId, i) => {
+        const def = Data.cards[cardId];
+        if (!def || def.cost === 99) return;
+        const wrap = document.createElement('div');
+        wrap.style.cssText = 'cursor:pointer';
+        try { wrap.appendChild(UI.renderCard(cardId)); } catch(e) {
+          wrap.textContent = cardId;
+        }
+        wrap.addEventListener('click', () => {
+          overlay.remove();
+          State.current.run = prevRun;
+          onPick(i);
+        });
+        grid.appendChild(wrap);
+      });
+    } finally { State.current.run = prevRun; }
+    panel.appendChild(grid);
+    const closeBtn = document.createElement('button');
+    closeBtn.className = 'btn';
+    closeBtn.style.cssText = 'margin-top:12px;width:100%';
+    closeBtn.textContent = '取消';
+    closeBtn.onclick = () => overlay.remove();
+    panel.appendChild(closeBtn);
+    overlay.appendChild(panel);
+    document.body.appendChild(overlay);
+  },
+  _coopSubmitRest(choice) {
+    const myRole = Net.isHost ? 'host' : 'guest';
+    if (Net.isHost) {
+      UI._coopApplyRest('host', choice);
+      Net.send({ t: 'coop-run-state', run: UI._coopSerializeRun() });
+      UI.coopRest();
+    } else {
+      Net.send({ t: 'coop-rest-choice', choice });
+    }
+  },
+  _coopApplyRest(role, choice) {
+    const run = UI._coopRun;
+    if (!run || !run.restChoices) return;
+    if (run.restChoices[role]) return; // 已选过
+    run.restChoices[role] = choice;
+    if (choice.type === 'heal') {
+      const maxKey = role+'MaxHp', hpKey = role+'Hp';
+      const heal = Math.floor(run[maxKey] * 0.30);
+      run[hpKey] = Math.min(run[maxKey], run[hpKey] + heal);
+    } else if (choice.type === 'learn' && typeof choice.deckIndex === 'number') {
+      const upKey = role+'Upgrades';
+      run[upKey] = run[upKey] || {};
+      run[upKey][choice.deckIndex] = (run[upKey][choice.deckIndex] || 0) + 1;
+    }
+  },
+
+  // ── 合作 · 商店 ──
+  coopShop() {
+    const run = UI._coopRun || UI._coopRunGuest;
+    if (!run) { State.go('coop-lobby'); return; }
+    const app = UI.app();
+    app.style.overflowY = 'auto';
+    const myRole = Net.isHost ? 'host' : 'guest';
+    const oppRole = myRole==='host'?'guest':'host';
+    const inv = run.shopInv || [];
+    const sold = run.shopSold || {};
+    const left = run.shopLeft || { host:false, guest:false };
+    const hChar = Data.characters.find(c => c.id === run.hostCharId) || {};
+    const gChar = Data.characters.find(c => c.id === run.guestCharId) || {};
+
+    let cardsHtml = '<div style="display:flex;flex-wrap:wrap;gap:14px;justify-content:center"></div>';
+    app.innerHTML = `
+      <div style="min-height:100vh;background:var(--bg,#0c0c1a);padding:18px;color:#fff;font-family:var(--font);max-width:920px;margin:0 auto;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+          <div style="font-size:1.4rem;font-weight:800;color:#ffd060">🏪 好奇小卖部（联机）</div>
+          <div style="font-size:1.05rem;color:#f5c518;font-weight:800">💰 ${run.gold||0}（共享）</div>
+        </div>
+        <div style="font-size:0.9rem;color:rgba(255,255,255,0.6);margin-bottom:14px">每张卡只能由对应角色购买。两人都点「离开」才能进入下一个节点。</div>
+        <div id="coop-shop-cards" style="display:flex;flex-wrap:wrap;gap:14px;justify-content:center;margin-bottom:14px"></div>
+        <div style="display:flex;gap:14px;justify-content:center;margin-top:8px;flex-wrap:wrap">
+          <div style="padding:8px 14px;background:rgba(127,224,168,0.08);border:1.5px solid rgba(127,224,168,0.45);border-radius:12px;text-align:center">
+            <div>${hChar.emoji||'?'} 🏠 房主 · 牌组 ${(run.hostDeck||[]).length}</div>
+            <div style="color:${left.host?'#7fe0a8':'rgba(255,255,255,0.55)'};font-size:0.88rem">${left.host?'✓ 已离开':'购物中…'}</div>
+          </div>
+          <div style="padding:8px 14px;background:rgba(80,160,255,0.08);border:1.5px solid rgba(80,160,255,0.45);border-radius:12px;text-align:center">
+            <div>${gChar.emoji||'?'} 🔑 访客 · 牌组 ${(run.guestDeck||[]).length}</div>
+            <div style="color:${left.guest?'#7fe0a8':'rgba(255,255,255,0.55)'};font-size:0.88rem">${left.guest?'✓ 已离开':'购物中…'}</div>
+          </div>
+        </div>
+        <div style="text-align:center;margin-top:16px">
+          ${left[myRole] ? '<div style="color:#7fe0a8">✓ 你已离开，等待对方…</div>' : `<button class="btn" id="coop-shop-leave" style="width:200px">👣 离开商店</button>`}
+          ${(left.host && left.guest && Net.isHost) ? '<button class="btn primary" id="coop-shop-continue" style="margin-left:10px;width:200px">前往地图 →</button>' : ''}
+        </div>
+      </div>`;
+
+    const grid = document.getElementById('coop-shop-cards');
+    const prevRun = State.current.run;
+    inv.forEach((item, idx) => {
+      const isSold = !!sold[idx];
+      const buyerRole = item.role; // 只能 host 或 guest 角色对应购买
+      const canBuy = !isSold && (buyerRole === myRole) && (run.gold||0) >= item.price;
+      const isMine = buyerRole === myRole;
+      const wrap = document.createElement('div');
+      wrap.style.cssText = `display:flex;flex-direction:column;align-items:center;gap:4px;opacity:${isSold?'0.4':'1'};border:2px solid ${isMine?(canBuy?'#7fe0a8':'rgba(127,224,168,0.3)'):'rgba(255,255,255,0.15)'};border-radius:12px;padding:8px;background:rgba(255,255,255,0.03);`;
+      // 渲染卡牌（用对应角色 fake-run 上下文）
+      State.current.run = { character: { id: buyerRole==='host'?run.hostCharId:run.guestCharId }, deck:[], cardUpgrades:{}, relics:[], mode:'coop', combat:null };
+      try {
+        const cardEl = UI.renderCard(item.id);
+        wrap.appendChild(cardEl);
+      } catch(e) {
+        const fb = document.createElement('div'); fb.textContent = item.id; wrap.appendChild(fb);
+      } finally { State.current.run = prevRun; }
+      const label = document.createElement('div');
+      label.style.cssText = `font-size:0.75rem;font-weight:700;color:${buyerRole==='host'?'#7fe0a8':'#5dade2'}`;
+      label.textContent = buyerRole==='host'?'🏠 房主专属':'🔑 访客专属';
+      wrap.appendChild(label);
+      const price = document.createElement('div');
+      price.style.cssText = `font-weight:800;color:${isSold?'rgba(255,255,255,0.5)':((run.gold||0)>=item.price?'#f5c518':'#ff7d7d')}`;
+      price.textContent = isSold ? `✅ 已被 ${sold[idx]==='host'?'🏠':'🔑'} 买走` : `💰 ${item.price}`;
+      wrap.appendChild(price);
+      if (canBuy) {
+        const btn = document.createElement('button');
+        btn.className = 'btn';
+        btn.style.cssText = 'padding:4px 14px;font-size:0.88rem';
+        btn.textContent = '购买';
+        btn.onclick = () => UI._coopShopBuy(idx);
+        wrap.appendChild(btn);
+      }
+      grid.appendChild(wrap);
+    });
+
+    document.getElementById('coop-shop-leave')?.addEventListener('click', () => UI._coopShopLeave());
+    document.getElementById('coop-shop-continue')?.addEventListener('click', () => {
+      if (!Net.isHost) return;
+      Net.send({ t: 'coop-run-state', run: UI._coopSerializeRun() });
+      Net.send({ t: 'coop-screen', screen: 'map' });
+      State.current.screen = 'coop-map';
+      UI.coopMap();
+    });
+  },
+  _coopShopBuy(idx) {
+    const myRole = Net.isHost ? 'host' : 'guest';
+    if (Net.isHost) {
+      UI._coopApplyShopBuy('host', idx);
+      Net.send({ t: 'coop-run-state', run: UI._coopSerializeRun() });
+      UI.coopShop();
+    } else {
+      Net.send({ t: 'coop-shop-buy', idx });
+    }
+  },
+  _coopApplyShopBuy(role, idx) {
+    const run = UI._coopRun;
+    if (!run) return;
+    const item = (run.shopInv||[])[idx];
+    if (!item || (run.shopSold||{})[idx]) return;
+    if (item.role !== role) return;
+    if ((run.gold||0) < item.price) return;
+    run.gold -= item.price;
+    run.shopSold = run.shopSold || {};
+    run.shopSold[idx] = role;
+    if (role === 'host') (run.hostDeck = run.hostDeck || []).push(item.id);
+    else (run.guestDeck = run.guestDeck || []).push(item.id);
+  },
+  _coopShopLeave() {
+    const myRole = Net.isHost ? 'host' : 'guest';
+    if (Net.isHost) {
+      UI._coopApplyShopLeave('host');
+      Net.send({ t: 'coop-run-state', run: UI._coopSerializeRun() });
+      UI.coopShop();
+    } else {
+      Net.send({ t: 'coop-shop-leave' });
+    }
+  },
+  _coopApplyShopLeave(role) {
+    const run = UI._coopRun;
+    if (!run) return;
+    run.shopLeft = run.shopLeft || { host:false, guest:false };
+    run.shopLeft[role] = true;
+  },
+
+  // ── 合作 · 问号事件 ──
+  coopQuestion() {
+    const run = UI._coopRun || UI._coopRunGuest;
+    if (!run) { State.go('coop-lobby'); return; }
+    const app = UI.app();
+    const evt = (Data.questionEvents || []).find(e => e.id === run.questionEventId) || (Data.questionEvents||[])[0];
+    if (!evt) { State.go('coop-map'); return; }
+    const isHost = Net.isHost;
+    const hChar = Data.characters.find(c => c.id === run.hostCharId) || {};
+    const gChar = Data.characters.find(c => c.id === run.guestCharId) || {};
+    const result = run.questionResult;
+    const optsHtml = (evt.options || []).map((opt, i) => {
+      const disabled = !isHost || result;
+      return `<button data-opt-i="${i}" class="coop-q-opt" ${disabled?'disabled':''} style="width:100%;padding:12px;background:#0f3460;color:#e2b96a;border:1.5px solid #e2b96a;border-radius:8px;font-size:1rem;cursor:${disabled?'default':'pointer'};opacity:${disabled?0.55:1};margin-bottom:8px;text-align:left;">
+        <div style="font-weight:700">${opt.label}</div>
+        ${opt.tooltip?`<div style="font-size:0.8rem;color:rgba(226,185,106,0.7);margin-top:4px;white-space:pre-line">${opt.tooltip}</div>`:''}
+      </button>`;
+    }).join('');
+    const resultHtml = result
+      ? `<div style="margin-top:14px;padding:12px;border-radius:10px;background:${result.type==='good'?'#1a4a1a':'#4a1a1a'};border:1.5px solid ${result.type==='good'?'#4caf50':'#f44336'};color:${result.type==='good'?'#81c784':'#ef9a9a'};text-align:center">${result.msg}</div>`
+      : '';
+    const contBtn = (result && isHost) ? '<button id="coop-q-continue" class="btn primary" style="margin-top:14px;width:240px">继续旅程 →</button>' : '';
+    app.innerHTML = `
+      <div style="min-height:100vh;background:#1a1a2e;padding:24px;color:#fff;font-family:var(--font)">
+        <div style="max-width:520px;margin:0 auto;background:#16213e;border:2px solid #e2b96a;border-radius:16px;padding:24px">
+          <div style="text-align:center;font-size:2.4rem;margin-bottom:8px">${evt.img?`<img src="${evt.img}" style="width:100px;height:100px;object-fit:contain;border-radius:12px">`:'❓'}</div>
+          <h2 style="color:#e2b96a;text-align:center;margin:0 0 12px">${evt.title}</h2>
+          <p style="color:#ccc;line-height:1.7;margin:0 0 16px;text-align:center">${evt.desc}</p>
+          <div style="display:flex;gap:10px;justify-content:center;margin-bottom:14px;font-size:0.85rem">
+            <span>${hChar.emoji||'?'} 🏠 ${run.hostHp}/${run.hostMaxHp}</span>
+            <span style="color:#f5c518">💰 ${run.gold||0}</span>
+            <span>${gChar.emoji||'?'} 🔑 ${run.guestHp}/${run.guestMaxHp}</span>
+          </div>
+          <div style="font-size:0.85rem;color:rgba(255,255,255,0.5);text-align:center;margin-bottom:10px">${isHost?'你（房主）来决定':'等待房主决定…'}</div>
+          ${optsHtml}
+          ${resultHtml}
+          <div style="text-align:center">${contBtn}</div>
+        </div>
+      </div>`;
+    document.querySelectorAll('.coop-q-opt').forEach(btn => {
+      btn.addEventListener('click', () => {
+        if (!Net.isHost) return;
+        const i = parseInt(btn.dataset.optI);
+        UI._coopResolveQuestion(i);
+      });
+    });
+    document.getElementById('coop-q-continue')?.addEventListener('click', () => {
+      if (!Net.isHost) return;
+      // 清理事件状态
+      UI._coopRun.questionEventId = null;
+      UI._coopRun.questionResult = null;
+      Net.send({ t: 'coop-run-state', run: UI._coopSerializeRun() });
+      Net.send({ t: 'coop-screen', screen: 'map' });
+      State.current.screen = 'coop-map';
+      UI.coopMap();
+    });
+  },
+  _coopResolveQuestion(optIdx) {
+    if (!Net.isHost) return;
+    const run = UI._coopRun;
+    if (!run) return;
+    const evt = (Data.questionEvents || []).find(e => e.id === run.questionEventId);
+    if (!evt || !evt.options || !evt.options[optIdx]) return;
+    // 构造一个 shim run，把效果分摊到双方
+    const shim = UI._coopMakeQuestionShim(run);
+    let result;
+    try {
+      result = evt.options[optIdx].resolve(shim, UI);
+    } catch(e) {
+      console.warn('coop question resolve failed', e);
+      result = { type:'bad', msg:'事件解析失败（已跳过）' };
+    }
+    if (result === null) {
+      // 异步事件不支持联机版，给个兜底
+      result = { type:'good', msg:'事件已完成' };
+    }
+    UI._coopApplyQuestionShim(run, shim);
+    run.questionResult = result;
+    run.questionResolvedBy = 'host';
+    Net.send({ t: 'coop-run-state', run: UI._coopSerializeRun() });
+    UI.coopQuestion();
+  },
+  // 构造一个伪 run 对象（character / gold / relics / potions / deck），事件执行后把变化回写
+  _coopMakeQuestionShim(run) {
+    // 用房主作为主角承担 hp / maxHp 改动（最简化方案）
+    return {
+      character: {
+        id: run.hostCharId,
+        hp: run.hostHp,
+        maxHp: run.hostMaxHp,
+      },
+      gold: run.gold || 0,
+      relics: [...(run.sharedRelics||[])],
+      potions: [...(run.potions||[null,null,null])],
+      deck: [...(run.hostDeck||[])],
+      cardUpgrades: {},
+    };
+  },
+  _coopApplyQuestionShim(run, shim) {
+    run.hostHp = Math.max(0, Math.min(shim.character.maxHp, shim.character.hp));
+    run.hostMaxHp = shim.character.maxHp;
+    // maxHp 缩水时同步访客 hp
+    if (run.hostHp > run.hostMaxHp) run.hostHp = run.hostMaxHp;
+    run.gold = Math.max(0, shim.gold);
+    run.sharedRelics = shim.relics || [];
+    run.potions = shim.potions || [null,null,null];
+    run.hostDeck = shim.deck || [];
   },
 
   // 多幕推进（Boss 后自动）
@@ -8612,6 +9073,9 @@ window.addEventListener('DOMContentLoaded', () => {
     'menu':        () => UI.menu(),
     'coop-lobby':  () => UI.coopLobby(),
     'coop-map':    () => UI.coopMap(),
+    'coop-rest':   () => UI.coopRest(),
+    'coop-shop':   () => UI.coopShop(),
+    'coop-question': () => UI.coopQuestion(),
     'char-select': () => UI.characterSelect(),
     'map':         () => UI.map(),
     'combat':      () => UI.combat(),
