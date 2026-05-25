@@ -9064,9 +9064,14 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
     const contBtn = (result && isHost) ? '<button id="coop-q-continue" class="btn primary" style="margin-top:14px;width:240px">继续旅程 →</button>' : '';
 
     // 状态提示
+    const isMapChanging = UI._COOP_MAP_CHANGING_EVENTS && UI._COOP_MAP_CHANGING_EVENTS.has(evt.id);
     let statusLine;
     if (result) statusLine = '';
-    else if (myVote == null) statusLine = '请选择你的选项（高风险选项需要<b>双方都选才执行</b>，否则默认走"安全选项"）';
+    else if (myVote == null) {
+      statusLine = isMapChanging
+        ? '⚠️ 本事件涉及地图进度，需要<b>双方都同意才能执行风险项</b>，否则走"安全选项"'
+        : '各人独立选择，互不干扰（你的选择只影响你自己）';
+    }
     else if (oppVote == null) statusLine = `你已选 #${myVote+1}，等待对方选择…`;
     else statusLine = '双方均已投票，结算中…';
 
@@ -9123,7 +9128,14 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
     }
   },
 
+  // 改地图状态的事件 id 集合（这类事件必须双方同意才执行风险项，否则走安全项）
+  // 因为如果只有一人跳关、地图进度就会错位
+  _COOP_MAP_CHANGING_EVENTS: new Set(['datou_drive']),
+
   // 房主端尝试聚合投票，若双方都投了则执行
+  // 规则：
+  //   - 大头跳关等改地图事件：双方投同项才执行；不同则走 index 大的"安全"项
+  //   - 其他事件：双方各自独立结算自己的选项（影响各自的 hp/relics/deck），共享资源（金币/药水）顺序应用
   _coopTryResolveQuestion() {
     if (!Net.isHost) return;
     const run = UI._coopRun;
@@ -9133,31 +9145,104 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
     if (run.questionResult) return; // 已结算过
     const evt = (Data.questionEvents || []).find(e => e.id === run.questionEventId);
     if (!evt || !evt.options) return;
-    // 规则：双方投同一项 → 执行该项；不同 → 执行 index 较大的（通常是"婉拒/安全"选项）
-    let chosenIdx;
-    if (v.host === v.guest) chosenIdx = v.host;
-    else chosenIdx = Math.max(v.host, v.guest);
-    if (!evt.options[chosenIdx]) chosenIdx = 0;
-    const shim = UI._coopMakeQuestionShim(run);
+
+    const isMapChanging = UI._COOP_MAP_CHANGING_EVENTS.has(evt.id);
+
     let result;
-    try {
-      result = evt.options[chosenIdx].resolve(shim, UI);
-    } catch(e) {
-      console.warn('coop question resolve failed', e);
-      result = { type:'bad', msg:'事件解析失败（已跳过）' };
+    if (isMapChanging) {
+      // 改地图事件：必须双方同意才能执行风险项
+      let chosenIdx;
+      if (v.host === v.guest) chosenIdx = v.host;
+      else chosenIdx = Math.max(v.host, v.guest); // 投不同 → 走"安全"选项
+      if (!evt.options[chosenIdx]) chosenIdx = 0;
+      const shim = UI._coopMakeQuestionShim(run);
+      let r;
+      try { r = evt.options[chosenIdx].resolve(shim, UI); }
+      catch(e) { console.warn(e); r = { type:'bad', msg:'事件解析失败（已跳过）' }; }
+      if (r === null) r = { type:'good', msg:'事件已完成' };
+      UI._coopApplyQuestionShim(run, shim);
+      if (v.host !== v.guest) {
+        r = { ...r, msg: `🤝 双方投票不一致（${v.host+1} vs ${v.guest+1}）→ 走"${evt.options[chosenIdx].label}"\n` + r.msg };
+      }
+      result = r;
+    } else {
+      // 普通事件：双方各自独立结算
+      // host shim：用 host 个人字段 + 共享金币/药水
+      const hostShim = UI._coopMakeHostShim(run);
+      let hostRes;
+      try { hostRes = evt.options[v.host].resolve(hostShim, UI); }
+      catch(e) { console.warn('host resolve', e); hostRes = { type:'bad', msg:'解析失败' }; }
+      if (hostRes === null) hostRes = { type:'good', msg:'已完成' };
+      // 把 host shim 的变化写回（共享字段会同步进 run.gold / run.sharedPotions）
+      UI._coopApplyHostShim(run, hostShim);
+
+      // guest shim：使用更新后的共享资源（gold/potions），加 guest 个人字段
+      const guestShim = UI._coopMakeGuestShim(run);
+      let guestRes;
+      try { guestRes = evt.options[v.guest].resolve(guestShim, UI); }
+      catch(e) { console.warn('guest resolve', e); guestRes = { type:'bad', msg:'解析失败' }; }
+      if (guestRes === null) guestRes = { type:'good', msg:'已完成' };
+      UI._coopApplyGuestShim(run, guestShim);
+
+      // 合并结果文本：双方独立显示
+      const hostOptName = evt.options[v.host].label;
+      const guestOptName = evt.options[v.guest].label;
+      const same = v.host === v.guest;
+      const mergedMsg = same
+        ? `🤝 双方都选了「${hostOptName}」\n\n🏠 ${hostRes.msg}\n🔑 ${guestRes.msg}`
+        : `🤝 双方独立选择：\n🏠 选「${hostOptName}」→ ${hostRes.msg}\n🔑 选「${guestOptName}」→ ${guestRes.msg}`;
+      // type：双方都 good 才 good，否则 mixed
+      const type = (hostRes.type === 'good' && guestRes.type === 'good') ? 'good' : 'bad';
+      result = { type, msg: mergedMsg };
     }
-    if (result === null) result = { type:'good', msg:'事件已完成' };
-    // 如果双方投了不同选项，在 msg 前加一段标注
-    if (v.host !== v.guest) {
-      result = { ...result, msg: `🤝 双方投票不一致（${v.host+1} vs ${v.guest+1}），默认选「${evt.options[chosenIdx].label}」\n` + result.msg };
-    }
-    UI._coopApplyQuestionShim(run, shim);
+
     run.questionResult = result;
     run.questionResolvedBy = 'consensus';
   },
+
+  // host 专属 shim（仅用于非改地图事件的独立结算）
+  _coopMakeHostShim(run) {
+    return {
+      character: { id: run.hostCharId, hp: run.hostHp, maxHp: run.hostMaxHp },
+      gold: run.gold || 0,
+      relics: [...(run.hostRelics||[])],
+      potions: [...(run.sharedPotions||[null,null,null,null,null,null])],
+      deck: [...(run.hostDeck||[])],
+      cardUpgrades: {},
+      // map 字段在地图事件 shim 才提供
+    };
+  },
+  _coopApplyHostShim(run, shim) {
+    run.hostMaxHp = shim.character.maxHp;
+    run.hostHp = Math.max(0, Math.min(run.hostMaxHp, shim.character.hp));
+    run.gold = Math.max(0, shim.gold);
+    run.hostRelics = shim.relics || [];
+    const np = shim.potions || [];
+    run.sharedPotions = [0,1,2,3,4,5].map(i => np[i] || null);
+    run.hostDeck = shim.deck || [];
+  },
+  _coopMakeGuestShim(run) {
+    return {
+      character: { id: run.guestCharId, hp: run.guestHp, maxHp: run.guestMaxHp },
+      gold: run.gold || 0,
+      relics: [...(run.guestRelics||[])],
+      potions: [...(run.sharedPotions||[null,null,null,null,null,null])],
+      deck: [...(run.guestDeck||[])],
+      cardUpgrades: {},
+    };
+  },
+  _coopApplyGuestShim(run, shim) {
+    run.guestMaxHp = shim.character.maxHp;
+    run.guestHp = Math.max(0, Math.min(run.guestMaxHp, shim.character.hp));
+    run.gold = Math.max(0, shim.gold);
+    run.guestRelics = shim.relics || [];
+    const np = shim.potions || [];
+    run.sharedPotions = [0,1,2,3,4,5].map(i => np[i] || null);
+    run.guestDeck = shim.deck || [];
+  },
   // 构造一个伪 run 对象（character / gold / relics / potions / deck），事件执行后把变化回写
+  // 改地图事件用的 shim：包含 map / currentNodeId / travelEdges（这些是引用，会被直接修改）
   _coopMakeQuestionShim(run) {
-    // 房主是事件选择者，事件效果作用于房主个人资源（杀戮尖塔联机标准）
     return {
       character: {
         id: run.hostCharId,
@@ -9169,6 +9254,10 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
       potions: [...(run.sharedPotions||[null,null,null,null,null,null])],
       deck: [...(run.hostDeck||[])],
       cardUpgrades: {},
+      // 地图引用 — 跳关事件会写 currentNodeId / travelEdges / done
+      map: run.map,
+      currentNodeId: run.currentNodeId,
+      travelEdges: run.travelEdges,
     };
   },
   _coopApplyQuestionShim(run, shim) {
@@ -9177,10 +9266,13 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
     if (run.hostHp > run.hostMaxHp) run.hostHp = run.hostMaxHp;
     run.gold = Math.max(0, shim.gold);
     run.hostRelics = shim.relics || [];
-    // 药水池可能因事件变化（添加 / 消耗），但保持 6 槽
     const np = shim.potions || [];
     run.sharedPotions = [0,1,2,3,4,5].map(i => np[i] || null);
     run.hostDeck = shim.deck || [];
+    // 地图状态：跳关 / 移动会通过 shim 直接修改了 run.map 的节点（done 标记），
+    // 但 currentNodeId / travelEdges 是 shim 上的值，需要写回 run
+    if (shim.currentNodeId != null) run.currentNodeId = shim.currentNodeId;
+    if (shim.travelEdges) run.travelEdges = shim.travelEdges;
   },
 
   // 多幕推进（Boss 后自动）
