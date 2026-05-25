@@ -8139,6 +8139,20 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
         </div>`;
       }
 
+      // 个人遗物（仅对自己生效）
+      const myRelics = (UI._coopRun && Array.isArray(UI._coopRun[role+'Relics'])) ? UI._coopRun[role+'Relics'] : [];
+      const relicsHtml = myRelics.length > 0
+        ? `<div style="display:flex;gap:3px;flex-wrap:wrap;justify-content:center;margin-top:3px">
+            ${myRelics.map(rid => {
+              const r = Data.relics && Data.relics[rid];
+              const emoji = r?.emoji || '🔮';
+              const name = r?.name || rid;
+              return `<span title="${name}" style="font-size:0.95rem;cursor:help;background:rgba(245,197,24,0.12);border:1px solid rgba(245,197,24,0.4);border-radius:5px;padding:0 4px">${emoji}</span>`;
+            }).join('')}
+          </div>` : '';
+      // 个人金币
+      const myGold = UI._coopRun ? (UI._coopRun[role+'Gold']||0) : 0;
+
       return `<div class="player-area coop-player-area" style="flex:1;padding:12px 10px;background:${bg};border:${ring};border-radius:14px;text-align:center;position:relative;display:flex;flex-direction:column;align-items:center;gap:6px;${dead?'opacity:0.55;':''}">
         ${ended && !dead ? `<div style="position:absolute;top:6px;right:8px;font-size:0.7rem;font-weight:800;color:#7fe0a8;background:rgba(127,224,168,0.18);border:1px solid rgba(127,224,168,0.5);border-radius:6px;padding:1px 6px">已结束 ✓</div>` : ''}
         ${dead ? `<div style="position:absolute;top:6px;right:8px;font-size:0.7rem;font-weight:800;color:#ff9b8f">已阵亡</div>` : ''}
@@ -8151,7 +8165,9 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
         <div style="display:flex;justify-content:center;gap:10px;font-size:0.82rem;margin-top:2px">
           <span style="color:#f5c518;font-weight:800">⚡ ${ended?0:energy}/${maxEnergy}</span>
           <span style="color:rgba(255,255,255,0.6)">🂠 ${handCount}</span>
+          <span style="color:#ffd060;font-weight:700">💰 ${myGold}</span>
         </div>
+        ${relicsHtml}
         ${racerHud}${archerHud}
       </div>`;
     }
@@ -8194,32 +8210,18 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
       ? `<div style="background:rgba(168,90,255,0.18);border:1.5px solid rgba(168,90,255,0.55);border-radius:10px;padding:8px 14px;text-align:center;color:#d8b8ff;font-weight:700">${pi.label||'对方正在操作…'} — ${pi.who==='host'?'🏠 房主':'🔑 访客'} 操作中，请等待…</div>`
       : '';
 
-    // 共享遗物栏（从 _coopRun.sharedRelics 读取）
-    const sharedRelics = (UI._coopRun && Array.isArray(UI._coopRun.sharedRelics)) ? UI._coopRun.sharedRelics : [];
-    const relicBarHtml = sharedRelics.length > 0
-      ? `<div style="display:flex;gap:4px;align-items:center;flex-wrap:wrap;max-width:280px">
-          <span style="font-size:0.75rem;color:rgba(255,255,255,0.5);font-weight:700">遗物</span>
-          ${sharedRelics.map(rid => {
-            const r = Data.relics && Data.relics[rid];
-            const emoji = r?.emoji || '🔮';
-            const name = r?.name || rid;
-            return `<span title="${name}${r?.description?': '+r.description.replace(/"/g,''):''}" style="font-size:1.05rem;cursor:help;background:rgba(245,197,24,0.12);border:1px solid rgba(245,197,24,0.4);border-radius:6px;padding:1px 6px">${emoji}</span>`;
-          }).join('')}
-        </div>` : '';
-
-    // 共享药水栏（从 _coopRun.sharedPotions 读取）
-    const sharedPotions = (UI._coopRun && Array.isArray(UI._coopRun.sharedPotions)) ? UI._coopRun.sharedPotions : [];
-    const potionBarHtml = sharedPotions.filter(p=>p).length > 0
-      ? `<div style="display:flex;gap:4px;align-items:center">
-          <span style="font-size:0.75rem;color:rgba(255,255,255,0.5);font-weight:700">药水</span>
-          ${sharedPotions.map((pid, i) => {
-            if (!pid) return `<span style="width:22px;height:22px;border:1px dashed rgba(255,255,255,0.15);border-radius:50%;display:inline-block"></span>`;
-            const pdef = Data.potions && Data.potions[pid];
-            const emoji = pdef?.emoji || '🧪';
-            const name = pdef?.name || pid;
-            return `<span title="${name}" style="font-size:1.1rem;cursor:help;background:rgba(127,224,168,0.12);border:1px solid rgba(127,224,168,0.4);border-radius:50%;padding:1px 4px">${emoji}</span>`;
-          }).join('')}
-        </div>` : '';
+    // 共享药水栏（双方共用，从 _coopRun.sharedPotions 读取）
+    const sharedPotions = (UI._coopRun && Array.isArray(UI._coopRun.sharedPotions)) ? UI._coopRun.sharedPotions : [null,null,null];
+    const sharedPotionBarHtml = `<div style="display:flex;gap:4px;align-items:center">
+        <span style="font-size:0.75rem;color:rgba(255,255,255,0.5);font-weight:700">药水（共享）</span>
+        ${sharedPotions.map((pid, i) => {
+          if (!pid) return `<span style="width:22px;height:22px;border:1px dashed rgba(255,255,255,0.15);border-radius:50%;display:inline-block"></span>`;
+          const pdef = Data.potions && Data.potions[pid];
+          const emoji = pdef?.emoji || '🧪';
+          const name = pdef?.name || pid;
+          return `<span title="${name}" style="font-size:1.15rem;cursor:help;background:rgba(127,224,168,0.15);border:1px solid rgba(127,224,168,0.45);border-radius:50%;padding:1px 5px">${emoji}</span>`;
+        }).join('')}
+      </div>`;
 
     app.innerHTML = `
       <div class="combat-screen">
@@ -8227,7 +8229,7 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
           <div style="display:flex;align-items:center;gap:10px;flex:1;flex-wrap:wrap">
             <span style="font-size:1.1rem;font-weight:800;color:#7fe0a8">🤝 联机合作</span>
             <span style="font-size:0.9rem;color:rgba(255,255,255,0.6)">第 ${coopCs.turn} 回合</span>
-            ${relicBarHtml}${potionBarHtml}
+            ${sharedPotionBarHtml}
           </div>
           <div style="display:flex;align-items:center;gap:6px">
             <span style="font-size:0.9rem;color:#f9ca24;font-weight:700">${phaseLabel}</span>
@@ -8508,12 +8510,15 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
       guestUpgrades: {},
       hostHp: hChar.hp, hostMaxHp: hChar.maxHp,
       guestHp: gChar.hp, guestMaxHp: gChar.maxHp,
-      sharedRelics: [],   // 共享遗物
-      potions: [null,null,null], // 共享药水
+      // 个人遗物（杀戮尖塔联机标准：每人独立持有，只对自己生效）
+      hostRelics: [], guestRelics: [],
+      // 共享药水池（双方共用 3 个槽位）
+      sharedPotions: [null,null,null],
+      // 个人金币（杀戮尖塔联机标准：各人独立）
+      hostGold: 0, guestGold: 0,
       map,
       currentNodeId: startNode ? startNode.id : null,
       act: 1,
-      gold: 0,
     };
     return UI._coopRun;
   },
@@ -8707,7 +8712,7 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
     } else if (node.type === 'question' || node.type === 'event') {
       // 问号事件：房主操作，访客只读
       const pool = (Data.questionEvents || []).filter(e => {
-        if (e.relicId && (UI._coopRun.sharedRelics||[]).includes(e.relicId)) return false;
+        if (e.relicId && ((UI._coopRun.hostRelics||[]).includes(e.relicId) || (UI._coopRun.guestRelics||[]).includes(e.relicId))) return false;
         return true;
       });
       const evt = pool.length ? pool[Math.floor(Math.random()*pool.length)] : (Data.questionEvents||[])[0];
@@ -8900,22 +8905,23 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
     const hChar = Data.characters.find(c => c.id === run.hostCharId) || {};
     const gChar = Data.characters.find(c => c.id === run.guestCharId) || {};
 
+    const myGold = run[myRole+'Gold'] || 0;
     let cardsHtml = '<div style="display:flex;flex-wrap:wrap;gap:14px;justify-content:center"></div>';
     app.innerHTML = `
       <div style="min-height:100vh;background:var(--bg,#0c0c1a);padding:18px;color:#fff;font-family:var(--font);max-width:920px;margin:0 auto;">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
           <div style="font-size:1.4rem;font-weight:800;color:#ffd060">🏪 好奇小卖部（联机）</div>
-          <div style="font-size:1.05rem;color:#f5c518;font-weight:800">💰 ${run.gold||0}（共享）</div>
+          <div style="font-size:1.05rem;color:#f5c518;font-weight:800">💰 你的金币 ${myGold}</div>
         </div>
-        <div style="font-size:0.9rem;color:rgba(255,255,255,0.6);margin-bottom:14px">每张卡只能由对应角色购买。两人都点「离开」才能进入下一个节点。</div>
+        <div style="font-size:0.9rem;color:rgba(255,255,255,0.6);margin-bottom:14px">每张卡只能由对应角色用自己的金币购买。两人都点「离开」才能进入下一个节点。</div>
         <div id="coop-shop-cards" style="display:flex;flex-wrap:wrap;gap:14px;justify-content:center;margin-bottom:14px"></div>
         <div style="display:flex;gap:14px;justify-content:center;margin-top:8px;flex-wrap:wrap">
           <div style="padding:8px 14px;background:rgba(127,224,168,0.08);border:1.5px solid rgba(127,224,168,0.45);border-radius:12px;text-align:center">
-            <div>${hChar.emoji||'?'} 🏠 房主 · 牌组 ${(run.hostDeck||[]).length}</div>
+            <div>${hChar.emoji||'?'} 🏠 房主 · 牌组 ${(run.hostDeck||[]).length} · 💰${run.hostGold||0}</div>
             <div style="color:${left.host?'#7fe0a8':'rgba(255,255,255,0.55)'};font-size:0.88rem">${left.host?'✓ 已离开':'购物中…'}</div>
           </div>
           <div style="padding:8px 14px;background:rgba(80,160,255,0.08);border:1.5px solid rgba(80,160,255,0.45);border-radius:12px;text-align:center">
-            <div>${gChar.emoji||'?'} 🔑 访客 · 牌组 ${(run.guestDeck||[]).length}</div>
+            <div>${gChar.emoji||'?'} 🔑 访客 · 牌组 ${(run.guestDeck||[]).length} · 💰${run.guestGold||0}</div>
             <div style="color:${left.guest?'#7fe0a8':'rgba(255,255,255,0.55)'};font-size:0.88rem">${left.guest?'✓ 已离开':'购物中…'}</div>
           </div>
         </div>
@@ -8930,7 +8936,7 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
     inv.forEach((item, idx) => {
       const isSold = !!sold[idx];
       const buyerRole = item.role; // 只能 host 或 guest 角色对应购买
-      const canBuy = !isSold && (buyerRole === myRole) && (run.gold||0) >= item.price;
+      const canBuy = !isSold && (buyerRole === myRole) && (run[myRole+'Gold']||0) >= item.price;
       const isMine = buyerRole === myRole;
       const wrap = document.createElement('div');
       wrap.style.cssText = `display:flex;flex-direction:column;align-items:center;gap:4px;opacity:${isSold?'0.4':'1'};border:2px solid ${isMine?(canBuy?'#7fe0a8':'rgba(127,224,168,0.3)'):'rgba(255,255,255,0.15)'};border-radius:12px;padding:8px;background:rgba(255,255,255,0.03);`;
@@ -8947,7 +8953,7 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
       label.textContent = buyerRole==='host'?'🏠 房主专属':'🔑 访客专属';
       wrap.appendChild(label);
       const price = document.createElement('div');
-      price.style.cssText = `font-weight:800;color:${isSold?'rgba(255,255,255,0.5)':((run.gold||0)>=item.price?'#f5c518':'#ff7d7d')}`;
+      price.style.cssText = `font-weight:800;color:${isSold?'rgba(255,255,255,0.5)':((run[buyerRole+'Gold']||0)>=item.price?'#f5c518':'#ff7d7d')}`;
       price.textContent = isSold ? `✅ 已被 ${sold[idx]==='host'?'🏠':'🔑'} 买走` : `💰 ${item.price}`;
       wrap.appendChild(price);
       if (canBuy) {
@@ -8986,8 +8992,9 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
     const item = (run.shopInv||[])[idx];
     if (!item || (run.shopSold||{})[idx]) return;
     if (item.role !== role) return;
-    if ((run.gold||0) < item.price) return;
-    run.gold -= item.price;
+    const goldKey = role + 'Gold';
+    if ((run[goldKey]||0) < item.price) return;
+    run[goldKey] -= item.price;
     run.shopSold = run.shopSold || {};
     run.shopSold[idx] = role;
     if (role === 'host') (run.hostDeck = run.hostDeck || []).push(item.id);
@@ -9039,9 +9046,8 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
           <h2 style="color:#e2b96a;text-align:center;margin:0 0 12px">${evt.title}</h2>
           <p style="color:#ccc;line-height:1.7;margin:0 0 16px;text-align:center">${evt.desc}</p>
           <div style="display:flex;gap:10px;justify-content:center;margin-bottom:14px;font-size:0.85rem">
-            <span>${hChar.emoji||'?'} 🏠 ${run.hostHp}/${run.hostMaxHp}</span>
-            <span style="color:#f5c518">💰 ${run.gold||0}</span>
-            <span>${gChar.emoji||'?'} 🔑 ${run.guestHp}/${run.guestMaxHp}</span>
+            <span>${hChar.emoji||'?'} 🏠 ${run.hostHp}/${run.hostMaxHp} 💰${run.hostGold||0}</span>
+            <span>${gChar.emoji||'?'} 🔑 ${run.guestHp}/${run.guestMaxHp} 💰${run.guestGold||0}</span>
           </div>
           <div style="font-size:0.85rem;color:rgba(255,255,255,0.5);text-align:center;margin-bottom:10px">${isHost?'你（房主）来决定':'等待房主决定…'}</div>
           ${optsHtml}
@@ -9094,16 +9100,16 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
   },
   // 构造一个伪 run 对象（character / gold / relics / potions / deck），事件执行后把变化回写
   _coopMakeQuestionShim(run) {
-    // 用房主作为主角承担 hp / maxHp 改动（最简化方案）
+    // 房主是事件选择者，事件效果作用于房主个人资源（杀戮尖塔联机标准）
     return {
       character: {
         id: run.hostCharId,
         hp: run.hostHp,
         maxHp: run.hostMaxHp,
       },
-      gold: run.gold || 0,
-      relics: [...(run.sharedRelics||[])],
-      potions: [...(run.potions||[null,null,null])],
+      gold: run.hostGold || 0,
+      relics: [...(run.hostRelics||[])],
+      potions: [...(run.sharedPotions||[null,null,null])],
       deck: [...(run.hostDeck||[])],
       cardUpgrades: {},
     };
@@ -9111,11 +9117,10 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
   _coopApplyQuestionShim(run, shim) {
     run.hostHp = Math.max(0, Math.min(shim.character.maxHp, shim.character.hp));
     run.hostMaxHp = shim.character.maxHp;
-    // maxHp 缩水时同步访客 hp
     if (run.hostHp > run.hostMaxHp) run.hostHp = run.hostMaxHp;
-    run.gold = Math.max(0, shim.gold);
-    run.sharedRelics = shim.relics || [];
-    run.potions = shim.potions || [null,null,null];
+    run.hostGold = Math.max(0, shim.gold);
+    run.hostRelics = shim.relics || [];
+    run.sharedPotions = shim.potions || [null,null,null];
     run.hostDeck = shim.deck || [];
   },
 
