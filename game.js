@@ -1,4 +1,4 @@
-// ── data.js ──────────────────────────────────────────────────────────────────
+﻿// ── data.js ──────────────────────────────────────────────────────────────────
 const Data = {
   characters: [
     {
@@ -46,12 +46,13 @@ const Data = {
     },
     {
       id: 'archer', name: '射手', emoji: '🏹', color: '#27ae60',
-      hp: 72, maxHp: 72, description: '蓄力型角色。打出技能牌积累蓄力，在关键时刻一击爆发。',
+      hp: 72, maxHp: 72, description: '蓄力型角色。每回合多抽 1 张牌（手牌 6 张），打出技能牌积累蓄力，在关键时刻一击爆发。',
       startingDeck: ['ar_shoot','ar_shoot','ar_shoot','ar_shoot','ar_dodge','ar_dodge','ar_dodge','ar_aim','ar_aim','ar_sprint'],
       detail: {
         gold: 85,
         playstyle: '蓄力爆发流。平时用技能牌积攒蓄力值（上限5点），攒满后用消耗蓄力的攻击牌一波输出高额伤害。格挡与蓄力往往同步增长，前期稳住防线、中期蓄势待发、关键时刻一击制敌是核心节奏。',
         mechanics: [
+          { name: '🃏 每回合多抽 1 张', desc: '射手每回合抽牌 6 张（其他角色 5 张），方便快速循环到关键蓄力/爆发牌。' },
           { name: '🏹 蓄力（Charge）', desc: '上限默认5点。打出稀有强化牌「蓄力上限」后可提升至6点。消耗全部蓄力的攻击牌：每消耗1点额外造成2~3点伤害，蓄力越满爆发越高。' },
           { name: '🛡 格挡蓄力联动', desc: '大量技能牌同时增加格挡+蓄力，打防守就等于在攒爆发，攻防一体是射手的核心优势。闪身、格挡蓄力、疾风步等都是典型例子。' },
           { name: '🎯 消耗型爆发', desc: '攻击牌打出时将蓄力清零并转化为伤害。蓄满5点后一击输出可达15~25点以上。「满蓄爆射」须满蓄才能打出，造成30点高额伤害。' },
@@ -575,7 +576,7 @@ const Data = {
     {
       id: 'iron_stomach',
       name: '大眼的鐵胃',
-      icon: `<img src="/manus-storage/img_00_572k_79c2d105.png" style="width:44px;height:44px;object-fit:contain;vertical-align:middle">`,
+      icon: `<img src="manus-storage/img_00_572k_79c2d105.png" style="width:44px;height:44px;object-fit:contain;vertical-align:middle">`,
       tier: 'common',
       desc: '永久增加 11 点生命上限，并立即回复 11 点 HP。',
       apply(run){ run.character.maxHp+=11; run.character.hp=Math.min(run.character.hp+11,run.character.maxHp); }
@@ -757,7 +758,7 @@ const Data = {
       icon: null,
       tier: 'rare',
       source: 'battle',  // 可通过战斗掉落获得
-      img: '/manus-storage/img_01_3443k_f8fb25b0.png',
+      img: 'manus-storage/img_01_3443k_f8fb25b0.png',
       desc: '每场战斗中，抵御第一次受到的负面状态（弱化/易伤/中毒等）。',
       apply(run){ run.relics.push('susu_eyemask'); }
     },
@@ -776,7 +777,7 @@ const Data = {
       icon: null,
       tier: 'epic',
       source: 'battle',  // 可通过战斗掉落获得
-      img: '/manus-storage/xiaojiu_guitar_e444f0fa.png',
+      img: 'manus-storage/xiaojiu_guitar_e444f0fa.png',
       desc: '每场战斗的每个回合额外多抽 1 张牌。',
       apply(run){ run.relics.push('xiaojiu_guitar'); }
     },
@@ -786,7 +787,7 @@ const Data = {
       icon: '🏈',
       tier: 'rare',
       source: 'event',
-      img: '/manus-storage/football_icon_0390dd99.png',
+      img: 'manus-storage/football_icon_0390dd99.png',
       desc: '每场战斗第一回合增加 1 点能量。',
       apply(run){ run.relics.push('football'); }
     },
@@ -1047,7 +1048,7 @@ const Data = {
     {
       id: 'datou_drive',
       title: '带你兜风的大头',
-      img: '/manus-storage/datou_sprite.png',
+      img: 'manus-storage/datou_sprite.png',
       noBeforeBoss: true,
       desc: '一辆 SUV 缓缓停下，大头反戴着棒球帽，从车窗探出脑袋朝你咧嘴一笑："上车？我带你抄个近路！" 你看了一眼他握方向盘的姿势……心里有点没底。',
       options: [
@@ -1282,7 +1283,7 @@ const Data = {
       id: 'oolong',
       name: '乌龙茶',
       emoji: '🍵',
-      img: '/manus-storage/img_02_6k_7120b6b8.png',
+      img: 'manus-storage/img_02_6k_7120b6b8.png',
       color: '#8B6914',
       glowColor: 'rgba(210,160,50,0.6)',
       desc: '回复 20% 最大生命値',
@@ -1300,7 +1301,7 @@ const Data = {
       id: 'laozao',
       name: 'skype的醒糟水',
       emoji: '🍶',
-      img: '/manus-storage/laozao_icon_7788818e.png',
+      img: 'manus-storage/laozao_icon_7788818e.png',
       color: '#c8860a',
       glowColor: 'rgba(200,134,10,0.6)',
       tier: 'rare',
@@ -1323,7 +1324,7 @@ const Data = {
       id: 'bread',
       name: '小七的面包',
       emoji: '🍞',
-      img: '/manus-storage/bread_icon_15f90b35.png',
+      img: 'manus-storage/bread_icon_15f90b35.png',
       color: '#8B4513',
       glowColor: 'rgba(139,69,19,0.6)',
       tier: 'common',
@@ -4420,9 +4421,9 @@ const CoopGame = {
 };
 
 // ── ui.js ─────────────────────────────────────────────────────────────────────
-const DAYAN_IMG_SRC = '/manus-storage/img_03_574k_632f1438.png';
-const WANGWEI_IMG_SRC = '/manus-storage/wangwei_sprite_nobg_90111a38.png';
-const IRON_STOMACH_IMG_SRC = '/manus-storage/img_00_572k_79c2d105.png';
+const DAYAN_IMG_SRC = 'manus-storage/img_03_574k_632f1438.png';
+const WANGWEI_IMG_SRC = 'manus-storage/wangwei_sprite_nobg_90111a38.png';
+const IRON_STOMACH_IMG_SRC = 'manus-storage/img_00_572k_79c2d105.png';
 const UI = {
   _selectedCard:null, _drag:null,
   app(){ return document.getElementById('app'); },
@@ -4697,12 +4698,12 @@ el.innerHTML=`<div class="card-type-bar"></div>${rarityTag}<div class="card-cost
       protein_powder: { name: '大眼的蛋白粉', icon: '💪', desc: '永久 +1 力量，所有攻击伤害+1。' },
       spike_shoes:    { name: '大眼的钉鞋',   icon: '👟', desc: '每回合结束后，有 5% 概率跳过怪物回合。' },
       magnifier:      { name: '大眼的放大镜', icon: '🔍', desc: '每场战斗开始时，随机1张手牌本回合费用变0。' },
-      iron_stomach:   { name: '大眼的铁胃',   icon: null, img: '/manus-storage/img_00_572k_79c2d105.png', desc: '永久增加 11 点生命上限，并立即回复 11 HP。' },
+      iron_stomach:   { name: '大眼的铁胃',   icon: null, img: 'manus-storage/img_00_572k_79c2d105.png', desc: '永久增加 11 点生命上限，并立即回复 11 HP。' },
       amulet:         { name: '大眼的水晶球', icon: '🔮', desc: '第一次被致死时，以 50% 最大生命值存活（仅触发一次）。命运早已在水晶球中显现。' },
-      football:       { name: '橄榄球', icon: '🏈', img: '/manus-storage/football_icon_0390dd99.png', desc: '每场战斗第一回合增加 1 点能量。' },
-      susu_eyemask:   { name: 'Susu的眼罩', icon: null, img: '/manus-storage/img_01_3443k_f8fb25b0.png', desc: '每场战斗中，第一次受到负面状态效果时免疫（弱化/易伤/中毒等），仅触发一次。' },
+      football:       { name: '橄榄球', icon: '🏈', img: 'manus-storage/football_icon_0390dd99.png', desc: '每场战斗第一回合增加 1 点能量。' },
+      susu_eyemask:   { name: 'Susu的眼罩', icon: null, img: 'manus-storage/img_01_3443k_f8fb25b0.png', desc: '每场战斗中，第一次受到负面状态效果时免疫（弱化/易伤/中毒等），仅触发一次。' },
       susu_pocketwatch:{ name: '苏苏的怀表', icon: '⌚', desc: '当你被致死时，有 5% 概率时间倒流：满血复活，并瞬间击溃当前房间所有敌人（Boss 房：仅复活）。每场冒险仅触发一次。' },
-      xiaojiu_guitar: { name: '小九的六弦琴', icon: null, img: '/manus-storage/xiaojiu_guitar_e444f0fa.png', desc: '从第二回合开始，每个回合额外多抽 1 张牌。' },
+      xiaojiu_guitar: { name: '小九的六弦琴', icon: null, img: 'manus-storage/xiaojiu_guitar_e444f0fa.png', desc: '从第二回合开始，每个回合额外多抽 1 张牌。' },
       wangwei_bracelet: { name: '王微的手绳', icon: '📿', desc: '每回合开始时，获得 3 点格挡（不会消失，可累计）。' },
       wangwei_glasses:  { name: '王微的眼镜', icon: '👓', desc: '受到伤害时，有 20% 概率减少最多 15 点伤害。' },
       wangwei_bowl:     { name: '王微的碗',   icon: '🍜', desc: '每场战斗结束后，回复 5 点 HP。' },
@@ -5873,7 +5874,7 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
     };
     setTimeout(()=>{
       try{
-        _audioEl = new window.Audio('/manus-storage/susu_pocketwatch.m4a');
+        _audioEl = new window.Audio('manus-storage/susu_pocketwatch.m4a');
         _audioEl.volume = 0.9;
         _audioEl.play().catch(()=>{});
         _audioEl.onended = ()=>{ setTimeout(dismiss, 500); };
@@ -6826,7 +6827,7 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
       <!-- 憨人老板区域 -->
       <div style="display:flex;align-items:flex-end;gap:18px;padding:12px 20px 0;margin-bottom:-8px">
         <div class="hanren-wrapper">
-          <img src="/manus-storage/hanren_merchant_8f300175.png" alt="憨人" style="width:200px;height:200px;object-fit:contain;display:block;" />
+          <img src="manus-storage/hanren_merchant_8f300175.png" alt="憨人" style="width:200px;height:200px;object-fit:contain;display:block;" />
           <div style="text-align:center;font-size:0.8rem;color:rgba(255,255,255,0.6);margin-top:2px">憨人</div>
         </div>
         <div style="background:rgba(255,255,255,0.07);border:1.5px solid rgba(255,255,255,0.15);border-radius:14px 14px 14px 4px;padding:10px 16px;font-size:0.95rem;color:rgba(255,255,255,0.9);max-width:260px;line-height:1.5;margin-bottom:28px">
@@ -6847,7 +6848,7 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
 
     // 嘟嘟嘟台词触发音效（进入商店 1 秒后播放）
     if(_hanrenLine === '嘟嘟嘟嘟嘟嘟～🎵'){
-      const _dudu = new window.Audio('/manus-storage/hanren_dudu_bd3a1f22.m4a');
+      const _dudu = new window.Audio('manus-storage/hanren_dudu_bd3a1f22.m4a');
       _dudu.volume = 0.85;
       setTimeout(()=>{ _dudu.play().catch(()=>{}); }, 1000);
     }
@@ -7268,7 +7269,7 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
       chosen.push(pool.splice(idx,1)[0]);
     }
     let selectedRelic=null;
-    const DATOU_IMG_SRC='/manus-storage/datou_sprite.png';
+    const DATOU_IMG_SRC='manus-storage/datou_sprite.png';
     UI.app().innerHTML=`<div class="dayan-screen datou-theme slide-up">
       <img src="${DATOU_IMG_SRC}" alt="大头" style="width:min(200px,32vh);height:min(200px,32vh);object-fit:contain;margin-bottom:6px;filter:drop-shadow(0 0 22px rgba(245,197,24,0.8));flex-shrink:0;" />
       <div class="dayan-title" style="color:#f5c518;">🎁 大头的礼物 🎁</div>
@@ -7320,7 +7321,7 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
       chosen.push(pool.splice(idx,1)[0]);
     }
     let selectedRelic=null;
-    const WENHAO_IMG_SRC='/manus-storage/wenhao_sprite.png';
+    const WENHAO_IMG_SRC='manus-storage/wenhao_sprite.png';
     UI.app().innerHTML=`<div class="dayan-screen wenhao-theme slide-up">
       <img src="${WENHAO_IMG_SRC}" alt="文豪" style="width:min(280px,42vh);height:min(280px,42vh);object-fit:contain;margin-bottom:6px;filter:drop-shadow(0 0 18px rgba(255,255,255,0.5));flex-shrink:0;" />
       <div class="dayan-title" style="color:#a8d8ff;">✨ 文豪的礼物 ✨</div>
@@ -7447,7 +7448,7 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
       chosen.push(pool.splice(idx,1)[0]);
     }
     let selectedRelic=null;
-    const GAOSHAN_IMG_SRC='/manus-storage/gaoshan_sprite.png';
+    const GAOSHAN_IMG_SRC='manus-storage/gaoshan_sprite.png';
     UI.app().innerHTML=`<div class="dayan-screen gaoshan-theme slide-up">
       <img src="${GAOSHAN_IMG_SRC}" alt="高山" style="width:min(320px,45vh);height:min(480px,68vh);object-fit:contain;margin-bottom:6px;flex-shrink:0;" />
       <div class="dayan-title" style="color:#7ecfff;">✨ 高山的礼物 ✨</div>

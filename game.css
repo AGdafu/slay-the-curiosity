@@ -1,4 +1,4 @@
-  <style>
+﻿  <style>
 
 .combat-screen::before, .map-screen::before, .title-screen::before {
   content: '';
@@ -7,7 +7,7 @@
   right: -40px;
   width: 320px;
   height: 320px;
-  background-image: url('/manus-storage/game_bg_0_f5815d28.png');
+  background-image: url('manus-storage/game_bg_0_f5815d28.png');
   background-size: contain;
   background-repeat: no-repeat;
   background-position: bottom right;
@@ -23,7 +23,7 @@
   left: -60px;
   width: 220px;
   height: 220px;
-  background-image: url('/manus-storage/game_bg_0_f5815d28.png');
+  background-image: url('manus-storage/game_bg_0_f5815d28.png');
   background-size: contain;
   background-repeat: no-repeat;
   background-position: top left;
