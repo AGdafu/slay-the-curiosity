@@ -387,8 +387,13 @@ const Data = {
       description:'获得 <b>8</b> 点格挡，并获得 <b>1</b> 点愤怒。',
       effect(cs,ti,lv=0){ const blk=[8,10,12][lv]||8; const fg=[1,2,2][lv]||1; Combat.gainBlock(cs,blk,true); if(!cs.player.buffs) cs.player.buffs={}; cs.player.buffs.fury=(cs.player.buffs.fury||0)+fg; } },
     box_hook:         { id:'box_hook',         rarity:'uncommon', name:'勾拳',     cost:1, type:'attack', emoji:'🪝', needsTarget:true,
-      description:'造成 <b>9</b> 点伤害。',
-      effect(cs,ti,lv=0){ const base=[9,12,15][lv]||9; Combat.dealDamage(cs,ti,base+Combat._getBoxerBonus(cs)); } },
+      description:'造成 <b>5</b> 点伤害。每点愤怒额外造成 <b>2</b> 点伤害（不消耗愤怒）。',
+      effect(cs,ti,lv=0){
+        const base=[5,7,9][lv]||5;
+        const per=[2,2,3][lv]||2;
+        const fury=cs.player.buffs?.fury||0;
+        Combat.dealDamage(cs,ti,base+per*fury+Combat._getBoxerBonus(cs));
+      } },
     box_clinch:       { id:'box_clinch',       rarity:'uncommon', name:'缠抱',     cost:1, type:'skill',  emoji:'🫂', needsTarget:false,
       description:'获得 <b>5</b> 点格挡，对所有敌人施加 <b>1</b> 层虚弱。',
       effect(cs,ti,lv=0){ const blk=[5,7,9][lv]||5; Combat.gainBlock(cs,blk,true); cs.enemies.forEach(e=>{ if(!e._dead) Combat.applyDebuff(e,'weak',[1,2,2][lv]||1); }); } },
