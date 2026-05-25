@@ -8088,7 +8088,7 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
     }
 
     // 渲染玩家状态栏（同时行动模式：双方都常驻显示完整信息）
-    // 参考单人 .player-area 样式，做成大头像+HP条+buff
+    // 参考单人 .player-area 样式，做成大头像+HP条+buff，并按角色追加 HUD（挡位/蓄力）
     function renderPlayerBar(p, role, label, isSelf) {
       const energy = coopCs[role + 'Energy'];
       const maxEnergy = coopCs[role + 'MaxEnergy'];
@@ -8097,6 +8097,48 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
       const dead = p.hp <= 0;
       const ring = isSelf ? '2px solid rgba(127,224,168,0.55)' : '2px solid rgba(255,255,255,0.12)';
       const bg = isSelf ? 'rgba(127,224,168,0.1)' : 'rgba(255,255,255,0.05)';
+
+      // 赛车手挡位 HUD（仅在角色为 racer 时显示）
+      let racerHud = '';
+      if (p.charId === 'racer') {
+        const g = coopCs[role + 'Gear'] != null ? coopCs[role + 'Gear'] : 2;
+        const spd = coopCs[role + 'Speed'] || 0;
+        const mom = coopCs[role + 'Momentum'] || 0;
+        const gearColors = ['', '#7dccff', '#e8e8e8', '#ff7d7d'];
+        const gearIcons = ['', '↓', '•', '↑'];
+        const gc = gearColors[g] || '#fff';
+        const gearNames = ['', '1挡·防御', '2挡·中立', '3挡·攻击'];
+        racerHud = `<div style="margin-top:4px;display:flex;flex-direction:column;align-items:center;gap:4px;border-top:1px dashed rgba(255,255,255,0.15);padding-top:6px;width:100%">
+          <div style="display:flex;gap:3px;align-items:center">
+            ${[1,2,3].map(i => {
+              const active = g === i;
+              const c = gearColors[i];
+              return `<div style="width:36px;padding:3px 0;border-radius:7px;font-size:${active?'0.78rem':'0.66rem'};font-weight:900;text-align:center;border:${active?'2px':'1px'} solid ${active?c:'rgba(255,255,255,0.2)'};background:${active?c+'33':'rgba(255,255,255,0.04)'};color:${active?c:'rgba(255,255,255,0.3)'}">${gearIcons[i]}${i}</div>`;
+            }).join('')}
+          </div>
+          <div style="font-size:0.7rem;color:${gc};font-weight:800">${gearNames[g]||''}</div>
+          <div style="display:flex;gap:4px;font-size:0.7rem;flex-wrap:wrap;justify-content:center">
+            <span style="color:#f9ca24;background:rgba(249,202,36,0.12);border:1px solid rgba(249,202,36,0.4);border-radius:5px;padding:1px 5px">⚡${spd}</span>
+            ${mom>0?`<span style="color:#a8e6cf;background:rgba(168,230,207,0.12);border:1px solid rgba(168,230,207,0.4);border-radius:5px;padding:1px 5px">⬆${mom}</span>`:''}
+          </div>
+        </div>`;
+      }
+
+      // 射手蓄力条 HUD（仅在角色为 archer 时显示）
+      let archerHud = '';
+      if (p.charId === 'archer') {
+        const charge = coopCs[role + 'Charge'] || 0;
+        const chargeMax = coopCs[role + 'ChargeMax'] || 5;
+        const pct = chargeMax > 0 ? Math.min(100, charge / chargeMax * 100) : 0;
+        const isFull = charge >= chargeMax;
+        archerHud = `<div style="margin-top:4px;display:flex;flex-direction:column;align-items:center;gap:3px;border-top:1px dashed rgba(255,255,255,0.15);padding-top:6px;width:100%">
+          <div style="font-size:0.72rem;font-weight:800;color:${isFull?'#f5c518':'#7dccff'}">🎯 蓄力 ${charge}/${chargeMax}${isFull?' 🔥':''}</div>
+          <div style="width:110px;height:6px;background:rgba(255,255,255,0.08);border-radius:3px;overflow:hidden;border:1px solid rgba(255,255,255,0.1)">
+            <div style="width:${pct}%;height:100%;background:linear-gradient(90deg,#7dccff,${isFull?'#f5c518':'#a4d8ff'});transition:width 0.3s"></div>
+          </div>
+        </div>`;
+      }
+
       return `<div class="player-area coop-player-area" style="flex:1;padding:12px 10px;background:${bg};border:${ring};border-radius:14px;text-align:center;position:relative;display:flex;flex-direction:column;align-items:center;gap:6px;${dead?'opacity:0.55;':''}">
         ${ended && !dead ? `<div style="position:absolute;top:6px;right:8px;font-size:0.7rem;font-weight:800;color:#7fe0a8;background:rgba(127,224,168,0.18);border:1px solid rgba(127,224,168,0.5);border-radius:6px;padding:1px 6px">已结束 ✓</div>` : ''}
         ${dead ? `<div style="position:absolute;top:6px;right:8px;font-size:0.7rem;font-weight:800;color:#ff9b8f">已阵亡</div>` : ''}
@@ -8110,6 +8152,7 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
           <span style="color:#f5c518;font-weight:800">⚡ ${ended?0:energy}/${maxEnergy}</span>
           <span style="color:rgba(255,255,255,0.6)">🂠 ${handCount}</span>
         </div>
+        ${racerHud}${archerHud}
       </div>`;
     }
 
@@ -8151,12 +8194,40 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
       ? `<div style="background:rgba(168,90,255,0.18);border:1.5px solid rgba(168,90,255,0.55);border-radius:10px;padding:8px 14px;text-align:center;color:#d8b8ff;font-weight:700">${pi.label||'对方正在操作…'} — ${pi.who==='host'?'🏠 房主':'🔑 访客'} 操作中，请等待…</div>`
       : '';
 
+    // 共享遗物栏（从 _coopRun.sharedRelics 读取）
+    const sharedRelics = (UI._coopRun && Array.isArray(UI._coopRun.sharedRelics)) ? UI._coopRun.sharedRelics : [];
+    const relicBarHtml = sharedRelics.length > 0
+      ? `<div style="display:flex;gap:4px;align-items:center;flex-wrap:wrap;max-width:280px">
+          <span style="font-size:0.75rem;color:rgba(255,255,255,0.5);font-weight:700">遗物</span>
+          ${sharedRelics.map(rid => {
+            const r = Data.relics && Data.relics[rid];
+            const emoji = r?.emoji || '🔮';
+            const name = r?.name || rid;
+            return `<span title="${name}${r?.description?': '+r.description.replace(/"/g,''):''}" style="font-size:1.05rem;cursor:help;background:rgba(245,197,24,0.12);border:1px solid rgba(245,197,24,0.4);border-radius:6px;padding:1px 6px">${emoji}</span>`;
+          }).join('')}
+        </div>` : '';
+
+    // 共享药水栏（从 _coopRun.sharedPotions 读取）
+    const sharedPotions = (UI._coopRun && Array.isArray(UI._coopRun.sharedPotions)) ? UI._coopRun.sharedPotions : [];
+    const potionBarHtml = sharedPotions.filter(p=>p).length > 0
+      ? `<div style="display:flex;gap:4px;align-items:center">
+          <span style="font-size:0.75rem;color:rgba(255,255,255,0.5);font-weight:700">药水</span>
+          ${sharedPotions.map((pid, i) => {
+            if (!pid) return `<span style="width:22px;height:22px;border:1px dashed rgba(255,255,255,0.15);border-radius:50%;display:inline-block"></span>`;
+            const pdef = Data.potions && Data.potions[pid];
+            const emoji = pdef?.emoji || '🧪';
+            const name = pdef?.name || pid;
+            return `<span title="${name}" style="font-size:1.1rem;cursor:help;background:rgba(127,224,168,0.12);border:1px solid rgba(127,224,168,0.4);border-radius:50%;padding:1px 4px">${emoji}</span>`;
+          }).join('')}
+        </div>` : '';
+
     app.innerHTML = `
       <div class="combat-screen">
         <div class="combat-topbar">
           <div style="display:flex;align-items:center;gap:10px;flex:1;flex-wrap:wrap">
             <span style="font-size:1.1rem;font-weight:800;color:#7fe0a8">🤝 联机合作</span>
             <span style="font-size:0.9rem;color:rgba(255,255,255,0.6)">第 ${coopCs.turn} 回合</span>
+            ${relicBarHtml}${potionBarHtml}
           </div>
           <div style="display:flex;align-items:center;gap:6px">
             <span style="font-size:0.9rem;color:#f9ca24;font-weight:700">${phaseLabel}</span>
