@@ -77,11 +77,10 @@ const Data = {
     brute: [
       // 通用强力牌（原 default 池，brute 主要使用者）
       'bash','zap','pommel','shrug','armaments','inflame','ironwave','thunderclap',
-      // 扩池新增 br_ 前缀
+      // 战士专属牌（简单机制，力气大主题）
       'br_double_strike','br_heavy_blade','br_cleave','br_shield_wall',
       'br_taunt_roar','br_bash_v','br_bloodletting','br_pommel_smash',
-      'br_battle_trance','br_perfected_strike','br_demon_form','br_metallicize',
-      'br_juggernaut','br_whirlwind','br_brutal'
+      'br_grit','br_iron_swing','br_overwhelm'
     ],
     racer: [
       'nitro_boost','collision_block','drift_charge','overtake','turbo_crush',
@@ -386,15 +385,15 @@ const Data = {
       description:'获得 <b>8</b> 点格挡，并获得 <b>1</b> 点愤怒。',
       effect(cs,ti,lv=0){ const blk=[8,10,12][lv]||8; const fg=[1,2,2][lv]||1; Combat.gainBlock(cs,blk,true); if(!cs.player.buffs) cs.player.buffs={}; cs.player.buffs.fury=(cs.player.buffs.fury||0)+fg; } },
     box_hook:         { id:'box_hook',         rarity:'uncommon', name:'勾拳',     cost:1, type:'attack', emoji:'🪝', needsTarget:true,
-      description:'造成 <b>11</b> 点伤害。',
-      effect(cs,ti,lv=0){ const base=[11,14,17][lv]||11; Combat.dealDamage(cs,ti,base+Combat._getBoxerBonus(cs)); } },
+      description:'造成 <b>9</b> 点伤害。',
+      effect(cs,ti,lv=0){ const base=[9,12,15][lv]||9; Combat.dealDamage(cs,ti,base+Combat._getBoxerBonus(cs)); } },
     box_clinch:       { id:'box_clinch',       rarity:'uncommon', name:'缠抱',     cost:1, type:'skill',  emoji:'🫂', needsTarget:false,
       description:'获得 <b>5</b> 点格挡，敌方下回合 <b>所有攻击伤害 -2</b>。',
       effect(cs,ti,lv=0){ const blk=[5,7,9][lv]||5; Combat.gainBlock(cs,blk,true); cs.enemies.forEach(e=>{ if(!e._dead) Combat.applyDebuff(e,'weak',[1,2,2][lv]||1); }); } },
     box_furious_strike:{ id:'box_furious_strike',rarity:'rare',  name:'怒火出拳', cost:1, type:'attack', emoji:'😡', needsTarget:true,
       description:'造成 <b>8</b> 点伤害。HP 越低，伤害越高（每损失 <b>20%</b> 最大 HP 额外 <b>+3</b>）。',
       effect(cs,ti,lv=0){ const base=[8,11,14][lv]||8; const lost=1-cs.player.hp/cs.player.maxHp; const extra=Math.floor(lost/0.2)*([3,4,5][lv]||3); Combat.dealDamage(cs,ti,base+extra+Combat._getBoxerBonus(cs)); } },
-    box_double_jab:   { id:'box_double_jab',   rarity:'common',   name:'双刺拳',   cost:0, type:'attack', emoji:'👊', needsTarget:true,
+    box_double_jab:   { id:'box_double_jab',   rarity:'common',   name:'双刺拳',   cost:1, type:'attack', emoji:'👊', needsTarget:true,
       description:'造成 <b>2</b> 段 <b>3</b> 点伤害。',
       effect(cs,ti,lv=0){ const base=[3,4,5][lv]||3; const bonus=Combat._getBoxerBonus(cs); Combat.dealDamage(cs,ti,base+bonus); Combat.dealDamage(cs,ti,base+bonus); } },
     box_break_guard:  { id:'box_break_guard',  rarity:'rare',     name:'破防',     cost:2, type:'attack', emoji:'💢', needsTarget:true,
@@ -406,57 +405,69 @@ const Data = {
     box_knockout:     { id:'box_knockout',     rarity:'epic',     name:'KO 一击',  cost:3, type:'attack', emoji:'💥', needsTarget:true,
       description:'造成 <b>30</b> 点伤害。若敌人 HP ≤ <b>40%</b>，改为造成 <b>50</b> 点。',
       effect(cs,ti,lv=0){ const e=cs.enemies[ti]; const lo=e.hp/e.maxHp<=0.40; const base=lo?([50,58,66][lv]||50):([30,36,42][lv]||30); Combat.dealDamage(cs,ti,base+Combat._getBoxerBonus(cs)); } },
-    box_footwork:     { id:'box_footwork',     rarity:'common',   name:'步法',     cost:0, type:'skill',  emoji:'👟', needsTarget:false,
+    box_footwork:     { id:'box_footwork',     rarity:'uncommon', name:'步法',     cost:0, type:'skill',  emoji:'👟', needsTarget:false,
       description:'获得 <b>4</b> 点格挡，抽 <b>1</b> 张牌。',
       effect(cs,ti,lv=0){ const blk=[4,6,8][lv]||4; Combat.gainBlock(cs,blk,true); Combat.drawCards(cs,lv>=2?2:1); } },
 
     // ── 战士牌组：基础起始牌（rarity 标识，复用 strike/defend/clash 通用牌）─────────
     // 起始牌组中的 strike/defend/clash 已在通用区定义。下面是战士专属奖励牌。
     br_double_strike: { id:'br_double_strike', rarity:'common',   name:'二连击',   cost:1, type:'attack', emoji:'⚔️', needsTarget:true,
-      description:'造成 <b>2</b> 段 <b>5</b> 点伤害。',
-      effect(cs,ti,lv=0){ const base=[5,6,8][lv]||5; const str=cs.player.buffs?.strength||0; Combat.dealDamage(cs,ti,base+str); Combat.dealDamage(cs,ti,base+str); } },
+      description:'造成 <b>2</b> 段 <b>4</b> 点伤害。',
+      effect(cs,ti,lv=0){ const base=[4,5,7][lv]||4; const str=cs.player.buffs?.strength||0; Combat.dealDamage(cs,ti,base+str); Combat.dealDamage(cs,ti,base+str); } },
     br_heavy_blade:   { id:'br_heavy_blade',   rarity:'common',   name:'重剑',     cost:2, type:'attack', emoji:'🗡️', needsTarget:true,
-      description:'造成 <b>14</b> 点伤害。',
-      effect(cs,ti,lv=0){ const base=[14,18,22][lv]||14; const str=cs.player.buffs?.strength||0; Combat.dealDamage(cs,ti,base+str); } },
+      description:'造成 <b>12</b> 点伤害。',
+      effect(cs,ti,lv=0){ const base=[12,16,20][lv]||12; const str=cs.player.buffs?.strength||0; Combat.dealDamage(cs,ti,base+str); } },
     br_cleave:        { id:'br_cleave',        rarity:'common',   name:'横扫',     cost:1, type:'attack', emoji:'🌊', needsTarget:false,
       description:'对所有敌人造成 <b>7</b> 点伤害。',
       effect(cs,ti,lv=0){ const base=[7,10,13][lv]||7; const str=cs.player.buffs?.strength||0; cs.enemies.forEach((_,i)=>{ if(!cs.enemies[i]._dead) Combat.dealDamage(cs,i,base+str); }); } },
     br_shield_wall:   { id:'br_shield_wall',   rarity:'common',   name:'盾墙',     cost:1, type:'skill',  emoji:'🛡️', needsTarget:false,
       description:'获得 <b>10</b> 点格挡。',
       effect(cs,ti,lv=0){ const blk=[10,13,16][lv]||10; Combat.gainBlock(cs,blk,true); } },
-    br_taunt_roar:    { id:'br_taunt_roar',    rarity:'uncommon', name:'咆哮',     cost:1, type:'skill',  emoji:'🦁', needsTarget:false,
-      description:'对所有敌人施加 <b>2</b> 层虚弱。',
-      effect(cs,ti,lv=0){ const w=[2,3,3][lv]||2; cs.enemies.forEach(e=>{ if(!e._dead) Combat.applyDebuff(e,'weak',w); }); } },
+    // 战吼：复合型 — 削弱敌人 + 自我加固（区别于纯 debuff 卡）
+    br_taunt_roar:    { id:'br_taunt_roar',    rarity:'uncommon', name:'战吼',     cost:1, type:'skill',  emoji:'📢', needsTarget:false,
+      description:'对所有敌人施加 <b>1</b> 层虚弱，并获得 <b>5</b> 点格挡。',
+      effect(cs,ti,lv=0){ const w=[1,2,2][lv]||1; const b=[5,7,9][lv]||5; cs.enemies.forEach(e=>{ if(!e._dead) Combat.applyDebuff(e,'weak',w); }); Combat.gainBlock(cs,b,true); } },
+    // 破甲击：基础攻击+易伤 — 简单 combo，多种游戏都有的设计
     br_bash_v:        { id:'br_bash_v',        rarity:'uncommon', name:'破甲击',   cost:1, type:'attack', emoji:'🔨', needsTarget:true,
       description:'造成 <b>9</b> 点伤害，施加 <b>2</b> 层易伤。',
       effect(cs,ti,lv=0){ const base=[9,12,15][lv]||9; const v=[2,3,3][lv]||2; const str=cs.player.buffs?.strength||0; Combat.dealDamage(cs,ti,base+str); Combat.applyDebuff(cs.enemies[ti],'vulnerable',v); } },
-    br_bloodletting:  { id:'br_bloodletting',  rarity:'uncommon', name:'血祭',     cost:0, type:'skill',  emoji:'🩸', needsTarget:false,
-      description:'失去 <b>3</b> 点 HP，获得 <b>2</b> 点能量。',
-      effect(cs,ti,lv=0){ const cost=[3,2,2][lv]||3; cs.player.hp=Math.max(1,cs.player.hp-cost); State.run.character.hp=cs.player.hp; cs.energy=(cs.energy||0)+([2,2,3][lv]||2); } },
-    br_pommel_smash:  { id:'br_pommel_smash',  rarity:'uncommon', name:'剑柄重击', cost:1, type:'attack', emoji:'🗡️', needsTarget:true,
-      description:'造成 <b>10</b> 点伤害，抽 <b>1</b> 张牌。',
-      effect(cs,ti,lv=0){ const base=[10,13,16][lv]||10; const str=cs.player.buffs?.strength||0; Combat.dealDamage(cs,ti,base+str); Combat.drawCards(cs,lv>=2?2:1); } },
-    br_battle_trance: { id:'br_battle_trance', rarity:'uncommon', name:'战斗专注', cost:0, type:'skill',  emoji:'🧘', needsTarget:false,
-      description:'抽 <b>3</b> 张牌。消耗。',
-      effect(cs,ti,lv=0){ Combat.drawCards(cs,lv>=1?4:3); const oi=cs.discardPile.lastIndexOf('br_battle_trance'); if(oi!==-1) cs.discardPile.splice(oi,1); cs.exhaustPile.push('br_battle_trance'); } },
-    br_perfected_strike:{id:'br_perfected_strike',rarity:'uncommon',name:'完美打击', cost:2, type:'attack', emoji:'✨', needsTarget:true,
-      description:'造成 <b>6</b> 点伤害。牌组中每张含「打击/击/拳」的牌额外造成 <b>2</b> 点伤害。',
-      effect(cs,ti,lv=0){ const base=[6,8,10][lv]||6; const per=[2,2,3][lv]||2; const deck=(State.run?.deck)||[]; const cnt=deck.filter(id=>{ const c=Data.cards[id]; if(!c||c.type!=='attack') return false; return /击|拳|strike|punch|jab|hook|haymaker/.test(c.name||'')||/strike|jab|hook|punch|cross|uppercut|haymaker/.test(id); }).length; const str=cs.player.buffs?.strength||0; Combat.dealDamage(cs,ti,base+cnt*per+str); } },
-    br_demon_form:    { id:'br_demon_form',    rarity:'rare',     name:'恶魔形态', cost:3, type:'power',  emoji:'😈', needsTarget:false,
-      description:'能力。每回合开始时获得 <b>2</b> 层力量。',
-      effect(cs,ti,lv=0){ cs.player.buffs.demon_form=(cs.player.buffs.demon_form||0)+([2,3,3][lv]||2); } },
-    br_metallicize:   { id:'br_metallicize',   rarity:'rare',     name:'金属化',   cost:1, type:'power',  emoji:'⚙️', needsTarget:false,
-      description:'能力。每回合结束时获得 <b>3</b> 点格挡。',
-      effect(cs,ti,lv=0){ cs.player.buffs.metallicize=(cs.player.buffs.metallicize||0)+([3,4,5][lv]||3); } },
-    br_juggernaut:    { id:'br_juggernaut',    rarity:'rare',     name:'压路机',   cost:2, type:'power',  emoji:'🚂', needsTarget:false,
-      description:'能力。每获得格挡时对随机敌人造成 <b>5</b> 点伤害。',
-      effect(cs,ti,lv=0){ cs.player.buffs.juggernaut=(cs.player.buffs.juggernaut||0)+([5,7,9][lv]||5); } },
-    br_whirlwind:     { id:'br_whirlwind',     rarity:'rare',     name:'旋风',     cost:2, type:'attack', emoji:'🌪️', needsTarget:false,
-      description:'对所有敌人造成 <b>3</b> 段 <b>5</b> 点伤害。',
-      effect(cs,ti,lv=0){ const base=[5,6,8][lv]||5; const hits=[3,4,4][lv]||3; const str=cs.player.buffs?.strength||0; for(let i=0;i<hits;i++) cs.enemies.forEach((en,j)=>{ if(!en._dead) Combat.dealDamage(cs,j,base+str); }); } },
-    br_brutal:        { id:'br_brutal',        rarity:'epic',     name:'凶残',     cost:0, type:'power',  emoji:'💀', needsTarget:false,
-      description:'能力。每回合开始失去 <b>1</b> HP，但抽 <b>1</b> 张额外牌。',
-      effect(cs,ti,lv=0){ cs.player.buffs.brutal=(cs.player.buffs.brutal||0)+1; } },
+    // 透支：原创设计 — 弃手牌换能量（不掉血，区别于 STS 的 Bloodletting）
+    br_bloodletting:  { id:'br_bloodletting',  rarity:'uncommon', name:'透支',     cost:0, type:'skill',  emoji:'⚡', needsTarget:false,
+      description:'弃掉 <b>2</b> 张手牌（自动从最右开始）；获得 <b>3</b> 点能量。',
+      effect(cs,ti,lv=0){ const n=[2,1,1][lv]||2; for(let i=0;i<n && cs.hand.length>0;i++){ const c=cs.hand.pop(); cs.discardPile.push(c); } cs.energy=(cs.energy||0)+([3,3,4][lv]||3); } },
+    // 紧逼：原创 — 越多攻击越狠（鼓励攻击堆叠，简单 combo）
+    br_pommel_smash:  { id:'br_pommel_smash',  rarity:'uncommon', name:'紧逼',     cost:1, type:'attack', emoji:'👊', needsTarget:true,
+      description:'造成 <b>6</b> 点伤害；本回合每打过 1 张攻击牌额外造成 <b>2</b> 伤害（最高 +8）。',
+      effect(cs,ti,lv=0){
+        const base=[6,8,10][lv]||6;
+        const per=[2,2,3][lv]||2;
+        const cap=[8,10,12][lv]||8;
+        const cnt=cs._attacksPlayedThisTurn||0;
+        const bonus=Math.min(cnt*per, cap);
+        const str=cs.player.buffs?.strength||0;
+        Combat.dealDamage(cs,ti,base+bonus+str);
+      } },
+    // 硬抗：原创 — 简单防御 buff（区别于纯格挡）
+    br_grit:          { id:'br_grit',          rarity:'uncommon', name:'硬抗',     cost:1, type:'skill',  emoji:'🛡️', needsTarget:false,
+      description:'获得 <b>6</b> 点格挡；本回合受到的所有伤害额外 <b>-2</b>。',
+      effect(cs,ti,lv=0){ const b=[6,8,10][lv]||6; const r=[2,3,3][lv]||2; Combat.gainBlock(cs,b,true); cs.player.buffs.gritReduce=(cs.player.buffs.gritReduce||0)+r; } },
+    // 肉搏战：原创 — AOE 但自损（鲁莽风格，区别于 STS 的 Whirlwind）
+    br_iron_swing:    { id:'br_iron_swing',    rarity:'rare',     name:'肉搏战',   cost:2, type:'attack', emoji:'💪', needsTarget:false,
+      description:'对所有敌人造成 <b>9</b> 点伤害；自己受到 <b>3</b> 点伤害（不被格挡阻挡）。',
+      effect(cs,ti,lv=0){ const base=[9,12,15][lv]||9; const self=[3,3,2][lv]||3; const str=cs.player.buffs?.strength||0; cs.enemies.forEach((en,j)=>{ if(!en._dead) Combat.dealDamage(cs,j,base+str); }); cs.player.hp=Math.max(1,cs.player.hp-self); State.run.character.hp=cs.player.hp; } },
+    // 压制：原创 — 利用自己施加的 debuff 做爆发（鼓励 combo）
+    br_overwhelm:     { id:'br_overwhelm',     rarity:'rare',     name:'压制',     cost:1, type:'attack', emoji:'🥊', needsTarget:true,
+      description:'造成 <b>7</b> 点伤害；目标每有 1 层易伤或虚弱，额外造成 <b>3</b> 伤害（最高 +12）。',
+      effect(cs,ti,lv=0){
+        const base=[7,10,13][lv]||7;
+        const per=[3,3,4][lv]||3;
+        const cap=[12,15,18][lv]||12;
+        const e=cs.enemies[ti];
+        const stacks=(e.debuffs?.vulnerable||0)+(e.debuffs?.weak||0);
+        const bonus=Math.min(stacks*per, cap);
+        const str=cs.player.buffs?.strength||0;
+        Combat.dealDamage(cs,ti,base+bonus+str);
+      } },
   },
   enemies: {
     slime: {
@@ -3042,6 +3053,8 @@ const Combat = {
     }
     // 大头的哨子：记录本回合是否打出过防御牌（type==='skill'）
     if(def.type==='skill'){ cs.defensePlayedThisTurn = true; }
+    // 战士「紧逼」用：记录本回合打出过的攻击牌数（在 effect 之后增加，避免自身计入）
+    if(def.type==='attack'){ cs._attacksPlayedThisTurn = (cs._attacksPlayedThisTurn||0) + 1; }
     // 大头的鼓棒：打出攻击牌时，20% 概率额外再释放一次相同效果
     if(def.type==='attack' && State.run?.relics?.includes('datou_drumstick') && !cs._whistleProc && Math.random()<0.10){
       cs._whistleProc = true; // 防止额外释放再次触发（避免无限循环）
@@ -3122,6 +3135,10 @@ const Combat = {
     }
     // 重置防御牌记录
     cs.defensePlayedThisTurn = false;
+    // 重置战士「紧逼」攻击计数
+    cs._attacksPlayedThisTurn = 0;
+    // 重置战士「硬抗」本回合减伤（buff 只持续到本回合结束）
+    if(cs.player.buffs) cs.player.buffs.gritReduce = 0;
     // ── 战士金属化：回合结束时获得 N 格挡 ──
     if((cs.player.buffs?.metallicize||0)>0){
       Combat.gainBlock(cs, cs.player.buffs.metallicize, true);
@@ -3350,6 +3367,8 @@ const Combat = {
   enemyAttack(cs,enemyIndex,amount){ const enemy=cs.enemies[enemyIndex];if(!enemy||enemy._dead)return 0; let dmg=amount+(enemy.buffs.strength||0); if((enemy.debuffs.weak||0)>0)dmg=Math.floor(dmg*0.75); if((enemy.debuffs.slow||0)>0)dmg=Math.floor(dmg*0.75); if((cs.player.debuffs.vulnerable||0)>0)dmg=Math.floor(dmg*1.5);
     // 拳击手「铁下巴」：所有受到的伤害 -1（最低 0）
     if((cs.player.buffs?.box_iron_chin||0)>0){ dmg=Math.max(0, dmg - cs.player.buffs.box_iron_chin); }
+    // 战士「硬抗」：本回合受到的所有伤害额外 -N（最低 0）
+    if((cs.player.buffs?.gritReduce||0)>0){ dmg=Math.max(0, dmg - cs.player.buffs.gritReduce); }
     // 王微的眼镜：20%概率完全无视本次伤害（多段攻击中触发后，本轮后续攻击也全部跳过）
     const run=State.run;
     if(run?.relics?.includes('wangwei_glasses') && Math.random()<0.20){
