@@ -5399,6 +5399,16 @@ el.innerHTML=`<div class="card-type-bar"></div>${rarityTag}<div class="card-cost
           if (State.current.screen === 'coop-shop') UI.coopShop();
         }
       }
+      else if (data.t==='coop-question-vote') {
+        // 访客对问号事件投票
+        if (Net.isHost && UI._coopRun) {
+          UI._coopRun.questionVotes = UI._coopRun.questionVotes || { host: null, guest: null };
+          UI._coopRun.questionVotes.guest = data.optIdx;
+          UI._coopTryResolveQuestion();
+          Net.send({ t: 'coop-run-state', run: UI._coopSerializeRun() });
+          if (State.current.screen === 'coop-question') UI.coopQuestion();
+        }
+      }
     });
     Net.on('disconnected', () => {
       if(!UI._coop) return;
@@ -8150,8 +8160,6 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
               return `<span title="${name}" style="font-size:0.95rem;cursor:help;background:rgba(245,197,24,0.12);border:1px solid rgba(245,197,24,0.4);border-radius:5px;padding:0 4px">${emoji}</span>`;
             }).join('')}
           </div>` : '';
-      // 个人金币
-      const myGold = UI._coopRun ? (UI._coopRun[role+'Gold']||0) : 0;
 
       return `<div class="player-area coop-player-area" style="flex:1;padding:12px 10px;background:${bg};border:${ring};border-radius:14px;text-align:center;position:relative;display:flex;flex-direction:column;align-items:center;gap:6px;${dead?'opacity:0.55;':''}">
         ${ended && !dead ? `<div style="position:absolute;top:6px;right:8px;font-size:0.7rem;font-weight:800;color:#7fe0a8;background:rgba(127,224,168,0.18);border:1px solid rgba(127,224,168,0.5);border-radius:6px;padding:1px 6px">已结束 ✓</div>` : ''}
@@ -8165,7 +8173,6 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
         <div style="display:flex;justify-content:center;gap:10px;font-size:0.82rem;margin-top:2px">
           <span style="color:#f5c518;font-weight:800">⚡ ${ended?0:energy}/${maxEnergy}</span>
           <span style="color:rgba(255,255,255,0.6)">🂠 ${handCount}</span>
-          <span style="color:#ffd060;font-weight:700">💰 ${myGold}</span>
         </div>
         ${relicsHtml}
         ${racerHud}${archerHud}
@@ -8223,12 +8230,14 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
         }).join('')}
       </div>`;
 
+    const sharedGold = UI._coopRun ? (UI._coopRun.gold||0) : 0;
     app.innerHTML = `
       <div class="combat-screen">
         <div class="combat-topbar">
           <div style="display:flex;align-items:center;gap:10px;flex:1;flex-wrap:wrap">
             <span style="font-size:1.1rem;font-weight:800;color:#7fe0a8">🤝 联机合作</span>
             <span style="font-size:0.9rem;color:rgba(255,255,255,0.6)">第 ${coopCs.turn} 回合</span>
+            <span style="font-size:0.95rem;color:#f5c518;font-weight:800">💰 ${sharedGold}（共享）</span>
             ${sharedPotionBarHtml}
           </div>
           <div style="display:flex;align-items:center;gap:6px">
@@ -8510,12 +8519,12 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
       guestUpgrades: {},
       hostHp: hChar.hp, hostMaxHp: hChar.maxHp,
       guestHp: gChar.hp, guestMaxHp: gChar.maxHp,
-      // 个人遗物（杀戮尖塔联机标准：每人独立持有，只对自己生效）
+      // 个人遗物（每人独立持有，只对自己生效）
       hostRelics: [], guestRelics: [],
-      // 共享药水池（双方共用 3 个槽位）
-      sharedPotions: [null,null,null],
-      // 个人金币（杀戮尖塔联机标准：各人独立）
-      hostGold: 0, guestGold: 0,
+      // 共享药水池（双方共用 6 个槽位）
+      sharedPotions: [null,null,null,null,null,null],
+      // 共享金币池
+      gold: 0,
       map,
       currentNodeId: startNode ? startNode.id : null,
       act: 1,
@@ -8719,6 +8728,7 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
       UI._coopRun.questionEventId = evt ? evt.id : null;
       UI._coopRun.questionResult = null;
       UI._coopRun.questionResolvedBy = null;
+      UI._coopRun.questionVotes = { host: null, guest: null };
       Net.send({ t: 'coop-run-state', run: UI._coopSerializeRun() });
       Net.send({ t: 'coop-screen', screen: 'coop-question' });
       State.current.screen = 'coop-question';
@@ -8905,23 +8915,22 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
     const hChar = Data.characters.find(c => c.id === run.hostCharId) || {};
     const gChar = Data.characters.find(c => c.id === run.guestCharId) || {};
 
-    const myGold = run[myRole+'Gold'] || 0;
     let cardsHtml = '<div style="display:flex;flex-wrap:wrap;gap:14px;justify-content:center"></div>';
     app.innerHTML = `
       <div style="min-height:100vh;background:var(--bg,#0c0c1a);padding:18px;color:#fff;font-family:var(--font);max-width:920px;margin:0 auto;">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
           <div style="font-size:1.4rem;font-weight:800;color:#ffd060">🏪 好奇小卖部（联机）</div>
-          <div style="font-size:1.05rem;color:#f5c518;font-weight:800">💰 你的金币 ${myGold}</div>
+          <div style="font-size:1.05rem;color:#f5c518;font-weight:800">💰 ${run.gold||0}（共享）</div>
         </div>
-        <div style="font-size:0.9rem;color:rgba(255,255,255,0.6);margin-bottom:14px">每张卡只能由对应角色用自己的金币购买。两人都点「离开」才能进入下一个节点。</div>
+        <div style="font-size:0.9rem;color:rgba(255,255,255,0.6);margin-bottom:14px">每张卡只能由对应角色购买，金币从共享池扣。两人都点「离开」才能进入下一个节点。</div>
         <div id="coop-shop-cards" style="display:flex;flex-wrap:wrap;gap:14px;justify-content:center;margin-bottom:14px"></div>
         <div style="display:flex;gap:14px;justify-content:center;margin-top:8px;flex-wrap:wrap">
           <div style="padding:8px 14px;background:rgba(127,224,168,0.08);border:1.5px solid rgba(127,224,168,0.45);border-radius:12px;text-align:center">
-            <div>${hChar.emoji||'?'} 🏠 房主 · 牌组 ${(run.hostDeck||[]).length} · 💰${run.hostGold||0}</div>
+            <div>${hChar.emoji||'?'} 🏠 房主 · 牌组 ${(run.hostDeck||[]).length}</div>
             <div style="color:${left.host?'#7fe0a8':'rgba(255,255,255,0.55)'};font-size:0.88rem">${left.host?'✓ 已离开':'购物中…'}</div>
           </div>
           <div style="padding:8px 14px;background:rgba(80,160,255,0.08);border:1.5px solid rgba(80,160,255,0.45);border-radius:12px;text-align:center">
-            <div>${gChar.emoji||'?'} 🔑 访客 · 牌组 ${(run.guestDeck||[]).length} · 💰${run.guestGold||0}</div>
+            <div>${gChar.emoji||'?'} 🔑 访客 · 牌组 ${(run.guestDeck||[]).length}</div>
             <div style="color:${left.guest?'#7fe0a8':'rgba(255,255,255,0.55)'};font-size:0.88rem">${left.guest?'✓ 已离开':'购物中…'}</div>
           </div>
         </div>
@@ -8936,7 +8945,7 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
     inv.forEach((item, idx) => {
       const isSold = !!sold[idx];
       const buyerRole = item.role; // 只能 host 或 guest 角色对应购买
-      const canBuy = !isSold && (buyerRole === myRole) && (run[myRole+'Gold']||0) >= item.price;
+      const canBuy = !isSold && (buyerRole === myRole) && (run.gold||0) >= item.price;
       const isMine = buyerRole === myRole;
       const wrap = document.createElement('div');
       wrap.style.cssText = `display:flex;flex-direction:column;align-items:center;gap:4px;opacity:${isSold?'0.4':'1'};border:2px solid ${isMine?(canBuy?'#7fe0a8':'rgba(127,224,168,0.3)'):'rgba(255,255,255,0.15)'};border-radius:12px;padding:8px;background:rgba(255,255,255,0.03);`;
@@ -8953,7 +8962,7 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
       label.textContent = buyerRole==='host'?'🏠 房主专属':'🔑 访客专属';
       wrap.appendChild(label);
       const price = document.createElement('div');
-      price.style.cssText = `font-weight:800;color:${isSold?'rgba(255,255,255,0.5)':((run[buyerRole+'Gold']||0)>=item.price?'#f5c518':'#ff7d7d')}`;
+      price.style.cssText = `font-weight:800;color:${isSold?'rgba(255,255,255,0.5)':((run.gold||0)>=item.price?'#f5c518':'#ff7d7d')}`;
       price.textContent = isSold ? `✅ 已被 ${sold[idx]==='host'?'🏠':'🔑'} 买走` : `💰 ${item.price}`;
       wrap.appendChild(price);
       if (canBuy) {
@@ -8992,9 +9001,8 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
     const item = (run.shopInv||[])[idx];
     if (!item || (run.shopSold||{})[idx]) return;
     if (item.role !== role) return;
-    const goldKey = role + 'Gold';
-    if ((run[goldKey]||0) < item.price) return;
-    run[goldKey] -= item.price;
+    if ((run.gold||0) < item.price) return;
+    run.gold -= item.price;
     run.shopSold = run.shopSold || {};
     run.shopSold[idx] = role;
     if (role === 'host') (run.hostDeck = run.hostDeck || []).push(item.id);
@@ -9025,20 +9033,43 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
     const evt = (Data.questionEvents || []).find(e => e.id === run.questionEventId) || (Data.questionEvents||[])[0];
     if (!evt) { State.go('coop-map'); return; }
     const isHost = Net.isHost;
+    const myRole = isHost ? 'host' : 'guest';
     const hChar = Data.characters.find(c => c.id === run.hostCharId) || {};
     const gChar = Data.characters.find(c => c.id === run.guestCharId) || {};
     const result = run.questionResult;
+    const votes = run.questionVotes || { host: null, guest: null };
+    const myVote = votes[myRole];
+    const oppVote = votes[myRole==='host'?'guest':'host'];
+
     const optsHtml = (evt.options || []).map((opt, i) => {
-      const disabled = !isHost || result;
-      return `<button data-opt-i="${i}" class="coop-q-opt" ${disabled?'disabled':''} style="width:100%;padding:12px;background:#0f3460;color:#e2b96a;border:1.5px solid #e2b96a;border-radius:8px;font-size:1rem;cursor:${disabled?'default':'pointer'};opacity:${disabled?0.55:1};margin-bottom:8px;text-align:left;">
+      const picked = myVote === i;
+      const oppPicked = oppVote === i;
+      const disabled = !!result; // 出结果后不能再投
+      const bg = picked ? '#1f5f3a' : '#0f3460';
+      const border = picked ? '#7fe0a8' : '#e2b96a';
+      const color = picked ? '#a9f0c5' : '#e2b96a';
+      return `<button data-opt-i="${i}" class="coop-q-opt" ${disabled?'disabled':''} style="width:100%;padding:12px;background:${bg};color:${color};border:2px solid ${border};border-radius:8px;font-size:1rem;cursor:${disabled?'default':'pointer'};opacity:${disabled?0.65:1};margin-bottom:8px;text-align:left;position:relative;">
         <div style="font-weight:700">${opt.label}</div>
         ${opt.tooltip?`<div style="font-size:0.8rem;color:rgba(226,185,106,0.7);margin-top:4px;white-space:pre-line">${opt.tooltip}</div>`:''}
+        <div style="position:absolute;right:8px;top:8px;display:flex;gap:4px;font-size:0.75rem;font-weight:800">
+          ${picked?'<span style="color:#7fe0a8">你 ✓</span>':''}
+          ${oppPicked?`<span style="color:#5dade2">${myRole==='host'?'🔑':'🏠'} ✓</span>`:''}
+        </div>
       </button>`;
     }).join('');
+
     const resultHtml = result
       ? `<div style="margin-top:14px;padding:12px;border-radius:10px;background:${result.type==='good'?'#1a4a1a':'#4a1a1a'};border:1.5px solid ${result.type==='good'?'#4caf50':'#f44336'};color:${result.type==='good'?'#81c784':'#ef9a9a'};text-align:center">${result.msg}</div>`
       : '';
     const contBtn = (result && isHost) ? '<button id="coop-q-continue" class="btn primary" style="margin-top:14px;width:240px">继续旅程 →</button>' : '';
+
+    // 状态提示
+    let statusLine;
+    if (result) statusLine = '';
+    else if (myVote == null) statusLine = '请选择你的选项（高风险选项需要<b>双方都选才执行</b>，否则默认走"安全选项"）';
+    else if (oppVote == null) statusLine = `你已选 #${myVote+1}，等待对方选择…`;
+    else statusLine = '双方均已投票，结算中…';
+
     app.innerHTML = `
       <div style="min-height:100vh;background:#1a1a2e;padding:24px;color:#fff;font-family:var(--font)">
         <div style="max-width:520px;margin:0 auto;background:#16213e;border:2px solid #e2b96a;border-radius:16px;padding:24px">
@@ -9046,57 +9077,83 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
           <h2 style="color:#e2b96a;text-align:center;margin:0 0 12px">${evt.title}</h2>
           <p style="color:#ccc;line-height:1.7;margin:0 0 16px;text-align:center">${evt.desc}</p>
           <div style="display:flex;gap:10px;justify-content:center;margin-bottom:14px;font-size:0.85rem">
-            <span>${hChar.emoji||'?'} 🏠 ${run.hostHp}/${run.hostMaxHp} 💰${run.hostGold||0}</span>
-            <span>${gChar.emoji||'?'} 🔑 ${run.guestHp}/${run.guestMaxHp} 💰${run.guestGold||0}</span>
+            <span>${hChar.emoji||'?'} 🏠 ${run.hostHp}/${run.hostMaxHp}</span>
+            <span style="color:#f5c518">💰 ${run.gold||0}（共享）</span>
+            <span>${gChar.emoji||'?'} 🔑 ${run.guestHp}/${run.guestMaxHp}</span>
           </div>
-          <div style="font-size:0.85rem;color:rgba(255,255,255,0.5);text-align:center;margin-bottom:10px">${isHost?'你（房主）来决定':'等待房主决定…'}</div>
+          <div style="font-size:0.85rem;color:rgba(255,255,255,0.6);text-align:center;margin-bottom:10px">${statusLine}</div>
           ${optsHtml}
           ${resultHtml}
           <div style="text-align:center">${contBtn}</div>
         </div>
       </div>`;
+
     document.querySelectorAll('.coop-q-opt').forEach(btn => {
       btn.addEventListener('click', () => {
-        if (!Net.isHost) return;
+        if (result) return;
         const i = parseInt(btn.dataset.optI);
-        UI._coopResolveQuestion(i);
+        UI._coopVoteQuestion(i);
       });
     });
     document.getElementById('coop-q-continue')?.addEventListener('click', () => {
       if (!Net.isHost) return;
-      // 清理事件状态
       UI._coopRun.questionEventId = null;
       UI._coopRun.questionResult = null;
+      UI._coopRun.questionVotes = { host: null, guest: null };
       Net.send({ t: 'coop-run-state', run: UI._coopSerializeRun() });
       Net.send({ t: 'coop-screen', screen: 'map' });
       State.current.screen = 'coop-map';
       UI.coopMap();
     });
   },
-  _coopResolveQuestion(optIdx) {
+
+  // 投票：双方各自投，房主端聚合 → 若两人投同一项执行该项；不同则默认走 index 最大的项（"安全选项"）
+  _coopVoteQuestion(optIdx) {
+    const myRole = Net.isHost ? 'host' : 'guest';
+    if (Net.isHost) {
+      const run = UI._coopRun;
+      if (!run) return;
+      run.questionVotes = run.questionVotes || { host: null, guest: null };
+      run.questionVotes.host = optIdx;
+      UI._coopTryResolveQuestion();
+      Net.send({ t: 'coop-run-state', run: UI._coopSerializeRun() });
+      UI.coopQuestion();
+    } else {
+      Net.send({ t: 'coop-question-vote', optIdx });
+    }
+  },
+
+  // 房主端尝试聚合投票，若双方都投了则执行
+  _coopTryResolveQuestion() {
     if (!Net.isHost) return;
     const run = UI._coopRun;
     if (!run) return;
+    const v = run.questionVotes || {};
+    if (v.host == null || v.guest == null) return;
+    if (run.questionResult) return; // 已结算过
     const evt = (Data.questionEvents || []).find(e => e.id === run.questionEventId);
-    if (!evt || !evt.options || !evt.options[optIdx]) return;
-    // 构造一个 shim run，把效果分摊到双方
+    if (!evt || !evt.options) return;
+    // 规则：双方投同一项 → 执行该项；不同 → 执行 index 较大的（通常是"婉拒/安全"选项）
+    let chosenIdx;
+    if (v.host === v.guest) chosenIdx = v.host;
+    else chosenIdx = Math.max(v.host, v.guest);
+    if (!evt.options[chosenIdx]) chosenIdx = 0;
     const shim = UI._coopMakeQuestionShim(run);
     let result;
     try {
-      result = evt.options[optIdx].resolve(shim, UI);
+      result = evt.options[chosenIdx].resolve(shim, UI);
     } catch(e) {
       console.warn('coop question resolve failed', e);
       result = { type:'bad', msg:'事件解析失败（已跳过）' };
     }
-    if (result === null) {
-      // 异步事件不支持联机版，给个兜底
-      result = { type:'good', msg:'事件已完成' };
+    if (result === null) result = { type:'good', msg:'事件已完成' };
+    // 如果双方投了不同选项，在 msg 前加一段标注
+    if (v.host !== v.guest) {
+      result = { ...result, msg: `🤝 双方投票不一致（${v.host+1} vs ${v.guest+1}），默认选「${evt.options[chosenIdx].label}」\n` + result.msg };
     }
     UI._coopApplyQuestionShim(run, shim);
     run.questionResult = result;
-    run.questionResolvedBy = 'host';
-    Net.send({ t: 'coop-run-state', run: UI._coopSerializeRun() });
-    UI.coopQuestion();
+    run.questionResolvedBy = 'consensus';
   },
   // 构造一个伪 run 对象（character / gold / relics / potions / deck），事件执行后把变化回写
   _coopMakeQuestionShim(run) {
@@ -9107,9 +9164,9 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
         hp: run.hostHp,
         maxHp: run.hostMaxHp,
       },
-      gold: run.hostGold || 0,
+      gold: run.gold || 0,
       relics: [...(run.hostRelics||[])],
-      potions: [...(run.sharedPotions||[null,null,null])],
+      potions: [...(run.sharedPotions||[null,null,null,null,null,null])],
       deck: [...(run.hostDeck||[])],
       cardUpgrades: {},
     };
@@ -9118,9 +9175,11 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
     run.hostHp = Math.max(0, Math.min(shim.character.maxHp, shim.character.hp));
     run.hostMaxHp = shim.character.maxHp;
     if (run.hostHp > run.hostMaxHp) run.hostHp = run.hostMaxHp;
-    run.hostGold = Math.max(0, shim.gold);
+    run.gold = Math.max(0, shim.gold);
     run.hostRelics = shim.relics || [];
-    run.sharedPotions = shim.potions || [null,null,null];
+    // 药水池可能因事件变化（添加 / 消耗），但保持 6 槽
+    const np = shim.potions || [];
+    run.sharedPotions = [0,1,2,3,4,5].map(i => np[i] || null);
     run.hostDeck = shim.deck || [];
   },
 
