@@ -80,7 +80,9 @@ const Data = {
       // 战士专属牌（简单机制，力气大主题）
       'br_double_strike','br_heavy_blade','br_cleave','br_shield_wall',
       'br_taunt_roar','br_bash_v','br_bloodletting','br_pommel_smash',
-      'br_grit','br_iron_swing','br_overwhelm'
+      'br_grit','br_iron_swing','br_overwhelm',
+      // 新增：rare + epic
+      'br_berserker','br_executioner'
     ],
     racer: [
       'nitro_boost','collision_block','drift_charge','overtake','turbo_crush',
@@ -100,7 +102,7 @@ const Data = {
   cards: {
     strike:   { id:'strike',   rarity:'common',   name:'打击',   cost:1, type:'attack', emoji:'👊', description:'造成 6 点伤害。',                          needsTarget:true,  effect(cs,ti,lv=0){ const dmg=[6,9,12][lv]||6; Combat.dealDamage(cs,ti,dmg); } },
     defend:   { id:'defend',   rarity:'common',   name:'防御',   cost:1, type:'skill',  emoji:'🛡', description:'获得 5 点格挡。',                          needsTarget:false, effect(cs,ti,lv=0){ const blk=[5,8,11][lv]||5; Combat.gainBlock(cs,blk,true); } },
-    bash:     { id:'bash',     rarity:'uncommon', name:'猛击',   cost:2, type:'attack', emoji:'🔨', description:'造成 8 点伤害并施加 2 层易伤。',            needsTarget:true,  effect(cs,ti,lv=0){ const dmg=lv>=1?10:8; const vuln=lv>=1?3:2; Combat.dealDamage(cs,ti,dmg); Combat.applyDebuff(cs.enemies[ti],'vulnerable',vuln); } },
+    bash:     { id:'bash',     rarity:'uncommon', name:'猛击',   cost:2, type:'attack', emoji:'🔨', description:'造成 10 点伤害并施加 2 层易伤。',            needsTarget:true,  effect(cs,ti,lv=0){ const dmg=lv>=1?12:10; const vuln=lv>=1?3:2; Combat.dealDamage(cs,ti,dmg); Combat.applyDebuff(cs.enemies[ti],'vulnerable',vuln); } },
     zap:      { id:'zap',      rarity:'common',   name:'电击',   cost:1, type:'attack', emoji:'⚡', description:'造成 5 点伤害。若目标有易伤则额外 3 点。',  needsTarget:true,  effect(cs,ti){ const b=(cs.enemies[ti].debuffs.vulnerable||0)>0?3:0; Combat.dealDamage(cs,ti,5+b); } },
     clash:    { id:'clash',    rarity:'common',   name:'冲撞',   cost:0, type:'attack', emoji:'💢', description:'若手牌全为攻击牌，造成 12 点伤害，否则 5 点。', needsTarget:true, effect(cs,ti,lv=0){ const a=cs.hand.every(id=>Data.cards[id]&&Data.cards[id].type==='attack'); const dmgFull=[12,16,20][lv]||12; const dmgElse=[5,7,9][lv]||5; Combat.dealDamage(cs,ti,a?dmgFull:dmgElse); } },
     pommel:   { id:'pommel',   rarity:'uncommon', name:'剑柄击', cost:1, type:'attack', emoji:'🗡', description:'造成 9 点伤害，摸 1 张牌。',                needsTarget:true,  effect(cs,ti,lv=0){ Combat.dealDamage(cs,ti,9); Combat.drawCards(cs,lv>=1?2:1); } },
@@ -146,8 +148,8 @@ const Data = {
     gear_shift: { id:'gear_shift', rarity:'common', name:'换挡时机', cost:0, type:'skill', emoji:'🔄', description:'升 1 挡或降 1 挡（选择）。本卡本轮最多使用 2 次。', needsTarget:false,
       effect(cs){ Combat._gearShiftInteractive(cs, 'gear_shift'); } },
     // 起始牌：刹车漂移（替代猛击）
-    gear_brake: { id:'gear_brake', rarity:'common', name:'刹车漂移', cost:1, type:'attack', emoji:'💨', description:'造成 <b>8</b> 点伤害（含档位倍率）。3 挡时附加 2 层减速。', needsTarget:true,
-      effect(cs,ti){ const g=cs.gear||2; const dmgMult=[0,0.8,1.0,1.5][g]; const bonus=Combat._getFtBonus(cs); Combat.dealDamage(cs,ti,Math.floor(8*dmgMult)+bonus); if(g>=3){ Combat.applyDebuff(cs.enemies[ti],'slow',2); } } },
+    gear_brake: { id:'gear_brake', rarity:'common', name:'刹车漂移', cost:1, type:'attack', emoji:'💨', description:'造成 <b>10</b> 点伤害（含档位倍率）。3 挡时附加 2 层减速。', needsTarget:true,
+      effect(cs,ti){ const g=cs.gear||2; const dmgMult=[0,0.8,1.0,1.5][g]; const bonus=Combat._getFtBonus(cs); Combat.dealDamage(cs,ti,Math.floor(10*dmgMult)+bonus); if(g>=3){ Combat.applyDebuff(cs.enemies[ti],'slow',2); } } },
 
     // ── 攻击牌（6张）────────────────────────────────────────────────────────────────────────────────
     // 1. 刹车漂移（起始牌已包含）
@@ -209,11 +211,11 @@ const Data = {
 
     // ── 换挡标签牌（2张）────────────────────────────────────────────────────────────────────────────────
     // 19. 档位锁定：1费 技能+换挡 本回合档位不变，获得档位×3格挡
-    gear_lock: { id:'gear_lock', rarity:'common', name:'档位锁定', cost:1, type:'skill', emoji:'🔒', description:'本回合档位锁定。获得 <b>档位×3</b> 点格挡（最多 9）。', needsTarget:false,
-      effect(cs){ cs._gearLocked=true; Combat.gainBlock(cs,(cs.gear||2)*3,true); } },
-    // 20. 超速警告：0费消耗 攻击+换挡 3挡时造成10伤+降至2挡，否则无效
-    overspeed: { id:'overspeed', rarity:'uncommon', name:'超速警告', cost:0, type:'attack', emoji:'🚨', description:'若处于 3 挡，造成 <b>13</b> 点伤害并强制降至 2 挡。否则无效果。消耗。', needsTarget:true,
-      effect(cs,ti){ const g=cs.gear||2; if(g>=3){ const ftBonus=Combat._getFtBonus(cs); Combat.dealDamage(cs,ti,Math.floor(10*1.3)+ftBonus); Combat._changeGear(cs,-1); }
+    gear_lock: { id:'gear_lock', rarity:'common', name:'档位锁定', cost:1, type:'skill', emoji:'🔒', description:'本回合档位锁定。获得 <b>档位×4</b> 点格挡（最多 12）。', needsTarget:false,
+      effect(cs){ cs._gearLocked=true; Combat.gainBlock(cs,(cs.gear||2)*4,true); } },
+    // 20. 超速警告：0费消耗 攻击+换挡 3挡时造成16伤+降至2挡，否则无效
+    overspeed: { id:'overspeed', rarity:'uncommon', name:'超速警告', cost:0, type:'attack', emoji:'🚨', description:'若处于 3 挡，造成 <b>16</b> 点伤害并强制降至 2 挡。否则无效果。消耗。', needsTarget:true,
+      effect(cs,ti){ const g=cs.gear||2; if(g>=3){ const ftBonus=Combat._getFtBonus(cs); Combat.dealDamage(cs,ti,Math.floor(12*1.3)+ftBonus); Combat._changeGear(cs,-1); }
       const oi=cs.discardPile.lastIndexOf('overspeed'); if(oi!==-1) cs.discardPile.splice(oi,1); cs.exhaustPile.push('overspeed'); } },
 
     // ── 赛车手扩池 A：速度感深化（5张）────────────────────────────────────────────────────────
@@ -279,8 +281,8 @@ const Data = {
     // 稀有牌
     ar_arrow_rain: { id:'ar_arrow_rain', rarity:'uncommon', name:'箭雨', cost:2, type:'attack', emoji:'🏹', description:'对所有敌人造成 <b>2</b> 点伤害 <b>2</b> 次，消耗全部蓄力，每消耗 1 点额外造成 <b>2</b> 点伤害（作用于全体每次）。', needsTarget:false,
       effect(cs,ti,lv){ const c=cs.charge||0; cs.charge=0; const base=lv>=2?4:(lv>=1?3:2); cs.enemies.forEach((_,i)=>{ if(!cs.enemies[i]._dead){ Combat.dealDamage(cs,i,base+c*2); Combat.dealDamage(cs,i,base+c*2); } }); } },
-    ar_full_charge: { id:'ar_full_charge', rarity:'epic', name:'满蓄爆射', cost:2, type:'attack', emoji:'🎯', description:'<b>仅当蓄力 = 5（满蓄）时可打出。</b>消耗全部蓄力，造成 <b>30</b> 点伤害。', needsTarget:true,
-      effect(cs,ti,lv){ const c=cs.charge||0; const threshold=lv>=2?4:(cs.chargeMax||5); const dmg=lv>=1?36:30; if(c>=threshold){ cs.charge=0; Combat.dealDamage(cs,ti,dmg); } } },
+    ar_full_charge: { id:'ar_full_charge', rarity:'epic', name:'满蓄爆射', cost:2, type:'attack', emoji:'🎯', description:'<b>仅当蓄力 = 5（满蓄）时可打出。</b>消耗全部蓄力，造成 <b>22</b> 点伤害。', needsTarget:true,
+      effect(cs,ti,lv){ const c=cs.charge||0; const threshold=lv>=2?4:(cs.chargeMax||5); const dmg=lv>=1?28:22; if(c>=threshold){ cs.charge=0; Combat.dealDamage(cs,ti,dmg); } } },
     ar_gale:    { id:'ar_gale',    rarity:'uncommon', name:'疾风步',   cost:1, type:'skill',  emoji:'💨', description:'获得 <b>5</b> 点格挡，获得 <b>2</b> 点蓄力，抽 <b>1</b> 张牌。消耗。', needsTarget:false,
       effect(cs){ Combat.gainBlock(cs,5,true); Combat.archerGainCharge(cs,2); Combat.drawCards(cs,1); const oi=cs.discardPile.lastIndexOf('ar_gale'); if(oi!==-1) cs.discardPile.splice(oi,1); cs.exhaustPile.push('ar_gale'); } },
     ar_pierce_all: { id:'ar_pierce_all', rarity:'uncommon', name:'贯穿射击', cost:2, type:'attack', emoji:'🏹', description:'对所有敌人造成 <b>6</b> 点伤害，消耗全部蓄力，每消耗 1 点额外造成 <b>3</b> 点伤害（作用于所有敌人）。', needsTarget:false,
@@ -291,8 +293,8 @@ const Data = {
       effect(cs){ cs.player.buffs.archer_instinct=(cs.player.buffs.archer_instinct||0)+1; } },
     ar_cap_up:  { id:'ar_cap_up',  rarity:'rare',     name:'蓄力上限', cost:2, type:'power',  emoji:'✨', description:'永久：蓄力上限提升至 <b>6</b>（原为5）。立即获得 <b>2</b> 点蓄力。', needsTarget:false,
       effect(cs){ cs.chargeMax=6; Combat.archerGainCharge(cs,2); } },
-    ar_ultimate: { id:'ar_ultimate', rarity:'rare',   name:'终极连射', cost:3, type:'attack', emoji:'🏹', description:'造成 <b>5</b> 点伤害 4 次，消耗全部蓄力，每消耗 1 点额外造成 <b>3</b> 点伤害（作用于全部 4 次）。', needsTarget:true,
-      effect(cs,ti){ const c=cs.charge||0; cs.charge=0; for(let i=0;i<4;i++) Combat.dealDamage(cs,ti,5+c*3); } },
+    ar_ultimate: { id:'ar_ultimate', rarity:'rare',   name:'终极连射', cost:3, type:'attack', emoji:'🏹', description:'造成 <b>5</b> 点伤害 4 次，消耗全部蓄力，每消耗 1 点额外造成 <b>2</b> 点伤害（作用于全部 4 次）。', needsTarget:true,
+      effect(cs,ti){ const c=cs.charge||0; cs.charge=0; for(let i=0;i<4;i++) Combat.dealDamage(cs,ti,5+c*2); } },
 
     // ── 射手扩池 B：速攻辅助（6张）──────────────────────────────────────────────────────────────
     ar_scatter:       { id:'ar_scatter',       rarity:'common',   name:'散射',     cost:1, type:'attack', emoji:'🏹', description:'对所有敌人造成 <b>2</b> 点伤害，获得 <b>1</b> 点蓄力。', needsTarget:false,
@@ -334,8 +336,8 @@ const Data = {
       description:'造成 <b>9</b> 点伤害。',
       effect(cs,ti,lv=0){ const base=[9,12,15][lv]||9; Combat.dealDamage(cs,ti,base+Combat._getBoxerBonus(cs)); } },
     box_uppercut: { id:'box_uppercut', rarity:'uncommon', name:'上勾拳',   cost:2, type:'attack', emoji:'💥', needsTarget:true,
-      description:'造成 <b>22</b> 点伤害。若上回合未受到伤害，仅造成 <b>10</b> 点。',
-      effect(cs,ti,lv=0){ const tookDmg=(cs.damageTakenLastTurn||0)>0; const base=tookDmg?([22,26,30][lv]||22):([10,13,16][lv]||10); Combat.dealDamage(cs,ti,base+Combat._getBoxerBonus(cs)); } },
+      description:'造成 <b>18</b> 点伤害。若上回合未受到伤害，仅造成 <b>8</b> 点。',
+      effect(cs,ti,lv=0){ const tookDmg=(cs.damageTakenLastTurn||0)>0; const base=tookDmg?([18,22,26][lv]||18):([8,11,14][lv]||8); Combat.dealDamage(cs,ti,base+Combat._getBoxerBonus(cs)); } },
 
     // 普通奖励牌
     box_combo:    { id:'box_combo',    rarity:'common',   name:'连击',     cost:1, type:'attack', emoji:'🌪️', needsTarget:true,
@@ -410,8 +412,8 @@ const Data = {
       description:'能力。本场战斗内，所有受到的伤害 <b>-1</b>（最低 0）。',
       effect(cs){ cs.player.buffs.box_iron_chin=(cs.player.buffs.box_iron_chin||0)+1; } },
     box_knockout:     { id:'box_knockout',     rarity:'epic',     name:'KO 一击',  cost:3, type:'attack', emoji:'💥', needsTarget:true,
-      description:'造成 <b>30</b> 点伤害。若敌人 HP ≤ <b>40%</b>，改为造成 <b>50</b> 点。',
-      effect(cs,ti,lv=0){ const e=cs.enemies[ti]; const lo=e.hp/e.maxHp<=0.40; const base=lo?([50,58,66][lv]||50):([30,36,42][lv]||30); Combat.dealDamage(cs,ti,base+Combat._getBoxerBonus(cs)); } },
+      description:'造成 <b>24</b> 点伤害。若敌人 HP ≤ <b>40%</b>，改为造成 <b>40</b> 点。',
+      effect(cs,ti,lv=0){ const e=cs.enemies[ti]; const lo=e.hp/e.maxHp<=0.40; const base=lo?([40,48,56][lv]||40):([24,30,36][lv]||24); Combat.dealDamage(cs,ti,base+Combat._getBoxerBonus(cs)); } },
     box_footwork:     { id:'box_footwork',     rarity:'uncommon', name:'步法',     cost:0, type:'skill',  emoji:'👟', needsTarget:false,
       description:'获得 <b>4</b> 点格挡，抽 <b>1</b> 张牌。',
       effect(cs,ti,lv=0){ const blk=[4,6,8][lv]||4; Combat.gainBlock(cs,blk,true); Combat.drawCards(cs,lv>=2?2:1); } },
@@ -460,8 +462,30 @@ const Data = {
       effect(cs,ti,lv=0){ const b=[8,10,12][lv]||8; const r=[2,3,3][lv]||2; Combat.gainBlock(cs,b,true); cs.player.buffs.gritReduce=(cs.player.buffs.gritReduce||0)+r; } },
     // 肉搏战：原创 — 高强度 AOE，无自损（卡名保留但机制改）
     br_iron_swing:    { id:'br_iron_swing',    rarity:'rare',     name:'肉搏战',   cost:2, type:'attack', emoji:'💪', needsTarget:false,
-      description:'对所有敌人造成 <b>14</b> 点伤害。',
-      effect(cs,ti,lv=0){ const base=[14,18,22][lv]||14; const str=cs.player.buffs?.strength||0; cs.enemies.forEach((en,j)=>{ if(!en._dead) Combat.dealDamage(cs,j,base+str); }); } },
+      description:'对所有敌人造成 <b>16</b> 点伤害。',
+      effect(cs,ti,lv=0){ const base=[16,20,24][lv]||16; const str=cs.player.buffs?.strength||0; cs.enemies.forEach((en,j)=>{ if(!en._dead) Combat.dealDamage(cs,j,base+str); }); } },
+    // 断头台：原创 epic — 简单粗暴的斩杀机制，符合战士「力气大」主题
+    br_executioner:   { id:'br_executioner',   rarity:'epic',     name:'断头台',   cost:2, type:'attack', emoji:'🪓', needsTarget:true,
+      description:'造成 <b>15</b> 点伤害；若目标 HP ≤ <b>30%</b>，额外造成 <b>20</b> 点伤害。',
+      effect(cs,ti,lv=0){
+        const base=[15,18,22][lv]||15;
+        const bonus=[20,24,28][lv]||20;
+        const e=cs.enemies[ti];
+        const lo=e.hp/e.maxHp<=0.30;
+        const str=cs.player.buffs?.strength||0;
+        Combat.dealDamage(cs,ti,base+str);
+        if(lo){ Combat.dealDamage(cs,ti,bonus+str); }
+      } },
+    // 狂战士：原创 rare — 缺血叠力量（战士版搏命）
+    br_berserker:     { id:'br_berserker',     rarity:'rare',     name:'狂战士',   cost:1, type:'power',  emoji:'😤', needsTarget:false,
+      description:'能力。永久 <b>+2</b> 力量；每损失 <b>25%</b> 最大 HP，再 <b>+1</b> 力量（最多 +5）。',
+      effect(cs,ti,lv=0){
+        const baseStr=[2,3,3][lv]||2;
+        Combat.applyBuff(cs.player,'strength',baseStr);
+        const lostFrac=1 - cs.player.hp/cs.player.maxHp;
+        const extra=Math.min(Math.floor(lostFrac/0.25), 5);
+        if(extra>0) Combat.applyBuff(cs.player,'strength',extra);
+      } },
     // 压制：原创「以强欺弱」— 当你 HP 比敌人多时狠狠地揍他
     br_overwhelm:     { id:'br_overwhelm',     rarity:'rare',     name:'压制',     cost:1, type:'attack', emoji:'🥊', needsTarget:true,
       description:'造成 <b>9</b> 点伤害；若你当前 HP <b>高于</b>目标当前 HP，伤害<b>翻倍</b>。',
@@ -903,7 +927,7 @@ const Data = {
     },
     {
       id: 'susu_pocketwatch',
-      name: '苏苏的怀表',
+      name: 'susu的怀表',
       icon: '⌚',
       tier: 'epic',
       source: 'battle',
@@ -1583,7 +1607,7 @@ const Data = {
     ar_pierce_all:  { 1:{desc:'对所有敌人造成 <b>8</b> 点伤害，消耗全部蓄力，每消耗 1 点额外造成 <b>3</b> 点伤害（作用于所有敌人）。', cost:2}, 2:{desc:'<b>1费</b>。对所有敌人造成 <b>8</b> 点伤害，消耗全部蓄力，每消耗 1 点额外造成 <b>3</b> 点伤害（作用于所有敌人）。', cost:1} },
     ar_instinct:    { 1:{desc:'永久：每回合开始时，获得 <b>2</b> 点蓄力（不超过上限）。', cost:2}, 2:{desc:'<b>1费</b>。永久：每回合开始时，获得 <b>2</b> 点蓄力（不超过上限）。', cost:1} },
     ar_cap_up:      { 1:{desc:'永久：蓄力上限提升至 <b>8</b>（原为5）。立即获得 <b>3</b> 点蓄力。', cost:2}, 2:{desc:'<b>1费</b>。永久：蓄力上限提升至 <b>8</b>（原为5）。立即获得 <b>3</b> 点蓄力。', cost:1} },
-    ar_ultimate:    { 1:{desc:'造成 <b>6</b> 点伤害 4 次，消耗全部蓄力，每消耗 1 点额外造成 <b>3</b> 点伤害（作用于全部 4 次）。', cost:3}, 2:{desc:'<b>2费</b>。造成 <b>6</b> 点伤害 4 次，消耗全部蓄力，每消耗 1 点额外造成 <b>3</b> 点伤害（作用于全部 4 次）。', cost:2} },
+    ar_ultimate:    { 1:{desc:'造成 <b>6</b> 点伤害 4 次，消耗全部蓄力，每消耗 1 点额外造成 <b>2</b> 点伤害（作用于全部 4 次）。', cost:3}, 2:{desc:'<b>2费</b>。造成 <b>6</b> 点伤害 4 次，消耗全部蓄力，每消耗 1 点额外造成 <b>2</b> 点伤害（作用于全部 4 次）。', cost:2} },
     ar_focus_aim:   { 1:{desc:'获得 <b>4</b> 点蓄力。消耗。', cost:0}, 2:{desc:'获得 <b>4</b> 点蓄力。<b>去除消耗。</b>', cost:0} },
     ar_scatter:     { 1:{desc:'对所有敌人造成 <b>3</b> 点伤害，获得 <b>1</b> 点蓄力。', cost:1}, 2:{desc:'对所有敌人造成 <b>4</b> 点伤害，获得 <b>2</b> 点蓄力。', cost:1} },
     ar_weak_arrow:  { 1:{desc:'造成 <b>4</b> 点伤害，施加 <b>1</b> 层虚弱，获得 <b>1</b> 点蓄力。', cost:1}, 2:{desc:'造成 <b>5</b> 点伤害，施加 <b>2</b> 层虚弱，获得 <b>1</b> 点蓄力。', cost:1} },
@@ -1599,7 +1623,7 @@ const Data = {
     // ── Brute 卡牌升级 ──
     strike:       { 1:{desc:'造成 <b>9</b> 点伤害。', cost:1}, 2:{desc:'造成 <b>12</b> 点伤害。', cost:1} },
     defend:       { 1:{desc:'获得 <b>8</b> 点格挡。', cost:1}, 2:{desc:'获得 <b>11</b> 点格挡。', cost:1} },
-    bash:         { 1:{desc:'造成 <b>10</b> 点伤害并施加 <b>3</b> 层易伤。', cost:2}, 2:{desc:'造成 <b>10</b> 点伤害并施加 <b>3</b> 层易伤。<b>费用降为 1。</b>', cost:1} },
+    bash:         { 1:{desc:'造成 <b>12</b> 点伤害并施加 <b>3</b> 层易伤。', cost:2}, 2:{desc:'造成 <b>12</b> 点伤害并施加 <b>3</b> 层易伤。<b>费用降为 1。</b>', cost:1} },
     clash:        { 1:{desc:'若手牌全为攻击牌，造成 <b>16</b> 点伤害，否则 <b>7</b> 点。', cost:0}, 2:{desc:'若手牌全为攻击牌，造成 <b>20</b> 点伤害，否则 <b>9</b> 点。', cost:0} },
     pommel:       { 1:{desc:'造成 <b>9</b> 点伤害，摸 <b>2</b> 张牌。', cost:1}, 2:{desc:'造成 <b>9</b> 点伤害，摸 <b>2</b> 张牌。<b>费用降为 0。</b>', cost:0} },
     shrug:        { 1:{desc:'获得 <b>11</b> 点格挡，摸 1 张牌。', cost:1}, 2:{desc:'获得 <b>11</b> 点格挡，摸 <b>2</b> 张牌。', cost:1} },
@@ -1611,7 +1635,7 @@ const Data = {
     box_jab:        { 1:{desc:'造成 <b>7</b> 点伤害。',            cost:1}, 2:{desc:'造成 <b>10</b> 点伤害。',                          cost:1} },
     box_guard:      { 1:{desc:'获得 <b>8</b> 点格挡。',            cost:1}, 2:{desc:'获得 <b>11</b> 点格挡。',                          cost:1} },
     box_cross:      { 1:{desc:'造成 <b>12</b> 点伤害。',           cost:1}, 2:{desc:'造成 <b>15</b> 点伤害。',                          cost:1} },
-    box_uppercut:   { 1:{desc:'造成 <b>26</b> 点伤害。若上回合未受到伤害，仅造成 <b>13</b> 点。', cost:2}, 2:{desc:'造成 <b>30</b> 点伤害。若上回合未受到伤害，仅造成 <b>16</b> 点。', cost:2} },
+    box_uppercut:   { 1:{desc:'造成 <b>22</b> 点伤害。若上回合未受到伤害，仅造成 <b>11</b> 点。', cost:2}, 2:{desc:'造成 <b>26</b> 点伤害。若上回合未受到伤害，仅造成 <b>14</b> 点。', cost:2} },
     box_combo:      { 1:{desc:'造成 <b>3</b> 段 <b>4</b> 点伤害。', cost:1}, 2:{desc:'造成 <b>3</b> 段 <b>5</b> 点伤害。',                cost:1} },
     box_body_blow:  { 1:{desc:'造成 <b>13</b> 点伤害，施加 1 层虚弱。', cost:1}, 2:{desc:'造成 <b>16</b> 点伤害，施加 <b>2</b> 层虚弱。', cost:1} },
     box_counter:    { 1:{desc:'造成 <b>7</b> 点伤害。有愤怒时改为 <b>13</b> 点并消耗愤怒。', cost:1}, 2:{desc:'造成 <b>9</b> 点伤害。有愤怒时改为 <b>16</b> 点并消耗愤怒。', cost:1} },
@@ -3191,7 +3215,7 @@ const Combat = {
     }
     if(cs.player.hp<=0){
       const run2=State.run;
-      // 苏苏的怀表：5% 概率满血复活并秒杀非Boss房全场敌人（每场冒险仅一次）
+      // susu的怀表：5% 概率满血复活并秒杀非Boss房全场敌人（每场冒险仅一次）
       if(run2.relics?.includes('susu_pocketwatch') && !run2.pocketwatchUsed && Math.random() < 0.05){
         run2.pocketwatchUsed = true;
         cs.player.hp = run2.character.maxHp;
@@ -3368,8 +3392,8 @@ const Combat = {
     });
   },
   dealDamage(cs,targetIndex,amount){ const enemy=cs.enemies[targetIndex];if(!enemy||enemy._dead)return 0; let dmg=amount+(cs.player.buffs.strength||0);
-    // 速度感攻击加成：40-79=+2，>=80=+5
-    if(State.run?.character?.id==='racer'){ const _spd=cs.speed||0; if(_spd>=80) dmg+=5; else if(_spd>=40) dmg+=2; } if((enemy.debuffs.vulnerable||0)>0)dmg=Math.floor(dmg*1.5); if((cs.player.debuffs.weak||0)>0)dmg=Math.floor(dmg*0.75); if((cs.player.debuffs.slow||0)>0)dmg=Math.floor(dmg*0.70); const absorbed=Math.min(enemy.block,dmg);enemy.block=Math.max(0,enemy.block-absorbed);const actualDmg=dmg-absorbed;enemy.hp-=actualDmg;
+    // 速度感攻击加成：30-59=+2，>=60=+5
+    if(State.run?.character?.id==='racer'){ const _spd=cs.speed||0; if(_spd>=60) dmg+=5; else if(_spd>=30) dmg+=2; } if((enemy.debuffs.vulnerable||0)>0)dmg=Math.floor(dmg*1.5); if((cs.player.debuffs.weak||0)>0)dmg=Math.floor(dmg*0.75); if((cs.player.debuffs.slow||0)>0)dmg=Math.floor(dmg*0.70); const absorbed=Math.min(enemy.block,dmg);enemy.block=Math.max(0,enemy.block-absorbed);const actualDmg=dmg-absorbed;enemy.hp-=actualDmg;
     // 大头的西班牙语书：记录本回合是否对敌人造成过实际伤害
     if(actualDmg > 0) cs.dealtDamageThisTurn = true;
     // 死亡判定：HP≤0 立即标记死亡并归零（修复柠檬水等绕过 playCard 的伤害源）
@@ -4625,7 +4649,7 @@ const UI = {
       const ft = (cs.player?.buffs?.full_throttle||0) > 0;
       const ftBonus = Combat._getFtBonus(cs);
       const str = cs.player?.buffs?.strength || 0;
-      const spdAtk = spd>=80?5:(spd>=40?2:0);
+      const spdAtk = spd>=60?5:(spd>=30?2:0);
       const dmgExtra = str + spdAtk; // 力量+速度感攻击加成（在 dealDamage 里自动加）
       const gearLabel = ['','<span style="color:#7dccff">1挡</span>','<span style="color:#e0e0e0">2挡</span>','<span style="color:#ff7d7d">3挡</span>'][g];
       const RACER_CARDS = {
@@ -4873,7 +4897,7 @@ el.innerHTML=`<div class="card-type-bar"></div>${rarityTag}<div class="card-cost
       amulet:         { name: '大眼的水晶球', icon: '🔮', desc: '第一次被致死时，以 50% 最大生命值存活（仅触发一次）。命运早已在水晶球中显现。' },
       football:       { name: '橄榄球', icon: '🏈', img: 'manus-storage/football_icon_0390dd99.png', desc: '每场战斗第一回合增加 1 点能量。' },
       susu_eyemask:   { name: 'Susu的眼罩', icon: null, img: 'manus-storage/img_01_3443k_f8fb25b0.png', desc: '每场战斗中，第一次受到负面状态效果时免疫（弱化/易伤/中毒等），仅触发一次。' },
-      susu_pocketwatch:{ name: '苏苏的怀表', icon: '⌚', desc: '当你被致死时，有 5% 概率时间倒流：满血复活，并瞬间击溃当前房间所有敌人（Boss 房：仅复活）。每场冒险仅触发一次。' },
+      susu_pocketwatch:{ name: 'susu的怀表', icon: '⌚', desc: '当你被致死时，有 5% 概率时间倒流：满血复活，并瞬间击溃当前房间所有敌人（Boss 房：仅复活）。每场冒险仅触发一次。' },
       xiaojiu_guitar: { name: '小九的六弦琴', icon: null, img: 'manus-storage/xiaojiu_guitar_e444f0fa.png', desc: '从第二回合开始，每个回合额外多抽 1 张牌。' },
       wangwei_bracelet: { name: '王微的手绳', icon: '📿', desc: '每回合开始时，获得 3 点格挡（不会消失，可累计）。' },
       wangwei_glasses:  { name: '王微的眼镜', icon: '👓', desc: '受到伤害时，有 20% 概率减少最多 15 点伤害。' },
@@ -5344,7 +5368,7 @@ el.innerHTML=`<div class="card-type-bar"></div>${rarityTag}<div class="card-cost
           <button id="dbg-close" style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.2);color:#fff;border-radius:8px;padding:6px 14px;cursor:pointer">✕ 关闭</button>
         </div>
         <div style="background:rgba(255,255,255,0.04);border:1.5px solid rgba(255,255,255,0.12);border-radius:14px;padding:18px;margin-bottom:14px">
-          <div style="color:#e8d8ff;font-weight:800;font-size:1.05rem;margin-bottom:10px">⌚ 苏苏的怀表</div>
+          <div style="color:#e8d8ff;font-weight:800;font-size:1.05rem;margin-bottom:10px">⌚ susu的怀表</div>
           <div style="font-size:0.85rem;color:rgba(255,255,255,0.55);margin-bottom:12px">效果：被致死时 5% 概率满血复活并秒杀全场（Boss 房仅复活）。这里直接跳过概率与触发条件，**直接播放动画**。</div>
           <div style="display:flex;gap:10px;flex-wrap:wrap">
             <button class="dbg-btn" data-test="pocketwatch-normal" style="background:rgba(127,224,168,0.15);border:1.5px solid rgba(127,224,168,0.45);color:#a9f0c5;border-radius:8px;padding:8px 16px;cursor:pointer;font-weight:700">▶ 普通房间版（含秒杀）</button>
@@ -6011,7 +6035,7 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
     else if(node.type==='question'){State.go('question');}
   },
 
-  // ── 苏苏的怀表：时间倒流演出（onDone 在动画结束后回调） ──────────────
+  // ── susu的怀表：时间倒流演出（onDone 在动画结束后回调） ──────────────
   _triggerPocketWatch(isBoss, onDone){
     // 先暂停 BGM；演出结束后根据当前屏幕恢复
     const _bgmModeBefore = Audio._bgmMode;
@@ -6257,7 +6281,7 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
         </div>
         <div style="font-size:1.05rem;font-weight:900;color:${gc};letter-spacing:0.5px;text-shadow:0 0 8px ${gc}88">${gearNames[g]}</div>
         <div style="display:flex;gap:8px;align-items:center">
-          <div id="speed-hud-btn" onclick="UI.toggleSpeedPanel(${spd})" style="cursor:pointer;font-size:0.88rem;font-weight:700;color:#f9ca24;background:rgba(249,202,36,0.12);border:1.5px solid rgba(249,202,36,0.4);border-radius:8px;padding:2px 10px;user-select:none;transition:background 0.15s" onmouseenter="this.style.background='rgba(249,202,36,0.25)'" onmouseleave="this.style.background='rgba(249,202,36,0.12)'">⚡ 速度感 <b>${spd}</b>${spd>=80?' 🔥':spd>=60?' 🏎️':spd>=40?' ⚡':spd>=20?' 🛡':''}</div>'+
+          <div id="speed-hud-btn" onclick="UI.toggleSpeedPanel(${spd})" style="cursor:pointer;font-size:0.88rem;font-weight:700;color:#f9ca24;background:rgba(249,202,36,0.12);border:1.5px solid rgba(249,202,36,0.4);border-radius:8px;padding:2px 10px;user-select:none;transition:background 0.15s" onmouseenter="this.style.background='rgba(249,202,36,0.25)'" onmouseleave="this.style.background='rgba(249,202,36,0.12)'">⚡ 速度感 <b>${spd}</b>${spd>=60?' 🔥':spd>=30?' ⚡':spd>=15?' 🛡':''}</div>'+
           ${mom>0?`<div style="font-size:0.85rem;font-weight:700;color:#a8e6cf;background:rgba(168,230,207,0.12);border:1.5px solid rgba(168,230,207,0.4);border-radius:8px;padding:2px 10px">⬆ 势头 <b>${mom}</b></div>`:''}
         </div>
       </div>`;
