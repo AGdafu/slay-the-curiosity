@@ -846,7 +846,7 @@ const Data = {
       name: '高山的指南针',
       icon: '🧭',
       tier: 'epic',
-      desc: '激活后，第三层地图变为一条直路（7~10 节点）：精英 10%、普通战斗 30%、问号 26%、休息 17%、商店 17%。最后一节点必为商店（可能整条路上没有精英）。',
+      desc: '激活后，第三层地图变为一条直路（7~10 节点）。规则：最多 1 个精英 + 最多 3 个普通战斗 + 至少各 1 个问号 / 休息 / 商店，最后一节点必为商店。',
       apply(run){ run.relics.push('gaoshan_compass'); }
     },
     {
@@ -2531,31 +2531,50 @@ const MapGen = {
   FLOORS:7,
   // 固定伪随机数生成器（基于种子，保证每次生成相同地图）
   _rng(seed){ let s=(seed^0xdeadbeef)>>>0; return()=>{ s=Math.imul(s^(s>>>16),0x45d9f3b);s=Math.imul(s^(s>>>16),0x45d9f3b);s^=s>>>16;return(s>>>0)/0xffffffff; }; },
-  // 指南针直路地图：7~10个节点，一条直路。精英10%/普通战斗30%/问号26%/休息17%/商店17%，
-  // 最后节点必为商店（无精英保底，可能出现没有任何精英的地图）
+  // 指南针直路地图：7~10个节点。约束：精英≤1，普通战斗≤3，问号/休息/商店各≥1，最后一节点必为商店
   generateCompass(){
     const nodes=[],paths=[];let idCounter=0;const floorNodes=[];
     const rng=MapGen._rng(Date.now()&0xfffff);
     // 随机决7~10个中间节点（不含起点和终点boss）
     const midCount = 7 + Math.floor(rng() * 4); // 7,8,9,10
-    const totalFloors = midCount + 1; // 包含起点floor=0，中间节点floor=1..midCount，boss在floor=midCount+1
+    const totalFloors = midCount + 1;
     // 起点
     const entry={id:idCounter++,type:'start',floor:0,col:2,emoji:'🚶',done:false};
     nodes.push(entry);floorNodes[0]=[entry];
-    // 中间节点：每层只有一个
-    for(let f=1;f<=midCount;f++){
-      let type;
-      // 最后一层：必为商店
-      if(f===midCount){ type='shop'; }
-      else {
-        const r=rng();
-        // 精英 10% / 普通 30% / 问号 26% / 休息 17% / 商店 17%
-        if(r<0.10) type='elite';
-        else if(r<0.40) type='combat';
-        else if(r<0.66) type='question';
-        else if(r<0.83) type='rest';
-        else type='shop';
+    // 先构建中间节点类型池：保证 1 问号 + 1 休息 + 1 商店（最后一层会再放一个商店，是 boss 前的）
+    // 然后剩余槽位按概率填充，并尊重 elite≤1、combat≤3 的上限
+    const slotCount = midCount - 1; // 最后一层是固定的商店，不算在 slots 里
+    const slots = ['question','rest','shop']; // 强制保底（这 3 个分布在中间，最后还有一个 shop）
+    let eliteCount = 0, combatCount = 0;
+    while(slots.length < slotCount){
+      const r = rng();
+      let pick;
+      if(r < 0.10) pick='elite';
+      else if(r < 0.40) pick='combat';
+      else if(r < 0.66) pick='question';
+      else if(r < 0.83) pick='rest';
+      else pick='shop';
+      // 上限保护：超了换成其他事件
+      if(pick==='elite' && eliteCount>=1){
+        pick = (r < 0.5 ? 'question' : (r < 0.75 ? 'rest' : 'shop'));
       }
+      if(pick==='combat' && combatCount>=3){
+        pick = (r < 0.33 ? 'question' : (r < 0.66 ? 'rest' : 'shop'));
+      }
+      if(pick==='elite') eliteCount++;
+      if(pick==='combat') combatCount++;
+      slots.push(pick);
+    }
+    // 打乱中间槽位顺序
+    for(let i=slots.length-1; i>0; i--){
+      const j = Math.floor(rng()*(i+1));
+      const tmp = slots[i]; slots[i] = slots[j]; slots[j] = tmp;
+    }
+    // 最后一层固定商店
+    slots.push('shop');
+    // 实际生成节点
+    for(let f=1; f<=midCount; f++){
+      const type = slots[f-1];
       const node={id:idCounter++,type,floor:f,col:2,emoji:MapGen._emoji(type),done:false};
       nodes.push(node);floorNodes[f]=[node];
     }
@@ -4976,7 +4995,7 @@ el.innerHTML=`<div class="card-type-bar"></div>${rarityTag}<div class="card-cost
       // 高山遗物
       gaoshan_sunglasses: { name: '高山的雪镜',   icon: '🥽', desc: '每回合开始时，有 35% 概率获得 1 点额外能量。' },
       gaoshan_jacket:     { name: '高山的冲锋衣', icon: '🧥', desc: '每场战斗中，第一次获得格挡时，格挡值翻倍。' },
-      gaoshan_compass:    { name: '高山的指南针', icon: '🧭', desc: '激活后，第三层地图变为一条直路：精英 10%、普通 30%、问号 26%、休息 17%、商店 17%；最后一节点必为商店（可能整条路上没有精英）。' },
+      gaoshan_compass:    { name: '高山的指南针', icon: '🧭', desc: '激活后，第三层地图变为一条直路。规则：最多 1 精英、最多 3 普通战斗、问号/休息/商店至少各 1 个，最后一节点必为商店。' },
       gaoshan_braid:      { name: '高山的麻花辫', icon: '💇', desc: '每场战斗开始时，随机回复 3~8 点 HP。' },
       // 事件专属遗物
       football:           { name: '橄榄球',           icon: '🏈', desc: '每场战斗第一回合增加 1 点能量。' },
@@ -5428,7 +5447,7 @@ el.innerHTML=`<div class="card-type-bar"></div>${rarityTag}<div class="card-cost
         </div>
         <div style="background:rgba(255,255,255,0.04);border:1.5px solid rgba(255,200,80,0.3);border-radius:14px;padding:18px">
           <div style="color:#ffd060;font-weight:800;font-size:1.05rem;margin-bottom:6px">高山的指南针 · 第三层地图生成预览</div>
-          <div style="font-size:0.82rem;color:rgba(255,255,255,0.6);margin-bottom:10px">配比：精英 10% / 普通 40% / 问号 22% / 休息 14% / 商店 14%。保底：至少 1 个精英 + 最后必商店。</div>
+          <div style="font-size:0.82rem;color:rgba(255,255,255,0.6);margin-bottom:10px">规则：最多 1 个精英 + 最多 3 个普通战斗 + 问号/休息/商店至少各 1 个，最后一节点必商店。</div>
           <div style="display:flex;gap:10px;align-items:center;margin-bottom:14px;flex-wrap:wrap">
             <button id="dbg-roll" style="background:rgba(127,224,168,0.18);border:1.5px solid rgba(127,224,168,0.5);color:#a9f0c5;border-radius:8px;padding:8px 18px;cursor:pointer;font-weight:700">🎲 生成新地图</button>
             <button id="dbg-roll10" style="background:rgba(127,224,168,0.10);border:1.5px solid rgba(127,224,168,0.35);color:#a9f0c5;border-radius:8px;padding:8px 14px;cursor:pointer">🎲×10 统计</button>
