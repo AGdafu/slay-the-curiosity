@@ -4678,6 +4678,14 @@ const UI = {
   renderCard(cardId, overrideCost, upgradeLevel, inCombatHand=false){
     const def=Data.cards[cardId];if(!def)return document.createElement('div');
     const el=document.createElement('div');el.className='card';el.dataset.cardId=cardId;el.dataset.type=def.type;
+    // 防御类技能（主效果为格挡）→ 蓝色色条；其余技能 → 紫色
+    const DEFENSE_CARDS = new Set([
+      'box_guard','box_iron_step','box_footwork','box_endure','box_dodge_punch',
+      'gear_defend','gear_lock','corner_line','corner_guard','pit_repair',
+      'br_shield_wall','br_grit','armaments','shrug',
+      'ar_block_charge','ar_roll','ar_wind_step','ar_gale','ar_dodge'
+    ]);
+    if(def.type==='skill' && DEFENSE_CARDS.has(cardId)) el.dataset.subtype='defend';
     // 升级后可能改变费用
     let _upgradedCost = def.cost;
     if(upgradeLevel > 0){
