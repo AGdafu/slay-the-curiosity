@@ -846,7 +846,7 @@ const Data = {
       name: '高山的指南针',
       icon: '🧭',
       tier: 'epic',
-      desc: '激活后，第三层地图变为一条直路（7~10 节点）。规则：最多 1 个精英 + 最多 3 个普通战斗 + 至少各 1 个问号 / 休息 / 商店，最后一节点必为商店。',
+      desc: '激活后，第三层地图变为一条直路（7~10 节点）。规则：最多 1 个精英 + 普通战斗 2~3 个 + 至少各 1 个问号 / 休息 / 商店，最后一节点必为商店。',
       apply(run){ run.relics.push('gaoshan_compass'); }
     },
     {
@@ -2531,7 +2531,7 @@ const MapGen = {
   FLOORS:7,
   // 固定伪随机数生成器（基于种子，保证每次生成相同地图）
   _rng(seed){ let s=(seed^0xdeadbeef)>>>0; return()=>{ s=Math.imul(s^(s>>>16),0x45d9f3b);s=Math.imul(s^(s>>>16),0x45d9f3b);s^=s>>>16;return(s>>>0)/0xffffffff; }; },
-  // 指南针直路地图：7~10个节点。约束：精英≤1，普通战斗≤3，问号/休息/商店各≥1，最后一节点必为商店
+  // 指南针直路地图：7~10个节点。约束：精英≤1，普通战斗 2~3，问号/休息/商店各≥1，最后一节点必为商店
   generateCompass(){
     const nodes=[],paths=[];let idCounter=0;const floorNodes=[];
     const rng=MapGen._rng(Date.now()&0xfffff);
@@ -2541,11 +2541,11 @@ const MapGen = {
     // 起点
     const entry={id:idCounter++,type:'start',floor:0,col:2,emoji:'🚶',done:false};
     nodes.push(entry);floorNodes[0]=[entry];
-    // 先构建中间节点类型池：保证 1 问号 + 1 休息 + 1 商店（最后一层会再放一个商店，是 boss 前的）
-    // 然后剩余槽位按概率填充，并尊重 elite≤1、combat≤3 的上限
-    const slotCount = midCount - 1; // 最后一层是固定的商店，不算在 slots 里
-    const slots = ['question','rest','shop']; // 强制保底（这 3 个分布在中间，最后还有一个 shop）
-    let eliteCount = 0, combatCount = 0;
+    // 先构建中间节点类型池：强制保底 1 问号 + 1 休息 + 1 商店 + 2 普通战斗
+    // 剩余槽位按概率填充，并尊重 elite≤1、combat≤3 的上限
+    const slotCount = midCount - 1; // 最后一层固定商店，不算在 slots 里
+    const slots = ['question','rest','shop','combat','combat']; // 强制保底
+    let eliteCount = 0, combatCount = 2;
     while(slots.length < slotCount){
       const r = rng();
       let pick;
@@ -4995,7 +4995,7 @@ el.innerHTML=`<div class="card-type-bar"></div>${rarityTag}<div class="card-cost
       // 高山遗物
       gaoshan_sunglasses: { name: '高山的雪镜',   icon: '🥽', desc: '每回合开始时，有 35% 概率获得 1 点额外能量。' },
       gaoshan_jacket:     { name: '高山的冲锋衣', icon: '🧥', desc: '每场战斗中，第一次获得格挡时，格挡值翻倍。' },
-      gaoshan_compass:    { name: '高山的指南针', icon: '🧭', desc: '激活后，第三层地图变为一条直路。规则：最多 1 精英、最多 3 普通战斗、问号/休息/商店至少各 1 个，最后一节点必为商店。' },
+      gaoshan_compass:    { name: '高山的指南针', icon: '🧭', desc: '激活后，第三层地图变为一条直路。规则：最多 1 精英、普通战斗 2~3 个、问号/休息/商店至少各 1 个，最后一节点必为商店。' },
       gaoshan_braid:      { name: '高山的麻花辫', icon: '💇', desc: '每场战斗开始时，随机回复 3~8 点 HP。' },
       // 事件专属遗物
       football:           { name: '橄榄球',           icon: '🏈', desc: '每场战斗第一回合增加 1 点能量。' },
@@ -5447,7 +5447,7 @@ el.innerHTML=`<div class="card-type-bar"></div>${rarityTag}<div class="card-cost
         </div>
         <div style="background:rgba(255,255,255,0.04);border:1.5px solid rgba(255,200,80,0.3);border-radius:14px;padding:18px">
           <div style="color:#ffd060;font-weight:800;font-size:1.05rem;margin-bottom:6px">高山的指南针 · 第三层地图生成预览</div>
-          <div style="font-size:0.82rem;color:rgba(255,255,255,0.6);margin-bottom:10px">规则：最多 1 个精英 + 最多 3 个普通战斗 + 问号/休息/商店至少各 1 个，最后一节点必商店。</div>
+          <div style="font-size:0.82rem;color:rgba(255,255,255,0.6);margin-bottom:10px">规则：最多 1 个精英 + 普通战斗 2~3 个 + 问号/休息/商店至少各 1 个，最后一节点必商店。</div>
           <div style="display:flex;gap:10px;align-items:center;margin-bottom:14px;flex-wrap:wrap">
             <button id="dbg-roll" style="background:rgba(127,224,168,0.18);border:1.5px solid rgba(127,224,168,0.5);color:#a9f0c5;border-radius:8px;padding:8px 18px;cursor:pointer;font-weight:700">🎲 生成新地图</button>
             <button id="dbg-roll10" style="background:rgba(127,224,168,0.10);border:1.5px solid rgba(127,224,168,0.35);color:#a9f0c5;border-radius:8px;padding:8px 14px;cursor:pointer">🎲×10 统计</button>
