@@ -1451,7 +1451,7 @@ const Data = {
     },
     laozao: {
       id: 'laozao',
-      name: 'skype的醒糟水',
+      name: '老灶的醪糟水',
       emoji: '🍶',
       img: 'manus-storage/laozao_icon_7788818e.png',
       color: '#c8860a',
@@ -1461,15 +1461,11 @@ const Data = {
       desc: '喝下后本回合所有手牌费用随机变为 0~3。',
       use(run, cs) {
         if (!cs) return '只能在战斗中使用！';
-        // 为每张手牌随机分配0~3的费用，存入cs.laozaoCosts
-        cs.laozaoCosts = {};
-        const results = cs.hand.map((cardId, i) => {
-          const newCost = Math.floor(Math.random() * 4); // 0,1,2,3
-          cs.laozaoCosts[cardId + '_' + i] = newCost;
-          return newCost;
-        });
+        // 为每张手牌随机分配0~3的费用。用并行数组 laozaoCostsArr[i] 跟手牌索引对齐，
+        // 打牌后通过 splice 同步索引，避免 cardId+index key 失配 bug
+        cs.laozaoCostsArr = cs.hand.map(() => Math.floor(Math.random() * 4));
         cs.laozaoActive = true;
-        return `手牌费用已随机变化：${results.join(', ')}！`;
+        return `手牌费用已随机变化：${cs.laozaoCostsArr.join(', ')}！`;
       }
     },
     bread: {
@@ -3021,9 +3017,8 @@ const Combat = {
     const def=Data.cards[cardId];if(!def)return false;
     // 放大镜：用手牌位置索引精确匹配唯一那张牌
     const isMagnifierCard = cs.magnifierActive && cs.magnifierHandIndex === handIndex;
-    // 醪糟水：本回合手牌费用随机化
-    const laozaoKey = cardId + '_' + handIndex;
-    const isLaozaoCard = cs.laozaoActive && cs.laozaoCosts && laozaoKey in cs.laozaoCosts;
+    // 醪糟水：本回合手牌费用随机化（用并行数组索引）
+    const isLaozaoCard = cs.laozaoActive && Array.isArray(cs.laozaoCostsArr) && handIndex < cs.laozaoCostsArr.length;
     // 升级后的费用（从 handUpgrades 读取升级等级，再查 Data.upgrades 获取费用）
     const _playCardLv = cs.handUpgrades ? (cs.handUpgrades[handIndex] || 0) : 0;
     let _baseCost = def.cost;
@@ -3031,7 +3026,7 @@ const Combat = {
       const _upgCostDef = Data.upgrades && Data.upgrades[cardId] && Data.upgrades[cardId][_playCardLv];
       if(_upgCostDef && _upgCostDef.cost !== undefined) _baseCost = _upgCostDef.cost;
     }
-    let effectiveCost = isMagnifierCard ? 0 : (isLaozaoCard ? cs.laozaoCosts[laozaoKey] : _baseCost);
+    let effectiveCost = isMagnifierCard ? 0 : (isLaozaoCard ? cs.laozaoCostsArr[handIndex] : _baseCost);
     // 赛车手超车外线：3挡时免费
     if(cardId==='overtake' && (cs.gear||2)>=3) effectiveCost=0;
     // 赛车手节油行驶：本回合技能牌费用-1（最低0）；+2升级时所有牌费用-1
@@ -3051,6 +3046,8 @@ const Combat = {
     }
     // 注意：打出放大镜牌之后的牌不影响索引
     cs.hand.splice(handIndex,1);
+    // 醪糟水：同步移除该索引的随机费用，保持数组与手牌对齐
+    if(Array.isArray(cs.laozaoCostsArr)) cs.laozaoCostsArr.splice(handIndex,1);
     // 获取当前打出牌的升级等级（从 handUpgrades 读取，并更新后续牌的索引）
     const _upgradeLevel = cs.handUpgrades ? (cs.handUpgrades[handIndex] || 0) : 0;
     // 打出牌后，handUpgrades 中 handIndex 之后的所有索引需要 -1
@@ -3139,7 +3136,7 @@ const Combat = {
     // 放大镜：回合结束时失效（若未打出则本回合结束）
     if(cs.magnifierActive){ cs.magnifierActive=false; cs.magnifierHandIndex=-1; }
     // 醒糟水：回合结束时清除费用随机化效果
-    if(cs.laozaoActive){ cs.laozaoActive=false; cs.laozaoCosts={}; }
+    if(cs.laozaoActive){ cs.laozaoActive=false; cs.laozaoCostsArr=null; cs.laozaoCosts=null; }
     // 大头的西班牙语书：回合结束时，若本回合对敌人造成过伤害，回复 2 点 HP
     if(State.run?.relics?.includes('datou_spanish_book') && cs.dealtDamageThisTurn){
       const healAmt = 2;
@@ -6530,8 +6527,8 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
       // 放大镜：直接用手牌位置索引判断，精确匹配唯一那张牌
       const isMagnifier = cs.magnifierActive && cs.magnifierHandIndex === idx;
       // 醪糟水：显示随机化后的费用
-      const laozaoKey2 = cardId + '_' + idx;
-      const isLaozao2 = cs.laozaoActive && cs.laozaoCosts && laozaoKey2 in cs.laozaoCosts;
+      const isLaozao2 = cs.laozaoActive && Array.isArray(cs.laozaoCostsArr) && idx < cs.laozaoCostsArr.length;
+      const laozaoCost2 = isLaozao2 ? cs.laozaoCostsArr[idx] : null;
       // 升级后的费用
       const _rhUpgLv = cs.handUpgrades ? (cs.handUpgrades[idx] || 0) : 0;
       let _rhBaseCost = def.cost;
@@ -6539,8 +6536,8 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
         const _rhUpgDef = Data.upgrades && Data.upgrades[cardId] && Data.upgrades[cardId][_rhUpgLv];
         if(_rhUpgDef && _rhUpgDef.cost !== undefined) _rhBaseCost = _rhUpgDef.cost;
       }
-      const effectiveCost = isMagnifier ? 0 : (isLaozao2 ? cs.laozaoCosts[laozaoKey2] : _rhBaseCost);
-      const displayOverride = isMagnifier ? 0 : (isLaozao2 ? cs.laozaoCosts[laozaoKey2] : (_rhUpgLv > 0 ? _rhBaseCost : undefined));
+      const effectiveCost = isMagnifier ? 0 : (isLaozao2 ? laozaoCost2 : _rhBaseCost);
+      const displayOverride = isMagnifier ? 0 : (isLaozao2 ? laozaoCost2 : (_rhUpgLv > 0 ? _rhBaseCost : undefined));
       const _handUpgradeLv = cs.handUpgrades ? (cs.handUpgrades[idx] || 0) : 0;
       const cardEl=UI.renderCard(cardId, displayOverride, _handUpgradeLv, true);
       cardEl.dataset.handIdx = String(idx); // 精确手牌位置，供打牌逻辑使用
