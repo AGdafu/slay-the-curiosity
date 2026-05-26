@@ -4336,6 +4336,19 @@ const CoopGame = {
     const hostMaxHp = (opts.hostMaxHp != null) ? opts.hostMaxHp : hChar.maxHp;
     const guestHp = (opts.guestHp != null) ? opts.guestHp : gChar.hp;
     const guestMaxHp = (opts.guestMaxHp != null) ? opts.guestMaxHp : gChar.maxHp;
+    // 根据 deck + per-index 升级表，构建 {cardId: [lvl, lvl, ...]} 升级队列
+    const buildUpgradeMap = (deck, upgrades) => {
+      const map = {};
+      if (!upgrades) return map;
+      deck.forEach((cardId, idx) => {
+        const lvl = upgrades[idx] || 0;
+        if (lvl > 0) {
+          if (!map[cardId]) map[cardId] = [];
+          map[cardId].push(lvl);
+        }
+      });
+      return map;
+    };
     const coopCs = {
       host: { hp: hostHp, maxHp: hostMaxHp, block: 0, buffs: {}, debuffs: {}, charId: hChar.id, charName: hChar.name, charEmoji: hChar.emoji },
       guest: { hp: guestHp, maxHp: guestMaxHp, block: 0, buffs: {}, debuffs: {}, charId: gChar.id, charName: gChar.name, charEmoji: gChar.emoji },
@@ -4343,9 +4356,14 @@ const CoopGame = {
       hostEnergy: 3, hostMaxEnergy: 3,
       hostHand: [], hostDrawPile: [...hostDeck].sort(() => Math.random() - 0.5),
       hostDiscardPile: [], hostHandUpgrades: {},
+      // 升级数据：来自 _coopRun.hostUpgrades / guestUpgrades
+      hostDeckSnapshot: [...hostDeck], hostUpgradesSnapshot: { ...(opts.hostUpgrades||{}) },
+      hostUpgradeMap: buildUpgradeMap(hostDeck, opts.hostUpgrades),
       guestEnergy: 3, guestMaxEnergy: 3,
       guestHand: [], guestDrawPile: [...guestDeck].sort(() => Math.random() - 0.5),
       guestDiscardPile: [], guestHandUpgrades: {},
+      guestDeckSnapshot: [...guestDeck], guestUpgradesSnapshot: { ...(opts.guestUpgrades||{}) },
+      guestUpgradeMap: buildUpgradeMap(guestDeck, opts.guestUpgrades),
       turn: 1,
       // 同时行动模式：双方都在 'player' 阶段同时打牌，各自点结束回合后才进入 'enemy'
       phase: 'player',
@@ -4354,9 +4372,9 @@ const CoopGame = {
       // 私有交互（赛车手换挡/赛线预判等）— 触发方设置，对方屏幕显示等待 banner
       pendingInteraction: null, // { who: 'host'|'guest', label: '换挡选择' }
     };
-    // 同时行动：双方各自抽 5 张起始手牌
-    this._drawCards(coopCs, 'host', 5);
-    this._drawCards(coopCs, 'guest', 5);
+    // 同时行动：双方各自抽 5 张起始手牌（射手 6 张）
+    this._drawCards(coopCs, 'host', hChar.id==='archer'?6:5);
+    this._drawCards(coopCs, 'guest', gChar.id==='archer'?6:5);
     this._coopCs = coopCs;
     return coopCs;
   },
@@ -4365,14 +4383,36 @@ const CoopGame = {
     const hand = who === 'host' ? coopCs.hostHand : coopCs.guestHand;
     const draw = who === 'host' ? coopCs.hostDrawPile : coopCs.guestDrawPile;
     const discard = who === 'host' ? coopCs.hostDiscardPile : coopCs.guestDiscardPile;
+    const handUpg = who === 'host' ? coopCs.hostHandUpgrades : coopCs.guestHandUpgrades;
+    const upgMap = who === 'host' ? coopCs.hostUpgradeMap : coopCs.guestUpgradeMap;
+    const deckSnap = who === 'host' ? coopCs.hostDeckSnapshot : coopCs.guestDeckSnapshot;
+    const upgSnap = who === 'host' ? coopCs.hostUpgradesSnapshot : coopCs.guestUpgradesSnapshot;
     for (let i = 0; i < n; i++) {
       if (draw.length === 0) {
         if (discard.length === 0) break;
         const shuffled = [...discard].sort(() => Math.random() - 0.5);
         discard.length = 0;
         draw.push(...shuffled);
+        // 洗牌：重建 upgradeMap，让升级在重洗后继续生效
+        const fresh = {};
+        if (upgSnap && deckSnap) {
+          deckSnap.forEach((cardId, idx) => {
+            const lvl = upgSnap[idx] || 0;
+            if (lvl > 0) { if (!fresh[cardId]) fresh[cardId] = []; fresh[cardId].push(lvl); }
+          });
+        }
+        // 用新表替换（保留引用）
+        Object.keys(upgMap).forEach(k => delete upgMap[k]);
+        Object.assign(upgMap, fresh);
       }
-      hand.push(draw.shift());
+      const drawnCard = draw.shift();
+      hand.push(drawnCard);
+      // 应用升级等级到 handUpgrades
+      if (upgMap && upgMap[drawnCard] && upgMap[drawnCard].length > 0) {
+        const lvl = upgMap[drawnCard].shift();
+        handUpg[hand.length - 1] = lvl;
+        if (upgMap[drawnCard].length === 0) delete upgMap[drawnCard];
+      }
     }
   },
 
@@ -4406,12 +4446,25 @@ const CoopGame = {
       if (!t || t.hp <= 0) return false;
     }
 
+    // 取出该手牌的升级等级（来自 handUpgrades）
+    const handUpgKey = who + 'HandUpgrades';
+    const handUpg = coopCs[handUpgKey] || {};
+    const upgradeLv = handUpg[idx] || 0;
+
     coopCs[energyKey] -= def.cost;
     hand.splice(idx, 1);
+    // splice 后重建 handUpgrades 索引（后面的索引整体 -1，被打出的那张丢弃）
+    const newHandUpg = {};
+    Object.keys(handUpg).forEach(k => {
+      const ki = parseInt(k);
+      if (ki < idx) newHandUpg[ki] = handUpg[ki];
+      else if (ki > idx) newHandUpg[ki - 1] = handUpg[ki];
+    });
+    coopCs[handUpgKey] = newHandUpg;
 
     // 构造一个临时 cs 对象供 card effect 使用
     const tempCs = this._makeTempCs(coopCs, who);
-    this._withFakeRun(player.charId, () => def.effect(tempCs, targetEnemyIndex, 0));
+    this._withFakeRun(player.charId, () => def.effect(tempCs, targetEnemyIndex, upgradeLv));
     // 将 tempCs 中的变化写回 coopCs
     this._applyTempCs(coopCs, who, tempCs);
 
@@ -8531,12 +8584,23 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
     if (handEl && !handAreaStatus) {
       handEl.innerHTML = '';
       const fakeRunPrev = State.current.run;
-      State.current.run = { character: { id: myPlayer.charId }, relics: [], cardUpgrades: {}, deck: [], mode: 'coop', combat: null };
+      // 注入伪 combat 以便 renderCard 的 racer/archer 实时预览能读到 gear/charge
+      const myHandUpg = coopCs[myRole + 'HandUpgrades'] || {};
+      State.current.run = { character: { id: myPlayer.charId }, relics: [], cardUpgrades: {}, deck: [], mode: 'coop',
+        combat: {
+          gear: coopCs[myRole+'Gear'] != null ? coopCs[myRole+'Gear'] : 2,
+          speed: coopCs[myRole+'Speed'] || 0,
+          momentum: coopCs[myRole+'Momentum'] || 0,
+          charge: coopCs[myRole+'Charge'] || 0,
+          chargeMax: coopCs[myRole+'ChargeMax'] || 5,
+          player: { buffs: myPlayer.buffs||{}, debuffs: myPlayer.debuffs||{}, hp: myPlayer.hp, maxHp: myPlayer.maxHp, block: myPlayer.block||0 }
+        } };
       try {
         myHand.forEach((cardId, idx) => {
           const def = Data.cards[cardId];
           if (!def) return;
-          const cardEl = UI.renderCard(cardId, undefined, 0, false);
+          const lvl = myHandUpg[idx] || 0;
+          const cardEl = UI.renderCard(cardId, undefined, lvl, true);
           cardEl.dataset.handIdx = String(idx);
           const canPlay = canAct && myEnergy >= def.cost;
           if (!canPlay) cardEl.classList.add('unplayable');
@@ -8933,6 +8997,8 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
         guestDeck: UI._coopRun.guestDeck,
         hostHp: UI._coopRun.hostHp, hostMaxHp: UI._coopRun.hostMaxHp,
         guestHp: UI._coopRun.guestHp, guestMaxHp: UI._coopRun.guestMaxHp,
+        hostUpgrades: UI._coopRun.hostUpgrades || {},
+        guestUpgrades: UI._coopRun.guestUpgrades || {},
       });
       Net.send({ t: 'coop-run-state', run: UI._coopSerializeRun() });
       Net.send({ t: 'coop-start', hostChar: UI._coopRun.hostCharId, guestChar: UI._coopRun.guestCharId, enemyIds });

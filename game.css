@@ -167,7 +167,7 @@ body {
   border-bottom: 2px solid var(--ink);
 }
 .card[data-type="attack"] .card-type-bar { background: #c0392b; }
-.card[data-type="skill"]  .card-type-bar { background: #2471a3; }
+.card[data-type="skill"]  .card-type-bar { background: #9b59b6; }
 .card[data-type="power"]  .card-type-bar { background: #7d3c98; }
 .card[data-type="curse"]  .card-type-bar { background: #555; }
 
