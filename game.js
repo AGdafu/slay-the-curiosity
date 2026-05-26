@@ -846,7 +846,7 @@ const Data = {
       name: '高山的指南针',
       icon: '🧭',
       tier: 'epic',
-      desc: '激活后，第三层地图变为一条直路（7~10 节点）：精英 30%、普通战斗 40%、问号 15%、商店 8%、休息 7%。保底至少 1 个精英，最后一节点为普通战斗（Boss 前不送商店）。',
+      desc: '激活后，第三层地图变为一条直路（7~10 节点）：精英 10%、普通战斗 55%、问号 18%、休息 10%、商店 7%。保底至少 1 个精英，最后一节点必为商店。',
       apply(run){ run.relics.push('gaoshan_compass'); }
     },
     {
@@ -2531,8 +2531,8 @@ const MapGen = {
   FLOORS:7,
   // 固定伪随机数生成器（基于种子，保证每次生成相同地图）
   _rng(seed){ let s=(seed^0xdeadbeef)>>>0; return()=>{ s=Math.imul(s^(s>>>16),0x45d9f3b);s=Math.imul(s^(s>>>16),0x45d9f3b);s^=s>>>16;return(s>>>0)/0xffffffff; }; },
-  // 指南针直路地图：7~10个节点，一条直路。重平衡：精英30%/普通战斗40%/问号15%/商店8%/休息7%，
-  // 最后节点为普通战斗（不再必为商店，增加 boss 前危险度）
+  // 指南针直路地图：7~10个节点，一条直路。精英10%/普通战斗55%/问号18%/休息10%/商店7%，
+  // 最后节点必为商店；中间至少保底 1 个精英
   generateCompass(){
     const nodes=[],paths=[];let idCounter=0;const floorNodes=[];
     const rng=MapGen._rng(Date.now()&0xfffff);
@@ -2543,25 +2543,23 @@ const MapGen = {
     const entry={id:idCounter++,type:'start',floor:0,col:2,emoji:'🚶',done:false};
     nodes.push(entry);floorNodes[0]=[entry];
     // 中间节点：每层只有一个
-    // 同时统计：精英至少 1 个，商店至少 1 个（保底但概率压低）
-    let eliteCount=0, shopCount=0;
+    let eliteCount=0;
     for(let f=1;f<=midCount;f++){
       let type;
-      // 倒数第二层：保底放精英（若至此还没出现过）
-      if(f===midCount-1 && eliteCount===0){ type='elite'; }
-      // 最后一层：放普通战斗（boss 前需正常战斗，不再送商店）
-      else if(f===midCount){ type='combat'; }
+      // 最后一层：必为商店
+      if(f===midCount){ type='shop'; }
+      // 倒数第二层：保底精英（若全程还没出现过）
+      else if(f===midCount-1 && eliteCount===0){ type='elite'; }
       else {
         const r=rng();
-        // 精英 30% / 普通 40% / 问号 15% / 商店 8% / 休息 7%
-        if(r<0.30) type='elite';
-        else if(r<0.70) type='combat';
-        else if(r<0.85) type='question';
-        else if(r<0.93) type='shop';
-        else type='rest';
+        // 精英 10% / 普通 55% / 问号 18% / 休息 10% / 商店 7%
+        if(r<0.10) type='elite';
+        else if(r<0.65) type='combat';
+        else if(r<0.83) type='question';
+        else if(r<0.93) type='rest';
+        else type='shop';
       }
       if(type==='elite') eliteCount++;
-      if(type==='shop') shopCount++;
       const node={id:idCounter++,type,floor:f,col:2,emoji:MapGen._emoji(type),done:false};
       nodes.push(node);floorNodes[f]=[node];
     }
@@ -4982,7 +4980,7 @@ el.innerHTML=`<div class="card-type-bar"></div>${rarityTag}<div class="card-cost
       // 高山遗物
       gaoshan_sunglasses: { name: '高山的雪镜',   icon: '🥽', desc: '每回合开始时，有 35% 概率获得 1 点额外能量。' },
       gaoshan_jacket:     { name: '高山的冲锋衣', icon: '🧥', desc: '每场战斗中，第一次获得格挡时，格挡值翻倍。' },
-      gaoshan_compass:    { name: '高山的指南针', icon: '🧭', desc: '激活后，第三层地图变为一条直路（节点更危险：精英 30%、普通 40%、问号 15%、商店 8%、休息 7%；至少 1 个精英，Boss 前最后一节点为普通战斗）。' },
+      gaoshan_compass:    { name: '高山的指南针', icon: '🧭', desc: '激活后，第三层地图变为一条直路：精英 10%、普通 55%、问号 18%、休息 10%、商店 7%；至少保底 1 个精英，最后一节点必为商店。' },
       gaoshan_braid:      { name: '高山的麻花辫', icon: '💇', desc: '每场战斗开始时，随机回复 3~8 点 HP。' },
       // 事件专属遗物
       football:           { name: '橄榄球',           icon: '🏈', desc: '每场战斗第一回合增加 1 点能量。' },
