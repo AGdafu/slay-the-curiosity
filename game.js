@@ -470,8 +470,9 @@ const Data = {
       effect(cs,ti,lv=0){
         const base=[15,18,22][lv]||15;
         const bonus=[20,24,28][lv]||20;
+        const threshold=[0.30,0.30,0.40][lv]||0.30;
         const e=cs.enemies[ti];
-        const lo=e.hp/e.maxHp<=0.30;
+        const lo=e.hp/e.maxHp<=threshold;
         const str=cs.player.buffs?.strength||0;
         Combat.dealDamage(cs,ti,base+str);
         if(lo){ Combat.dealDamage(cs,ti,bonus+str); }
@@ -1627,6 +1628,20 @@ const Data = {
     inflame:      { 1:{desc:'永久获得 <b>3</b> 层力量。', cost:1}, 2:{desc:'永久获得 <b>3</b> 层力量。<b>费用降为 0。</b>', cost:0} },
     ironwave:     { 1:{desc:'获得 <b>5+力量</b> 格挡，造成等量伤害。<b>力量加成翻倍计入。</b>', cost:1}, 2:{desc:'获得 <b>7+力量</b> 格挡，造成等量伤害。力量加成翻倍计入。', cost:1} },
     thunderclap:  { 1:{desc:'对所有敌人造成 <b>7</b> 点伤害并施加 1 层易伤。', cost:1}, 2:{desc:'对所有敌人造成 <b>7</b> 点伤害并施加 <b>2</b> 层易伤。', cost:1} },
+    // ── 战士专属卡牌升级 ──
+    br_double_strike:  { 1:{desc:'造成 <b>2</b> 段 <b>5</b> 点伤害。', cost:1}, 2:{desc:'造成 <b>2</b> 段 <b>7</b> 点伤害。', cost:1} },
+    br_heavy_blade:    { 1:{desc:'造成 <b>16</b> 点伤害。', cost:2}, 2:{desc:'造成 <b>20</b> 点伤害。', cost:2} },
+    br_cleave:         { 1:{desc:'对所有敌人造成 <b>10</b> 点伤害。', cost:1}, 2:{desc:'对所有敌人造成 <b>13</b> 点伤害。', cost:1} },
+    br_shield_wall:    { 1:{desc:'获得 <b>13</b> 点格挡。', cost:1}, 2:{desc:'获得 <b>16</b> 点格挡。', cost:1} },
+    br_taunt_roar:     { 1:{desc:'对所有敌人施加 <b>2</b> 层虚弱，获得 <b>7</b> 点格挡。', cost:1}, 2:{desc:'对所有敌人施加 <b>2</b> 层虚弱，获得 <b>9</b> 点格挡。', cost:1} },
+    br_bash_v:         { 1:{desc:'造成 <b>12</b> 点伤害，施加 <b>3</b> 层易伤。', cost:1}, 2:{desc:'造成 <b>15</b> 点伤害，施加 <b>3</b> 层易伤。', cost:1} },
+    br_bloodletting:   { 1:{desc:'弃 <b>2</b> 张手牌，获得 <b>3</b> 点能量。', cost:0}, 2:{desc:'弃 <b>1</b> 张手牌，获得 <b>3</b> 点能量。', cost:0} },
+    br_pommel_smash:   { 1:{desc:'造成 <b>8</b> 点伤害；本回合每打过 1 张攻击牌额外造成 <b>2</b> 伤害（最高 +10）。', cost:1}, 2:{desc:'造成 <b>10</b> 点伤害；本回合每打过 1 张攻击牌额外造成 <b>3</b> 伤害（最高 +12）。', cost:1} },
+    br_grit:           { 1:{desc:'获得 <b>10</b> 点格挡；本回合受击额外 <b>-3</b>。', cost:1}, 2:{desc:'获得 <b>12</b> 点格挡；本回合受击额外 <b>-3</b>。', cost:1} },
+    br_iron_swing:     { 1:{desc:'对所有敌人造成 <b>20</b> 点伤害。', cost:2}, 2:{desc:'对所有敌人造成 <b>24</b> 点伤害。', cost:2} },
+    br_overwhelm:      { 1:{desc:'造成 <b>13</b> 点伤害；你 HP 高于目标时伤害翻倍。', cost:1}, 2:{desc:'造成 <b>17</b> 点伤害；你 HP 高于目标时伤害翻倍。', cost:1} },
+    br_berserker:      { 1:{desc:'能力。永久 +<b>3</b> 力量；每损失 25% HP 再 +1 力量（最多 +5）。', cost:1}, 2:{desc:'<b>0费</b>。能力。永久 +<b>3</b> 力量；每损失 25% HP 再 +1 力量（最多 +5）。', cost:0} },
+    br_executioner:    { 1:{desc:'造成 <b>18</b> 点伤害；目标 HP ≤ 30% 时额外 +<b>24</b>。', cost:2}, 2:{desc:'造成 <b>22</b> 点伤害；目标 HP ≤ <b>40%</b> 时额外 +<b>28</b>。', cost:2} },
     // ── 拳击手卡牌升级 ──
     box_jab:        { 1:{desc:'造成 <b>7</b> 点伤害。',            cost:1}, 2:{desc:'造成 <b>10</b> 点伤害。',                          cost:1} },
     box_guard:      { 1:{desc:'获得 <b>8</b> 点格挡。',            cost:1}, 2:{desc:'获得 <b>11</b> 点格挡。',                          cost:1} },
