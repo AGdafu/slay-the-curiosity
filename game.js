@@ -846,7 +846,7 @@ const Data = {
       name: '高山的指南针',
       icon: '🧭',
       tier: 'epic',
-      desc: '激活后，第三层地图变为一条直路（7~10 节点）：精英 10%、普通战斗 40%、问号 22%、休息 14%、商店 14%。保底至少 1 个精英，最后一节点必为商店。',
+      desc: '激活后，第三层地图变为一条直路（7~10 节点）：精英 10%、普通战斗 40%、问号 22%、休息 14%、商店 14%。最后一节点必为商店（可能整条路上没有精英）。',
       apply(run){ run.relics.push('gaoshan_compass'); }
     },
     {
@@ -2532,7 +2532,7 @@ const MapGen = {
   // 固定伪随机数生成器（基于种子，保证每次生成相同地图）
   _rng(seed){ let s=(seed^0xdeadbeef)>>>0; return()=>{ s=Math.imul(s^(s>>>16),0x45d9f3b);s=Math.imul(s^(s>>>16),0x45d9f3b);s^=s>>>16;return(s>>>0)/0xffffffff; }; },
   // 指南针直路地图：7~10个节点，一条直路。精英10%/普通战斗40%/问号22%/休息14%/商店14%，
-  // 最后节点必为商店；中间至少保底 1 个精英
+  // 最后节点必为商店（无精英保底，可能出现没有任何精英的地图）
   generateCompass(){
     const nodes=[],paths=[];let idCounter=0;const floorNodes=[];
     const rng=MapGen._rng(Date.now()&0xfffff);
@@ -2543,13 +2543,10 @@ const MapGen = {
     const entry={id:idCounter++,type:'start',floor:0,col:2,emoji:'🚶',done:false};
     nodes.push(entry);floorNodes[0]=[entry];
     // 中间节点：每层只有一个
-    let eliteCount=0;
     for(let f=1;f<=midCount;f++){
       let type;
       // 最后一层：必为商店
       if(f===midCount){ type='shop'; }
-      // 倒数第二层：保底精英（若全程还没出现过）
-      else if(f===midCount-1 && eliteCount===0){ type='elite'; }
       else {
         const r=rng();
         // 精英 10% / 普通 40% / 问号 22% / 休息 14% / 商店 14%
@@ -2559,7 +2556,6 @@ const MapGen = {
         else if(r<0.86) type='rest';
         else type='shop';
       }
-      if(type==='elite') eliteCount++;
       const node={id:idCounter++,type,floor:f,col:2,emoji:MapGen._emoji(type),done:false};
       nodes.push(node);floorNodes[f]=[node];
     }
@@ -4980,7 +4976,7 @@ el.innerHTML=`<div class="card-type-bar"></div>${rarityTag}<div class="card-cost
       // 高山遗物
       gaoshan_sunglasses: { name: '高山的雪镜',   icon: '🥽', desc: '每回合开始时，有 35% 概率获得 1 点额外能量。' },
       gaoshan_jacket:     { name: '高山的冲锋衣', icon: '🧥', desc: '每场战斗中，第一次获得格挡时，格挡值翻倍。' },
-      gaoshan_compass:    { name: '高山的指南针', icon: '🧭', desc: '激活后，第三层地图变为一条直路：精英 10%、普通 40%、问号 22%、休息 14%、商店 14%；至少保底 1 个精英，最后一节点必为商店。' },
+      gaoshan_compass:    { name: '高山的指南针', icon: '🧭', desc: '激活后，第三层地图变为一条直路：精英 10%、普通 40%、问号 22%、休息 14%、商店 14%；最后一节点必为商店（可能整条路上没有精英）。' },
       gaoshan_braid:      { name: '高山的麻花辫', icon: '💇', desc: '每场战斗开始时，随机回复 3~8 点 HP。' },
       // 事件专属遗物
       football:           { name: '橄榄球',           icon: '🏈', desc: '每场战斗第一回合增加 1 点能量。' },
