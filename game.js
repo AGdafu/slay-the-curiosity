@@ -5425,22 +5425,28 @@ el.innerHTML=`<div class="card-type-bar"></div>${rarityTag}<div class="card-cost
     const overlay=document.createElement('div');
     overlay.style.cssText='position:fixed;inset:0;background:rgba(8,8,18,0.96);z-index:9000;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding:40px 20px;overflow-y:auto;font-family:var(--font);';
     overlay.innerHTML=`
-      <div style="max-width:720px;width:100%">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px">
+      <div style="max-width:820px;width:100%">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px">
           <h2 style="color:#ffd060;margin:0;font-size:1.6rem">🧭 模拟罗盘</h2>
           <button id="dbg-close" style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.2);color:#fff;border-radius:8px;padding:6px 14px;cursor:pointer">✕ 关闭</button>
         </div>
-        <div style="background:rgba(255,255,255,0.04);border:1.5px solid rgba(255,255,255,0.12);border-radius:14px;padding:18px;margin-bottom:14px">
-          <div style="color:#e8d8ff;font-weight:800;font-size:1.05rem;margin-bottom:10px">⌚ susu的怀表</div>
-          <div style="font-size:0.85rem;color:rgba(255,255,255,0.55);margin-bottom:12px">效果：被致死时 5% 概率满血复活并秒杀全场（Boss 房仅复活）。这里直接跳过概率与触发条件，**直接播放动画**。</div>
+        <div style="background:rgba(255,255,255,0.04);border:1.5px solid rgba(255,200,80,0.3);border-radius:14px;padding:18px">
+          <div style="color:#ffd060;font-weight:800;font-size:1.05rem;margin-bottom:6px">高山的指南针 · 第三层地图生成预览</div>
+          <div style="font-size:0.82rem;color:rgba(255,255,255,0.6);margin-bottom:10px">配比：精英 10% / 普通 40% / 问号 22% / 休息 14% / 商店 14%。保底：至少 1 个精英 + 最后必商店。</div>
+          <div style="display:flex;gap:10px;align-items:center;margin-bottom:14px;flex-wrap:wrap">
+            <button id="dbg-roll" style="background:rgba(127,224,168,0.18);border:1.5px solid rgba(127,224,168,0.5);color:#a9f0c5;border-radius:8px;padding:8px 18px;cursor:pointer;font-weight:700">🎲 生成新地图</button>
+            <button id="dbg-roll10" style="background:rgba(127,224,168,0.10);border:1.5px solid rgba(127,224,168,0.35);color:#a9f0c5;border-radius:8px;padding:8px 14px;cursor:pointer">🎲×10 统计</button>
+            <span id="dbg-stats" style="color:rgba(255,255,255,0.5);font-size:0.85rem">点击生成查看节点序列</span>
+          </div>
+          <div id="dbg-map" style="background:rgba(0,0,0,0.25);border-radius:10px;padding:14px;min-height:90px;display:flex;flex-wrap:wrap;gap:6px;align-items:center;justify-content:flex-start"></div>
+          <div id="dbg-multi" style="margin-top:14px;color:rgba(255,255,255,0.65);font-size:0.85rem"></div>
+        </div>
+        <div style="background:rgba(255,255,255,0.04);border:1.5px solid rgba(255,255,255,0.12);border-radius:14px;padding:18px;margin-top:14px">
+          <div style="color:#e8d8ff;font-weight:800;font-size:1.05rem;margin-bottom:10px">⌚ susu 的怀表（特效演示）</div>
           <div style="display:flex;gap:10px;flex-wrap:wrap">
             <button class="dbg-btn" data-test="pocketwatch-normal" style="background:rgba(127,224,168,0.15);border:1.5px solid rgba(127,224,168,0.45);color:#a9f0c5;border-radius:8px;padding:8px 16px;cursor:pointer;font-weight:700">▶ 普通房间版（含秒杀）</button>
             <button class="dbg-btn" data-test="pocketwatch-boss" style="background:rgba(240,150,150,0.15);border:1.5px solid rgba(240,150,150,0.45);color:#ff9b8f;border-radius:8px;padding:8px 16px;cursor:pointer;font-weight:700">▶ Boss 房间版（仅复活）</button>
           </div>
-        </div>
-        <div style="background:rgba(255,255,255,0.04);border:1.5px solid rgba(255,255,255,0.12);border-radius:14px;padding:18px;margin-bottom:14px;opacity:0.5">
-          <div style="color:#e8d8ff;font-weight:800;font-size:1.05rem;margin-bottom:10px">🔜 其他特效（待添加）</div>
-          <div style="font-size:0.85rem;color:rgba(255,255,255,0.55)">护身符复活、第二/三幕过场、Boss 击杀动画等可以陆续加入此面板</div>
         </div>
       </div>`;
     document.body.appendChild(overlay);
@@ -5450,15 +5456,79 @@ el.innerHTML=`<div class="card-type-bar"></div>${rarityTag}<div class="card-cost
     overlay.querySelectorAll('.dbg-btn').forEach(btn=>{
       btn.onclick=()=>{
         const t=btn.dataset.test;
-        if(t==='pocketwatch-normal'){
-          overlay.remove();
-          UI._triggerPocketWatch(false, ()=>UI.menu());
-        } else if(t==='pocketwatch-boss'){
-          overlay.remove();
-          UI._triggerPocketWatch(true, ()=>UI.menu());
-        }
+        if(t==='pocketwatch-normal'){ overlay.remove(); UI._triggerPocketWatch(false, ()=>UI.menu()); }
+        else if(t==='pocketwatch-boss'){ overlay.remove(); UI._triggerPocketWatch(true, ()=>UI.menu()); }
       };
     });
+
+    // ── 罗盘地图生成预览 ─────────────────────────────────────
+    const TYPE_META = {
+      start:    { icon:'🚶', label:'起点', color:'#aaa' },
+      combat:   { icon:'⚔️', label:'普通', color:'#ff9090' },
+      elite:    { icon:'💀', label:'精英', color:'#ffb060' },
+      question: { icon:'❓', label:'问号', color:'#90e0ff' },
+      shop:     { icon:'🏪', label:'商店', color:'#ffd060' },
+      rest:     { icon:'🏕️', label:'休息', color:'#80ff80' },
+      boss:     { icon:'👑', label:'Boss', color:'#e056fd' },
+    };
+    const rollOnce = () => {
+      const map = MapGen.generateCompass();
+      // map.nodes 已经是顺序的（按 floor 0..N）
+      return map.nodes;
+    };
+    const renderRoll = () => {
+      const nodes = rollOnce();
+      const mapBox = overlay.querySelector('#dbg-map');
+      mapBox.innerHTML = '';
+      // 统计中间节点（去掉 start 和 boss）
+      const mid = nodes.filter(n => n.type!=='start' && n.type!=='boss');
+      const counts = {};
+      mid.forEach(n => counts[n.type] = (counts[n.type]||0) + 1);
+      nodes.forEach((n, i) => {
+        const meta = TYPE_META[n.type] || { icon:'?', label:n.type, color:'#fff' };
+        const cell = document.createElement('div');
+        cell.title = `第 ${n.floor} 层 · ${meta.label}`;
+        cell.style.cssText = `display:flex;flex-direction:column;align-items:center;padding:6px 8px;background:rgba(255,255,255,0.04);border:1.5px solid ${meta.color}55;border-radius:8px;min-width:48px`;
+        cell.innerHTML = `<div style="font-size:1.5rem;line-height:1">${meta.icon}</div><div style="font-size:0.65rem;color:${meta.color};margin-top:2px;font-weight:700">${meta.label}</div><div style="font-size:0.6rem;color:rgba(255,255,255,0.4);margin-top:1px">${n.floor}</div>`;
+        mapBox.appendChild(cell);
+        if (i < nodes.length - 1) {
+          const arrow = document.createElement('div');
+          arrow.style.cssText = 'color:rgba(255,255,255,0.4);font-size:1.2rem';
+          arrow.textContent = '→';
+          mapBox.appendChild(arrow);
+        }
+      });
+      const statsTxt = `总节点 ${nodes.length}（中间 ${mid.length} + 起点 + Boss）｜` +
+        ['elite','combat','question','rest','shop'].map(t => {
+          const m = TYPE_META[t];
+          const c = counts[t]||0;
+          return `${m.icon} ${m.label} ${c}`;
+        }).join(' · ');
+      overlay.querySelector('#dbg-stats').textContent = statsTxt;
+      overlay.querySelector('#dbg-multi').textContent = '';
+    };
+    const rollMulti = () => {
+      const N = 10;
+      const totals = { elite:0, combat:0, question:0, rest:0, shop:0 };
+      let totalMid = 0;
+      for(let k=0;k<N;k++){
+        const nodes = rollOnce();
+        nodes.filter(n => n.type!=='start' && n.type!=='boss').forEach(n => {
+          totals[n.type] = (totals[n.type]||0) + 1;
+          totalMid++;
+        });
+      }
+      const lines = ['elite','combat','question','rest','shop'].map(t => {
+        const m = TYPE_META[t];
+        const c = totals[t]||0;
+        const pct = totalMid > 0 ? (c/totalMid*100).toFixed(1) : '0';
+        return `${m.icon} ${m.label.padEnd(2)}：${String(c).padStart(2)} 个（${pct}%）`;
+      });
+      overlay.querySelector('#dbg-multi').innerHTML = `<b>10 张地图的中间节点统计</b>（共 ${totalMid} 个）<br><pre style="margin:6px 0 0;font-family:monospace;color:rgba(255,255,255,0.8);font-size:0.85rem;line-height:1.55">${lines.join('\n')}</pre>`;
+    };
+    overlay.querySelector('#dbg-roll').onclick = renderRoll;
+    overlay.querySelector('#dbg-roll10').onclick = rollMulti;
+    renderRoll(); // 首次自动生成一张
   },
 
   // ── 联机合作大厅（阶段1：PeerJS 连接 + 房间码）──────────────────────────────
