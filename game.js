@@ -140,10 +140,10 @@ const Data = {
 
     // 起始牌：档位打击（替代打击）
     gear_strike: { id:'gear_strike', rarity:'common', name:'档位打击', cost:1, type:'attack', emoji:'👊', description:'造成 <b>6</b> 点伤害（含档位倍率）。', needsTarget:true,
-      effect(cs,ti){ const g=cs.gear||2; const dmgMult=[0,0.8,1.0,1.5][g]; const bonus=Combat._getFtBonus(cs); Combat.dealDamage(cs,ti,Math.floor(6*dmgMult)+bonus); } },
+      effect(cs,ti,lv=0){ const g=cs.gear||2; const dmgMult=[0,0.8,1.0,1.5][g]; const bonus=Combat._getFtBonus(cs); const base=[6,8,10][lv]||6; Combat.dealDamage(cs,ti,Math.floor(base*dmgMult)+bonus); if(lv>=2 && g>=3){ Combat.applyDebuff(cs.enemies[ti],'slow',1); } } },
     // 起始牌：档位防御（替代防御）
     gear_defend: { id:'gear_defend', rarity:'common', name:'档位防御', cost:1, type:'skill', emoji:'🛡', description:'获得 <b>5</b> 点格挡（含档位倍率）。', needsTarget:false,
-      effect(cs){ const g=cs.gear||2; const hasRedline=(cs.player.buffs.redline||0)>0; const blkMult=hasRedline&&g>=3?1.0:[0,1.4,1.0,0.7][g]; Combat.gainBlock(cs,Math.floor(5*blkMult),true); } },
+      effect(cs,ti,lv=0){ const g=cs.gear||2; const hasRedline=(cs.player.buffs.redline||0)>0; const blkMult=hasRedline&&g>=3?1.0:[0,1.4,1.0,0.7][g]; const base=lv>=1?7:5; Combat.gainBlock(cs,Math.floor(base*blkMult),true); if(lv>=2) Combat.drawCards(cs,1); } },
     // 起始牌：换挡时机
     gear_shift: { id:'gear_shift', rarity:'common', name:'换挡时机', cost:0, type:'skill', emoji:'🔄', description:'升 1 挡或降 1 挡（选择）。本卡本轮最多使用 2 次。', needsTarget:false,
       effect(cs){ Combat._gearShiftInteractive(cs, 'gear_shift'); } },
@@ -155,7 +155,7 @@ const Data = {
     // 1. 刹车漂移（起始牌已包含）
     // 2. 氮气加速：2费 攻击+换挡 12伤+升±1挡，6挡时改为16伤
     nitro_boost: { id:'nitro_boost', rarity:'rare', name:'氮气加速', cost:2, type:'attack', emoji:'💥', description:'造成 <b>14</b> 点伤害并升 1 挡。若已处于 3 挡，改为造成 <b>18</b> 点伤害。', needsTarget:true,
-      effect(cs,ti){ const g=cs.gear||2; const bonus=Combat._getFtBonus(cs); if(g>=3){ Combat.dealDamage(cs,ti,18+bonus); } else { Combat.dealDamage(cs,ti,14+bonus); Combat._changeGear(cs,1); } } },
+      effect(cs,ti,lv=0){ const g=cs.gear||2; const bonus=Combat._getFtBonus(cs); const baseLow=[14,16,18][lv]||14; const baseHigh=[18,22,24][lv]||18; if(g>=3){ Combat.dealDamage(cs,ti,baseHigh+bonus); } else { Combat.dealDamage(cs,ti,baseLow+bonus); Combat._changeGear(cs,1); } } },
     // 3. 碰撞拦截：1费 攻击 4格挡+造成等同格挡值伤害
     collision_block: { id:'collision_block', rarity:'uncommon', name:'碰撞拦截', cost:1, type:'attack', emoji:'💥', description:'获得 <b>5</b> 点格挡，造成 <b>7</b> 点伤害（均含档位倍率）。', needsTarget:true,
       effect(cs,ti,lv=0){ const g=cs.gear||2; const blkMult=[0,1.4,1.0,0.7][g]; const dmgMult=[0,0.8,1.0,1.5][g]; const blk=[5,6,7][lv]||5; const dmg=[7,9,10][lv]||7; const bonus=Combat._getFtBonus(cs); Combat.gainBlock(cs,Math.floor(blk*blkMult),true); Combat.dealDamage(cs,ti,Math.floor(dmg*dmgMult)+bonus); if(lv>=2) Combat.applyDebuff(cs.enemies[ti],'vulnerable',1); } },
@@ -167,7 +167,7 @@ const Data = {
       effect(cs,ti,lv=0){ const g=cs.gear||2; const dmgMult=[0,0.8,1.0,1.5][g]; const ftBonus=Combat._getFtBonus(cs); const base=[4,5,6][lv]||4; const hit=Math.floor(base*dmgMult)+ftBonus; Combat.dealDamage(cs,ti,hit); Combat.dealDamage(cs,ti,hit); if(lv>=2) Combat.applyDebuff(cs.enemies[ti],'slow',1); } },
     // 6. 涡轮压榨：3费 攻击+换挡 6×档位伤害，降2挡
     turbo_crush: { id:'turbo_crush', rarity:'rare', name:'涡轮压榨', cost:3, type:'attack', emoji:'⚡', description:'造成 <b>8×档位</b> 点伤害（8 / 16 / 24），随后降 2 挡。', needsTarget:true,
-      effect(cs,ti){ const g=cs.gear||2; const ftBonus=Combat._getFtBonus(cs); Combat.dealDamage(cs,ti,8*g+ftBonus); Combat._changeGear(cs,-2); } },
+      effect(cs,ti,lv=0){ const g=cs.gear||2; const ftBonus=Combat._getFtBonus(cs); const mult=[8,9,10][lv]||8; Combat.dealDamage(cs,ti,mult*g+ftBonus); Combat._changeGear(cs,-2); } },
 
     // ── 技能牌（8张）────────────────────────────────────────────────────────────────────────────────
     // 7. 进站维修：1费 技能 10格挡，1/2挡时+4回血
@@ -188,7 +188,7 @@ const Data = {
       effect(cs,ti,lv=0){ const baseUp=lv>=1?10:8; const baseNo=lv>=1?6:5; const amt = cs._shiftedUpThisTurn ? baseUp : baseNo; cs.player.block=(cs.player.block||0)+amt; if(lv>=2 && cs._shiftedUpThisTurn) Combat.drawCards(cs,1); } },
     // 13. 瞬时升挡：1费 换挡+技能 升2挡（不超过3挡上限），抄1张
     quick_upshift: { id:'quick_upshift', rarity:'common', name:'瞬时升挡', cost:1, type:'skill', emoji:'⬆️', description:'升 <b>2</b> 挡（上限 3 挡），抽 <b>1</b> 张牌。', needsTarget:false,
-      effect(cs){ Combat._changeGear(cs,2); Combat.drawCards(cs,1); } },
+      effect(cs,ti,lv=0){ Combat._changeGear(cs,2); Combat.drawCards(cs,lv===1?2:1); } },
     // 14. 强制降挡：0费消耗 换挡+技能 降±2挡，对敌施加减速层数=降幅×2
     forced_downshift: { id:'forced_downshift', rarity:'common', name:'强制降挡', cost:0, type:'skill', emoji:'⬇️', description:'降 2 挡。对敌人施加「减速」层数等于降幅×2。消耗。', needsTarget:false,
       effect(cs){ const prev=cs.gear||2; Combat._changeGear(cs,-2); const dropped=prev-(cs.gear||2); if(dropped>0){ cs.enemies.forEach(e=>{ if(!e._dead) Combat.applyDebuff(e,'slow',dropped*2); }); }
@@ -212,11 +212,11 @@ const Data = {
     // ── 换挡标签牌（2张）────────────────────────────────────────────────────────────────────────────────
     // 19. 档位锁定：1费 技能+换挡 本回合档位不变，获得档位×3格挡
     gear_lock: { id:'gear_lock', rarity:'common', name:'档位锁定', cost:1, type:'skill', emoji:'🔒', description:'本回合档位锁定。获得 <b>档位×4</b> 点格挡（最多 12）。', needsTarget:false,
-      effect(cs){ cs._gearLocked=true; Combat.gainBlock(cs,(cs.gear||2)*4,true); } },
+      effect(cs,ti,lv=0){ cs._gearLocked=true; const mult=lv>=1?5:4; Combat.gainBlock(cs,(cs.gear||2)*mult,true); } },
     // 20. 超速警告：0费消耗 攻击+换挡 3挡时造成16伤+降至2挡，否则无效
     overspeed: { id:'overspeed', rarity:'uncommon', name:'超速警告', cost:0, type:'attack', emoji:'🚨', description:'若处于 3 挡，造成 <b>16</b> 点伤害并强制降至 2 挡。否则无效果。消耗。', needsTarget:true,
-      effect(cs,ti){ const g=cs.gear||2; if(g>=3){ const ftBonus=Combat._getFtBonus(cs); Combat.dealDamage(cs,ti,Math.floor(12*1.3)+ftBonus); Combat._changeGear(cs,-1); }
-      const oi=cs.discardPile.lastIndexOf('overspeed'); if(oi!==-1) cs.discardPile.splice(oi,1); cs.exhaustPile.push('overspeed'); } },
+      effect(cs,ti,lv=0){ const g=cs.gear||2; if(g>=3){ const ftBonus=Combat._getFtBonus(cs); Combat.dealDamage(cs,ti,16+ftBonus); Combat._changeGear(cs,-1); }
+      if(lv<2){ const oi=cs.discardPile.lastIndexOf('overspeed'); if(oi!==-1) cs.discardPile.splice(oi,1); cs.exhaustPile.push('overspeed'); } } },
 
     // ── 赛车手扩池 A：速度感深化（5张）────────────────────────────────────────────────────────
     speed_rush:     { id:'speed_rush',     rarity:'common',   name:'急加速',   cost:1, type:'attack', emoji:'💨', description:'造成 <b>3</b> 点伤害（含档位倍率），获得 <b>档位×3</b> 点速度感。', needsTarget:true,
@@ -266,9 +266,9 @@ const Data = {
     ar_double_shot: { id:'ar_double_shot', rarity:'uncommon', name:'双箭齐发', cost:1, type:'attack', emoji:'🏹', description:'造成 <b>3</b> 点伤害 2 次，消耗全部蓄力，每消耗 1 点额外造成 <b>2</b> 点伤害（作用于 2 次）。', needsTarget:true,
       effect(cs,ti,lv){ const c=cs.charge||0; cs.charge=0; const base=lv>=2?5:(lv>=1?4:3); const mult=lv>=2?3:2; Combat.dealDamage(cs,ti,base+c*mult); Combat.dealDamage(cs,ti,base+c*mult); } },
     ar_block_charge: { id:'ar_block_charge', rarity:'common', name:'格挡蓄力', cost:1, type:'skill', emoji:'🛡️', description:'获得 <b>5</b> 点格挡，然后获得 <b>1</b> 点蓄力。', needsTarget:false,
-      effect(cs){ Combat.gainBlock(cs,5,true); Combat.archerGainCharge(cs,1); } },
+      effect(cs,ti,lv=0){ const blk=lv>=1?7:5; const chg=lv>=2?2:1; Combat.gainBlock(cs,blk,true); Combat.archerGainCharge(cs,chg); } },
     ar_roll:    { id:'ar_roll',    rarity:'uncommon', name:'翻滚闪避', cost:2, type:'skill',  emoji:'💨', description:'获得 <b>10</b> 点格挡，获得 <b>2</b> 点蓄力。', needsTarget:false,
-      effect(cs){ Combat.gainBlock(cs,10,true); Combat.archerGainCharge(cs,2); } },
+      effect(cs,ti,lv=0){ const blk=lv===1?13:10; Combat.gainBlock(cs,blk,true); Combat.archerGainCharge(cs,2); } },
     ar_pierce:  { id:'ar_pierce',  rarity:'uncommon', name:'穿甲箭',   cost:2, type:'attack', emoji:'🏹', description:'造成 <b>8</b> 点伤害，无视目标格挡，消耗全部蓄力，每消耗 1 点额外造成 <b>3</b> 点伤害。', needsTarget:true,
       effect(cs,ti,lv){ const c=cs.charge||0; cs.charge=0; const e=cs.enemies[ti]; const oldBlock=e.block; e.block=0; const base=lv>=1?10:8; const mult=lv>=2?4:3; Combat.dealDamage(cs,ti,base+c*mult); e.block=oldBlock; } },
     ar_swap:    { id:'ar_swap',    rarity:'uncommon', name:'换箭',     cost:0, type:'skill',  emoji:'🔄', description:'丢弃手牌中任意 1 张牌，抽 <b>2</b> 张牌，获得 <b>1</b> 点蓄力。', needsTarget:false,
@@ -276,7 +276,7 @@ const Data = {
     ar_rapid_fire: { id:'ar_rapid_fire', rarity:'uncommon', name:'连续射击', cost:2, type:'attack', emoji:'🎯', description:'造成 <b>4</b> 点伤害 2 次，消耗全部蓄力，每消耗 1 点额外造成 <b>2</b> 点伤害（作用于全部 2 次）。', needsTarget:true,
       effect(cs,ti,lv){ const c=cs.charge||0; cs.charge=0; const base=lv>=1?5:4; for(let i=0;i<2;i++) Combat.dealDamage(cs,ti,base+c*2); } },
     ar_wind_step: { id:'ar_wind_step', rarity:'uncommon', name:'风驰步', cost:1, type:'skill', emoji:'💨', description:'获得 <b>4</b> 点格挡，获得 <b>1</b> 点蓄力。本回合下一张攻击牌费用 -1。', needsTarget:false,
-      effect(cs){ Combat.gainBlock(cs,4,true); Combat.archerGainCharge(cs,1); cs._archerNextAttackDiscount=(cs._archerNextAttackDiscount||0)+1; } },
+      effect(cs,ti,lv=0){ const blk=lv>=1?6:4; const chg=lv>=2?2:1; Combat.gainBlock(cs,blk,true); Combat.archerGainCharge(cs,chg); cs._archerNextAttackDiscount=(cs._archerNextAttackDiscount||0)+1; } },
 
     // 稀有牌
     ar_arrow_rain: { id:'ar_arrow_rain', rarity:'uncommon', name:'箭雨', cost:2, type:'attack', emoji:'🏹', description:'对所有敌人造成 <b>2</b> 点伤害 <b>2</b> 次，消耗全部蓄力，每消耗 1 点额外造成 <b>2</b> 点伤害（作用于全体每次）。', needsTarget:false,
@@ -284,7 +284,7 @@ const Data = {
     ar_full_charge: { id:'ar_full_charge', rarity:'epic', name:'满蓄爆射', cost:2, type:'attack', emoji:'🎯', description:'<b>仅当蓄力 = 5（满蓄）时可打出。</b>消耗全部蓄力，造成 <b>22</b> 点伤害。', needsTarget:true,
       effect(cs,ti,lv){ const c=cs.charge||0; const threshold=lv>=2?4:(cs.chargeMax||5); const dmg=lv>=1?28:22; if(c>=threshold){ cs.charge=0; Combat.dealDamage(cs,ti,dmg); } } },
     ar_gale:    { id:'ar_gale',    rarity:'uncommon', name:'疾风步',   cost:1, type:'skill',  emoji:'💨', description:'获得 <b>5</b> 点格挡，获得 <b>2</b> 点蓄力，抽 <b>1</b> 张牌。消耗。', needsTarget:false,
-      effect(cs){ Combat.gainBlock(cs,5,true); Combat.archerGainCharge(cs,2); Combat.drawCards(cs,1); const oi=cs.discardPile.lastIndexOf('ar_gale'); if(oi!==-1) cs.discardPile.splice(oi,1); cs.exhaustPile.push('ar_gale'); } },
+      effect(cs,ti,lv=0){ const blk=lv>=1?7:5; const chg=lv>=2?3:2; const draw=lv>=2?2:1; Combat.gainBlock(cs,blk,true); Combat.archerGainCharge(cs,chg); Combat.drawCards(cs,draw); const oi=cs.discardPile.lastIndexOf('ar_gale'); if(oi!==-1) cs.discardPile.splice(oi,1); cs.exhaustPile.push('ar_gale'); } },
     ar_pierce_all: { id:'ar_pierce_all', rarity:'uncommon', name:'贯穿射击', cost:2, type:'attack', emoji:'🏹', description:'对所有敌人造成 <b>6</b> 点伤害，消耗全部蓄力，每消耗 1 点额外造成 <b>3</b> 点伤害（作用于所有敌人）。', needsTarget:false,
       effect(cs,ti,lv){ const c=cs.charge||0; cs.charge=0; const base=lv>=1?8:6; cs.enemies.forEach((_,i)=>{ if(!cs.enemies[i]._dead) Combat.dealDamage(cs,i,base+c*3); }); } },
 
@@ -292,9 +292,9 @@ const Data = {
     ar_instinct: { id:'ar_instinct', rarity:'epic', name:'猎手直觉', cost:2, type:'power', emoji:'✨', description:'永久：每 <b>2</b> 回合开始时，获得 <b>1</b> 点蓄力（不超过上限）。', needsTarget:false,
       effect(cs){ cs.player.buffs.archer_instinct=(cs.player.buffs.archer_instinct||0)+1; } },
     ar_cap_up:  { id:'ar_cap_up',  rarity:'rare',     name:'蓄力上限', cost:2, type:'power',  emoji:'✨', description:'永久：蓄力上限提升至 <b>6</b>（原为5）。立即获得 <b>2</b> 点蓄力。', needsTarget:false,
-      effect(cs){ cs.chargeMax=6; Combat.archerGainCharge(cs,2); } },
+      effect(cs,ti,lv=0){ const cap=lv>=1?8:6; const gain=lv>=1?3:2; cs.chargeMax=cap; Combat.archerGainCharge(cs,gain); } },
     ar_ultimate: { id:'ar_ultimate', rarity:'rare',   name:'终极连射', cost:3, type:'attack', emoji:'🏹', description:'造成 <b>5</b> 点伤害 4 次，消耗全部蓄力，每消耗 1 点额外造成 <b>2</b> 点伤害（作用于全部 4 次）。', needsTarget:true,
-      effect(cs,ti){ const c=cs.charge||0; cs.charge=0; for(let i=0;i<4;i++) Combat.dealDamage(cs,ti,5+c*2); } },
+      effect(cs,ti,lv=0){ const c=cs.charge||0; cs.charge=0; const base=lv>=1?6:5; for(let i=0;i<4;i++) Combat.dealDamage(cs,ti,base+c*2); } },
 
     // ── 射手扩池 B：速攻辅助（6张）──────────────────────────────────────────────────────────────
     ar_scatter:       { id:'ar_scatter',       rarity:'common',   name:'散射',     cost:1, type:'attack', emoji:'🏹', description:'对所有敌人造成 <b>2</b> 点伤害，获得 <b>1</b> 点蓄力。', needsTarget:false,
@@ -1570,11 +1570,11 @@ const Data = {
     forced_downshift:{ 1:{desc:'0费。降2挡，对敌人施加减速×降幅×<b>2</b>。消耗。', cost:0}, 2:{desc:'0费。降2挡，对敌人施加减速×降幅×<b>2</b>。<b>去除消耗。</b>', cost:0} },
     quick_upshift:  { 1:{desc:'升2挡（上限3挡），抽 <b>2</b> 张牌。', cost:1}, 2:{desc:'<b>0费</b>。升2挡（上限3挡），抽 1 张牌。', cost:0} },
     collision_block:{ 1:{desc:'获得 <b>6</b> 点格挡，造成 <b>9</b> 点伤害（均含档位倍率）。', cost:1}, 2:{desc:'获得 <b>7</b> 点格挡，造成 <b>10</b> 点伤害（均含档位倍率），施加 <b>1</b> 层易伤。', cost:1} },
-    gear_lock:      { 1:{desc:'本回合挡位锁定，获得挡位×<b>4</b> 点格挡。', cost:1}, 2:{desc:'<b>0费</b>。本回合挡位锁定，获得挡位×3 点格挡。', cost:0} },
-    nitro_boost:    { 1:{desc:'造成 <b>14</b> 点伤害并升1挡。3挡时改为造成 <b>18</b> 点伤害。', cost:2}, 2:{desc:'<b>1费</b>。造成 <b>12</b> 点伤害并升1挡。3挡时改为造成 <b>16</b> 点伤害。', cost:1} },
+    gear_lock:      { 1:{desc:'本回合挡位锁定，获得挡位×<b>5</b> 点格挡（最多 15）。', cost:1}, 2:{desc:'<b>0费</b>。本回合挡位锁定，获得挡位×<b>4</b> 点格挡。', cost:0} },
+    nitro_boost:    { 1:{desc:'造成 <b>16</b> 点伤害并升1挡。3挡时改为造成 <b>22</b> 点伤害。', cost:2}, 2:{desc:'造成 <b>18</b> 点伤害并升1挡。3挡时改为造成 <b>24</b> 点伤害。', cost:2} },
     drift_charge:   { 1:{desc:'对所有敌人造成 <b>7</b> 点伤害（含档位倍率）。速度感每满 <b>20</b> 点，额外造成 <b>2</b> 点伤害（最多 +8）。', cost:2}, 2:{desc:'对所有敌人造成 <b>7</b> 点伤害（含档位倍率）。速度感每满 <b>16</b> 点，额外造成 <b>2</b> 点伤害（最多 +8）。', cost:2} },
     overtake:       { 1:{desc:'造成 <b>5+5</b> 点伤害（两段，含档位倍率）。3挡时本牌费用变为0。', cost:1}, 2:{desc:'造成 <b>6+6</b> 点伤害（两段，含档位倍率）。3挡时本牌费用变为0，且施加 1 层减速。', cost:1} },
-    turbo_crush:    { 1:{desc:'造成 <b>7×（当前档位）</b> 点伤害，随后降2挡（最低降至1挡）。', cost:3}, 2:{desc:'<b>2费</b>。造成 <b>6×（当前档位）</b> 点伤害，随后降2挡（最低降至1挡）。', cost:2} },
+    turbo_crush:    { 1:{desc:'造成 <b>9×（当前档位）</b> 点伤害，随后降2挡（最低降至1挡）。', cost:3}, 2:{desc:'造成 <b>10×（当前档位）</b> 点伤害，随后降2挡（最低降至1挡）。', cost:3} },
     anti_skid:      { 1:{desc:'能力：每次降挡时获得 <b>4</b> 点格挡。', cost:1}, 2:{desc:'能力：每次降挡时获得 <b>4</b> 点格挡，且每回合首次降挡时抽 1 张牌。', cost:1} },
     redline:        { 1:{desc:'能力：3挡时格挡不受减损。每回合开始若处于3挡，抽 <b>1</b> 张牌并获得 <b>1</b> 点能量。', cost:3}, 2:{desc:'能力：3挡时格挡不受减损。每回合开始若处于3挡，抽 <b>2</b> 张牌并获得 <b>1</b> 点能量。', cost:3} },
     race_instinct:  { 1:{desc:'能力：每次升挡获得 1 点势头（上限 <b>5</b>）。', cost:2}, 2:{desc:'能力：每次升挡获得 1 点势头（上限 <b>5</b>），且每回合首次升挡时抽 1 张牌。', cost:2} },
@@ -4663,7 +4663,7 @@ const UI = {
         turbo_crush: ()=>{ const d=8*g+dmgExtra; const note=g>=3?'<span style="color:#f9ca24">降至 1 挡</span>':'<span style="color:#f9ca24">降 2 挡</span>'; return `造成 <b>${d}</b> 点伤害。${note}<br><span style="font-size:0.78em;opacity:0.8">${gearLabel}</span>`; },
         pit_repair:  ()=>{ const d=Math.floor(10*blkMul); const heal=g<=2?'<span style="color:#7dff7d">额外回血 6 HP</span>':''; return `获得 <b>${d}</b> 点格挡。${heal}<br><span style="font-size:0.78em;opacity:0.8">${gearLabel}</span>`; },
         gear_lock:   ()=>{ const d=(cs.gear||2)*3; return `本回合挡位锁定。获得 <b>${d}</b> 点格挡。<br><span style="font-size:0.78em;opacity:0.8">${gearLabel}</span>`; },
-        overspeed:   ()=>{ const d=g>=3?Math.floor(10*1.3)+ftBonus:0; return g>=3?`造成 <b>${d}</b> 点伤害并降 1 挡。消耗。<br><span style="font-size:0.78em;opacity:0.8">${gearLabel}</span>`:`<span style="color:#888">当前不在 3 挡，此牌无效果。</span>`; },
+        overspeed:   ()=>{ const d=g>=3?16+ftBonus+dmgExtra:0; const lv=upgradeLevel||0; const csmark=lv>=2?'':' 消耗。'; return g>=3?`造成 <b>${d}</b> 点伤害并降 1 挡。${csmark}<br><span style="font-size:0.78em;opacity:0.8">${gearLabel}</span>`:`<span style="color:#888">当前不在 3 挡，此牌无效果。</span>`; },
         speed_rush:  ()=>{ const lv=upgradeLevel||0; const base=[3,4,5][lv]||3; const spMult=[3,4,5][lv]||3; const d=Math.floor(base*atkMul)+ftBonus; const sp=g*spMult; return `造成 <b>${d}</b> 点伤害，获得 <b>${sp}</b> 点速度感（当前${spd}）。<br><span style="font-size:0.78em;opacity:0.8">${gearLabel}</span>`; },
         corner_guard:()=>{ const lv=upgradeLevel||0; const base=[5,6,7][lv]||5; const extra=cs._shiftedUpThisTurn?([3,4,5][lv]||3):0; return `获得 <b>${base+extra}</b> 点格挡${cs._shiftedUpThisTurn?'（已升挡加成）':''}。<br><span style="font-size:0.78em;opacity:0.8">${gearLabel}</span>`; },
         inertia_strike:()=>{ const lv=upgradeLevel||0; const base=[8,9,10][lv]||8; const spBonus=Math.floor((spd||0)/20)*2; const d=Math.floor((base+spBonus)*atkMul)+ftBonus; return `造成 <b>${d}</b> 点伤害（基础${base}+速度感加成${spBonus}，×档位倍率）。<br><span style="font-size:0.78em;opacity:0.8">${gearLabel} · 速度感每满20点+2</span>`; },
