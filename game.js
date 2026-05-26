@@ -149,7 +149,7 @@ const Data = {
       effect(cs){ Combat._gearShiftInteractive(cs, 'gear_shift'); } },
     // 起始牌：刹车漂移（替代猛击）
     gear_brake: { id:'gear_brake', rarity:'common', name:'刹车漂移', cost:1, type:'attack', emoji:'💨', description:'造成 <b>10</b> 点伤害（含档位倍率）。3 挡时附加 2 层减速。', needsTarget:true,
-      effect(cs,ti){ const g=cs.gear||2; const dmgMult=[0,0.8,1.0,1.5][g]; const bonus=Combat._getFtBonus(cs); Combat.dealDamage(cs,ti,Math.floor(10*dmgMult)+bonus); if(g>=3){ Combat.applyDebuff(cs.enemies[ti],'slow',2); } } },
+      effect(cs,ti,lv=0){ const g=cs.gear||2; const dmgMult=[0,0.8,1.0,1.5][g]; const bonus=Combat._getFtBonus(cs); const base=[10,13,16][lv]||10; const slow=[2,2,3][lv]||2; Combat.dealDamage(cs,ti,Math.floor(base*dmgMult)+bonus); if(g>=3){ Combat.applyDebuff(cs.enemies[ti],'slow',slow); } } },
 
     // ── 攻击牌（6张）────────────────────────────────────────────────────────────────────────────────
     // 1. 刹车漂移（起始牌已包含）
@@ -1563,7 +1563,7 @@ const Data = {
     gear_strike:    { 1:{desc:'造成 <b>8</b> 点伤害。',      cost:1}, 2:{desc:'造成 <b>10</b> 点伤害。若处于3挡，额外施加 1 层减速。', cost:1} },
     gear_defend:    { 1:{desc:'获得 <b>7</b> 点格挡（含档位倍率）。', cost:1}, 2:{desc:'获得 <b>7</b> 点格挡（含档位倍率），抽 <b>1</b> 张牌。', cost:1} },
     gear_shift:     { 1:{desc:'0费。升1挡或降1挡，本轮最多 <b>3</b> 次。', cost:0}, 2:{desc:'0费。升1挡或降1挡，本轮最多 <b>3</b> 次，首次使用后抽 <b>1</b> 张牌。', cost:0} },
-    gear_brake:     { 1:{desc:'造成 <b>10</b> 点伤害（含档位倍率）。3挡时额外施加 2 层减速。', cost:1}, 2:{desc:'<b>0费</b>。造成 <b>8</b> 点固定伤害。3挡时额外施加 2 层减速。', cost:0} },
+    gear_brake:     { 1:{desc:'造成 <b>13</b> 点伤害（含档位倍率）。3挡时额外施加 2 层减速。', cost:1}, 2:{desc:'造成 <b>16</b> 点伤害（含档位倍率）。3挡时额外施加 <b>3</b> 层减速。', cost:1} },
     overspeed:      { 1:{desc:'处于3挡时造成 <b>16</b> 点伤害并降1挡。消耗。', cost:0}, 2:{desc:'处于3挡时造成 <b>16</b> 点伤害并降1挡。<b>去除消耗。</b>', cost:0} },
     pit_repair:     { 1:{desc:'获得 <b>12</b> 点格挡。1/2挡时额外回血 <b>4</b> HP。', cost:1}, 2:{desc:'<b>0费</b>。获得 <b>10</b> 点格挡。1/2挡时额外回血 5 HP。', cost:0} },
     race_predict:   { 1:{desc:'查看牌堆顶 <b>4</b> 张，自由排序，抽 1 张。', cost:1}, 2:{desc:'查看牌堆顶 <b>4</b> 张，自由排序，抽 <b>2</b> 张。', cost:1} },
@@ -4655,7 +4655,7 @@ const UI = {
       const RACER_CARDS = {
         gear_strike: ()=>{ const d=Math.floor(6*atkMul)+ftBonus+dmgExtra; return `造成 <b>${d}</b> 点伤害。<br><span style="font-size:0.78em;opacity:0.8">${gearLabel}</span>`; },
         gear_defend: ()=>{ const d=Math.floor(5*blkMul); const rl=(cs.player?.buffs?.redline||0)>0; return `获得 <b>${rl&&g===3?5:d}</b> 点格挡。<br><span style="font-size:0.78em;opacity:0.8">${gearLabel}</span>`; },
-        gear_brake:  ()=>{ const d=Math.floor(8*atkMul)+ftBonus+dmgExtra; const extra=g>=3?' <span style="color:#f9ca24">并施加 2 层「减速」</span>':''; return `造成 <b>${d}</b> 点伤害。${extra}<br><span style="font-size:0.78em;opacity:0.8">${gearLabel}</span>`; },
+        gear_brake:  ()=>{ const base=[10,13,16][upgradeLevel||0]||10; const slow=[2,2,3][upgradeLevel||0]||2; const d=Math.floor(base*atkMul)+ftBonus+dmgExtra; const extra=g>=3?` <span style="color:#f9ca24">并施加 ${slow} 层「减速」</span>`:''; return `造成 <b>${d}</b> 点伤害。${extra}<br><span style="font-size:0.78em;opacity:0.8">${gearLabel}</span>`; },
         nitro_boost: ()=>{ const d=(g>=3?18:Math.floor(14*atkMul)+ftBonus)+dmgExtra; const note=g>=3?'<span style="color:#f9ca24">已处于最高挡，改为直接造成 18 伤</span>':'<span style="opacity:0.8">升至 3 挡</span>'; return `造成 <b>${d}</b> 点伤害。${note}<br><span style="font-size:0.78em;opacity:0.8">${gearLabel}</span>`; },
         collision_block: ()=>{ const lv=upgradeLevel||0; const blkBase=[5,6,7][lv]||5; const dmgBase=[7,9,10][lv]||7; const blk=Math.floor(blkBase*blkMul); const dmg=Math.floor(dmgBase*atkMul)+ftBonus+dmgExtra; return `获得 <b>${blk}</b> 点格挡，造成 <b>${dmg}</b> 点伤害${lv>=2?' 并施加 1 层易伤':''}。<br><span style="font-size:0.78em;opacity:0.8">${gearLabel}</span>`; },
         drift_charge: ()=>{ const lv=upgradeLevel||0; const base2=[6,7,7][lv]||6; const step2=[20,20,16][lv]||20; const base=Math.floor(base2*atkMul)+ftBonus+dmgExtra; const extra=Math.min(Math.floor(spd/step2)*2,8); return `对所有敌人造成 <b>${base}</b> 点伤害，速度感加成 <b>+${extra}</b>（每满${step2}点+2，上限+8）。<br><span style="font-size:0.78em;opacity:0.8">${gearLabel}</span>`; },
