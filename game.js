@@ -17,16 +17,17 @@ const Data = {
     },
     {
       id: 'brute', name: '战士', emoji: '⚔️', color: '#2e86c1',
-      hp: 85, maxHp: 85, description: '就是力气大。',
+      hp: 85, maxHp: 85, description: '就是力气大。每场战斗第 2/4/6/8/10 回合开始时自动 +1 力量（上限 +5）。',
       startingDeck: ['strike','strike','strike','strike','strike','strike','defend','defend','defend','clash'],
       detail: {
         gold: 85,
-        playstyle: '硬桥硬马暴力流。HP厚、金币足，直接靠攻击力和血量碾压敌人。机制简单直白，适合初次上手，也适合喜欢稳扎稳打风格的玩家。',
+        playstyle: '硬桥硬马暴力流。HP厚、金币足，自带「越打越狠」被动，越拖越强。机制简单直白，新手友好。',
         mechanics: [
-          { name: '❤️ 高HP（85点）', desc: '血量厚，能扛较多伤害，容错空间高，不需要精确计算格挡也能撑过来。' },
-          { name: '💰 起始金币（85金）', desc: '初始资金较充裕，可以在商店优先购买强力遗物或删牌，让牌组更精锐。' },
-          { name: '💪 力量叠加', desc: '通过特定牌积累力量层数，每1点力量使所有攻击额外+1伤害。力量越高，每张攻击牌的边际收益越大。' },
-          { name: '💢 冲撞（0费）', desc: '当手牌全为攻击牌时造成12点高伤，否则仅5点。合理安排手牌顺序能让0费牌稳定触发全额伤害。' },
+          { name: '💪 被动·越打越狠', desc: '每场战斗每 2 回合开始时自动获得 +1 永久力量（本场上限 +5）。第 2 回合就开始触发，10 回合后到达上限。即使没拿到任何力量牌也能自动 scale。' },
+          { name: '❤️ 高HP（85点）', desc: '血量厚，能扛较多伤害，容错空间高，可以靠"扛"等到被动触发。' },
+          { name: '💰 起始金币（85金）', desc: '初始资金较充裕，可以在商店优先购买强力遗物或删牌。' },
+          { name: '🔥 力量加成倍化', desc: '被动 + 激怒(inflame) + 狂战士 + 力量类增益共同叠加，每张攻击牌的边际收益滚雪球。' },
+          { name: '💢 冲撞（0费）', desc: '当手牌全为攻击牌时造成12点高伤，否则仅5点。合理排序能让0费牌稳定触发全额伤害。' },
         ]
       }
     },
@@ -614,11 +615,11 @@ const Data = {
     cursemage: {
       id:'cursemage', name:'诅咒法师', emoji:'🔮', hp:40, maxHp:40, actions:['darkbolt','hex','darkbolt','curse_rite','darkbolt'],
       getIntent(s){ const a=s.actions[s.actionIndex%s.actions.length]; const str=s.buffs?.strength||0;
-        if(a==='hex') return [{type:'debuff',label:'💢',num:'诅咒术',detail:'对玩家施加 2 层【易伤】和 2 层【虚弱】'}];
+        if(a==='hex') return [{type:'debuff',label:'💢',num:'诅咒术',detail:'对玩家施加 2 层【虚弱】'}];
         if(a==='curse_rite') return [{type:'pollute',label:'🔥',num:'黑暗仪式',detail:'造成 6 点伤害，并将 2 张「诅咒」牌插入手牌'}];
         return [{type:'attack',val:12+str,label:'⚔️',num:String(12+str),detail:`暗影箭：造成 ${12+str} 点伤害`}]; },
       doAction(cs,si){ const s=cs.enemies[si],a=s.actions[s.actionIndex%s.actions.length]; const str=s.buffs.strength||0;
-        if(a==='hex'){ Combat.applyDebuff(cs.player,'vulnerable',2); Combat.applyDebuff(cs.player,'weak',2); }
+        if(a==='hex'){ Combat.applyDebuff(cs.player,'weak',2); }
         else if(a==='curse_rite'){ Combat.enemyAttack(cs,si,6); cs.hand.push('curse_card'); cs.hand.push('curse_card'); }
         else Combat.enemyAttack(cs,si,12+str);
         s.actionIndex++; }
@@ -2940,6 +2941,8 @@ const Combat = {
     if(State.run?.character?.id==='archer'){ cs.charge=0; cs.chargeMax=5; cs._archerNextAttackDiscount=0; }
     // 拳击手：初始化愤怒系统
     if(State.run?.character?.id==='boxer'){ cs.damageTakenThisEnemyPhase=0; cs.damageTakenLastTurn=0; if(!cs.player.buffs) cs.player.buffs={}; cs.player.buffs.fury=0; }
+    // 战士被动「越打越狠」：每 2 回合开始时自动 +1 力量（本场战斗上限 +5）
+    if(State.run?.character?.id==='brute'){ cs.bruteRageStacks=0; }
     // ── 升级映射：将 deck 索引升级数据转换为 {cardId: [level, level, ...]} ──
     // 每张牌可能在 deck 中有多份，upgradeMap[cardId] 是一个队列，战斗中抽牌时依次取用
     cs.upgradeMap = {};
@@ -3278,6 +3281,18 @@ const Combat = {
       }
     }
     cs.turn++;cs.phase='player';cs.energy=cs.maxEnergy;
+    // 战士被动「越打越狠」：每 2 回合开始时 +1 力量（本场战斗内累计，上限 +5）
+    if(State.run?.character?.id==='brute' && cs.turn >= 2){
+      if((cs.turn % 2 === 0) && (cs.bruteRageStacks||0) < 5){
+        cs.bruteRageStacks = (cs.bruteRageStacks||0) + 1;
+        Combat.applyBuff(cs.player,'strength',1);
+        const _bTip=document.createElement('div');
+        _bTip.style.cssText='position:fixed;top:38%;left:50%;transform:translate(-50%,-50%);background:rgba(60,20,20,0.95);color:#ff8866;font-size:1.05rem;font-weight:900;padding:10px 22px;border-radius:12px;border:2px solid #ff8866;z-index:9999;pointer-events:none;text-shadow:0 0 8px rgba(255,136,102,0.6)';
+        _bTip.textContent=`💪 越打越狠！+1 力量（${cs.bruteRageStacks}/5）`;
+        document.body.appendChild(_bTip);
+        setTimeout(()=>_bTip.remove(),1400);
+      }
+    }
     // 武装：下回合 +N 能量
     if((cs._extraEnergyNextTurn||0)>0){
       cs.energy+=cs._extraEnergyNextTurn;
