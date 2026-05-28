@@ -17,14 +17,14 @@ const Data = {
     },
     {
       id: 'brute', name: '战士', emoji: '⚔️', color: '#2e86c1',
-      hp: 85, maxHp: 85, description: '就是力气大。每场战斗第 2/4/6/8/10 回合开始时自动 +1 力量（上限 +5）。',
+      hp: 85, maxHp: 85, description: '就是力气大。战斗时间越长，力量越大（每 2 回合自动 +1 力量，上限 +5）。',
       startingDeck: ['strike','strike','strike','strike','strike','strike','defend','defend','defend','clash'],
       detail: {
         gold: 85,
-        playstyle: '硬桥硬马暴力流。HP厚、金币足，自带「越打越狠」被动，越拖越强。机制简单直白，新手友好。',
+        playstyle: '硬桥硬马暴力流。HP厚、金币足，自带「持久战」被动 — 时间换力量。机制简单直白，新手友好。区别于拳击手（缺血爆发），战士是稳扎稳打越拖越强。',
         mechanics: [
-          { name: '💪 被动·越打越狠', desc: '每场战斗每 2 回合开始时自动获得 +1 永久力量（本场上限 +5）。第 2 回合就开始触发，10 回合后到达上限。即使没拿到任何力量牌也能自动 scale。' },
-          { name: '❤️ 高HP（85点）', desc: '血量厚，能扛较多伤害，容错空间高，可以靠"扛"等到被动触发。' },
+          { name: '💪 被动·持久战', desc: '每场战斗每 2 回合开始时自动获得 +1 永久力量（本场上限 +5）。**按时间累计**，跟血量无关（拳击手是缺血加成）。第 2 回合就开始触发，10 回合后达到上限。即使没拿到任何力量牌也能自动 scale。' },
+          { name: '❤️ 高HP（85点）', desc: '血量厚，能扛较多伤害，容错空间高，可以靠"扛"等到被动触发到位。' },
           { name: '💰 起始金币（85金）', desc: '初始资金较充裕，可以在商店优先购买强力遗物或删牌。' },
           { name: '🔥 力量加成倍化', desc: '被动 + 激怒(inflame) + 狂战士 + 力量类增益共同叠加，每张攻击牌的边际收益滚雪球。' },
           { name: '💢 冲撞（0费）', desc: '当手牌全为攻击牌时造成12点高伤，否则仅5点。合理排序能让0费牌稳定触发全额伤害。' },
@@ -3281,14 +3281,14 @@ const Combat = {
       }
     }
     cs.turn++;cs.phase='player';cs.energy=cs.maxEnergy;
-    // 战士被动「越打越狠」：每 2 回合开始时 +1 力量（本场战斗内累计，上限 +5）
+    // 战士被动「持久战」：每 2 回合开始时 +1 力量（本场战斗内累计，上限 +5）
     if(State.run?.character?.id==='brute' && cs.turn >= 2){
       if((cs.turn % 2 === 0) && (cs.bruteRageStacks||0) < 5){
         cs.bruteRageStacks = (cs.bruteRageStacks||0) + 1;
         Combat.applyBuff(cs.player,'strength',1);
         const _bTip=document.createElement('div');
-        _bTip.style.cssText='position:fixed;top:38%;left:50%;transform:translate(-50%,-50%);background:rgba(60,20,20,0.95);color:#ff8866;font-size:1.05rem;font-weight:900;padding:10px 22px;border-radius:12px;border:2px solid #ff8866;z-index:9999;pointer-events:none;text-shadow:0 0 8px rgba(255,136,102,0.6)';
-        _bTip.textContent=`💪 越打越狠！+1 力量（${cs.bruteRageStacks}/5）`;
+        _bTip.style.cssText='position:fixed;top:38%;left:50%;transform:translate(-50%,-50%);background:rgba(20,40,60,0.95);color:#7dccff;font-size:1.05rem;font-weight:900;padding:10px 22px;border-radius:12px;border:2px solid #7dccff;z-index:9999;pointer-events:none;text-shadow:0 0 8px rgba(125,204,255,0.6)';
+        _bTip.textContent=`💪 持久战！+1 力量（${cs.bruteRageStacks}/5）`;
         document.body.appendChild(_bTip);
         setTimeout(()=>_bTip.remove(),1400);
       }
