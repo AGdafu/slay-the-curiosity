@@ -17,17 +17,17 @@ const Data = {
     },
     {
       id: 'brute', name: '战士', emoji: '⚔️', color: '#2e86c1',
-      hp: 85, maxHp: 85, description: '就是力气大。战斗时间越长，力量越大（每 2 回合自动 +1 力量，上限 +5）。',
+      hp: 85, maxHp: 85, description: '就是力气大。同一回合越打越猛（每打 1 张攻击牌，本回合后续攻击 +2 伤害）。',
       startingDeck: ['strike','strike','strike','strike','strike','strike','defend','defend','defend','clash'],
       detail: {
         gold: 85,
-        playstyle: '硬桥硬马暴力流。HP厚、金币足，自带「持久战」被动 — 时间换力量。机制简单直白，新手友好。区别于拳击手（缺血爆发），战士是稳扎稳打越拖越强。',
+        playstyle: '猛攻流。每回合排牌顺序很重要：小攻击垫在前面、大攻击放最后做收尾，每张攻击都比前一张更狠。区别于拳击手的"缺血爆发"，战士是"节奏爆发"——血量无关，看你一回合能塞下多少拳。',
         mechanics: [
-          { name: '💪 被动·持久战', desc: '每场战斗每 2 回合开始时自动获得 +1 永久力量（本场上限 +5）。**按时间累计**，跟血量无关（拳击手是缺血加成）。第 2 回合就开始触发，10 回合后达到上限。即使没拿到任何力量牌也能自动 scale。' },
-          { name: '❤️ 高HP（85点）', desc: '血量厚，能扛较多伤害，容错空间高，可以靠"扛"等到被动触发到位。' },
+          { name: '💪 被动·猛势', desc: '同一回合内，每打出 1 张攻击牌，**后续**攻击牌伤害 +2（叠加，回合结束重置）。第 1 张：+0；第 2 张：+2；第 3 张：+4；第 4 张：+6……鼓励一回合连续猛攻。' },
+          { name: '❤️ 高HP（85点）', desc: '血量厚，容错高，可以省下能量打全攻击型回合。' },
           { name: '💰 起始金币（85金）', desc: '初始资金较充裕，可以在商店优先购买强力遗物或删牌。' },
-          { name: '🔥 力量加成倍化', desc: '被动 + 激怒(inflame) + 狂战士 + 力量类增益共同叠加，每张攻击牌的边际收益滚雪球。' },
-          { name: '💢 冲撞（0费）', desc: '当手牌全为攻击牌时造成12点高伤，否则仅5点。合理排序能让0费牌稳定触发全额伤害。' },
+          { name: '🔥 力量加成倍化', desc: '猛势 + 激怒(inflame) + 狂战士 + 力量类增益共同叠加，每张攻击的边际收益滚雪球。' },
+          { name: '💢 冲撞（0费）', desc: '当手牌全为攻击牌时造成 12 点高伤，否则仅 5 点。0费 + 全攻击触发 + 排在收尾位 = 单回合极限爆发。' },
         ]
       }
     },
@@ -2941,8 +2941,8 @@ const Combat = {
     if(State.run?.character?.id==='archer'){ cs.charge=0; cs.chargeMax=5; cs._archerNextAttackDiscount=0; }
     // 拳击手：初始化愤怒系统
     if(State.run?.character?.id==='boxer'){ cs.damageTakenThisEnemyPhase=0; cs.damageTakenLastTurn=0; if(!cs.player.buffs) cs.player.buffs={}; cs.player.buffs.fury=0; }
-    // 战士被动「越打越狠」：每 2 回合开始时自动 +1 力量（本场战斗上限 +5）
-    if(State.run?.character?.id==='brute'){ cs.bruteRageStacks=0; }
+    // 战士被动「猛势」：每打 1 张攻击牌，本回合后续攻击牌 +2 伤害（回合末重置）
+    if(State.run?.character?.id==='brute'){ cs.bruteOnslaughtCounter=0; cs._bruteOnslaughtBonus=0; }
     // ── 升级映射：将 deck 索引升级数据转换为 {cardId: [level, level, ...]} ──
     // 每张牌可能在 deck 中有多份，upgradeMap[cardId] 是一个队列，战斗中抽牌时依次取用
     cs.upgradeMap = {};
@@ -3100,8 +3100,20 @@ const Combat = {
       });
       cs.handUpgrades = newHandUpgrades;
     }
+    // 战士被动「猛势」：本张攻击牌享受 (前面打过的攻击数 × 2) 加成
+    const _isBruteAttack = (State.run?.character?.id==='brute' && def.type==='attack');
+    if(_isBruteAttack){
+      cs._bruteOnslaughtBonus = (cs.bruteOnslaughtCounter||0) * 2;
+    } else {
+      cs._bruteOnslaughtBonus = 0;
+    }
     // 赛车手超车外线：3挡时免费（已在费用计算前处理，此处无需额外处理）
     def.effect(cs, targetEnemyIndex, _upgradeLevel);
+    // 战士「猛势」：打完一张攻击牌后计数器 +1
+    if(_isBruteAttack){
+      cs.bruteOnslaughtCounter = (cs.bruteOnslaughtCounter||0) + 1;
+    }
+    cs._bruteOnslaughtBonus = 0;
     // 射手：打出消耗蓄力的牌后，重渲染手牌更新实时伤害数值
     if(State.run?.character?.id === 'archer' && typeof UI !== 'undefined' && UI._renderHand){
       setTimeout(()=>{ const _cs2=State.run?.combat; if(_cs2 && _cs2.phase==='player') UI._renderHand(_cs2); }, 50);
@@ -3281,17 +3293,10 @@ const Combat = {
       }
     }
     cs.turn++;cs.phase='player';cs.energy=cs.maxEnergy;
-    // 战士被动「持久战」：每 2 回合开始时 +1 力量（本场战斗内累计，上限 +5）
-    if(State.run?.character?.id==='brute' && cs.turn >= 2){
-      if((cs.turn % 2 === 0) && (cs.bruteRageStacks||0) < 5){
-        cs.bruteRageStacks = (cs.bruteRageStacks||0) + 1;
-        Combat.applyBuff(cs.player,'strength',1);
-        const _bTip=document.createElement('div');
-        _bTip.style.cssText='position:fixed;top:38%;left:50%;transform:translate(-50%,-50%);background:rgba(20,40,60,0.95);color:#7dccff;font-size:1.05rem;font-weight:900;padding:10px 22px;border-radius:12px;border:2px solid #7dccff;z-index:9999;pointer-events:none;text-shadow:0 0 8px rgba(125,204,255,0.6)';
-        _bTip.textContent=`💪 持久战！+1 力量（${cs.bruteRageStacks}/5）`;
-        document.body.appendChild(_bTip);
-        setTimeout(()=>_bTip.remove(),1400);
-      }
+    // 战士被动「猛势」：每回合开始时重置攻击牌计数器
+    if(State.run?.character?.id==='brute'){
+      cs.bruteOnslaughtCounter=0;
+      cs._bruteOnslaughtBonus=0;
     }
     // 武装：下回合 +N 能量
     if((cs._extraEnergyNextTurn||0)>0){
@@ -3439,7 +3444,7 @@ const Combat = {
       }
     });
   },
-  dealDamage(cs,targetIndex,amount){ const enemy=cs.enemies[targetIndex];if(!enemy||enemy._dead)return 0; let dmg=amount+(cs.player.buffs.strength||0);
+  dealDamage(cs,targetIndex,amount){ const enemy=cs.enemies[targetIndex];if(!enemy||enemy._dead)return 0; let dmg=amount+(cs.player.buffs.strength||0)+(cs._bruteOnslaughtBonus||0);
     // 速度感攻击加成：30-59=+2，>=60=+5
     if(State.run?.character?.id==='racer'){ const _spd=cs.speed||0; if(_spd>=60) dmg+=5; else if(_spd>=30) dmg+=2; } if((enemy.debuffs.vulnerable||0)>0)dmg=Math.floor(dmg*1.5); if((cs.player.debuffs.weak||0)>0)dmg=Math.floor(dmg*0.75); if((cs.player.debuffs.slow||0)>0)dmg=Math.floor(dmg*0.70); const absorbed=Math.min(enemy.block,dmg);enemy.block=Math.max(0,enemy.block-absorbed);const actualDmg=dmg-absorbed;enemy.hp-=actualDmg;
     // 大头的西班牙语书：记录本回合是否对敌人造成过实际伤害
