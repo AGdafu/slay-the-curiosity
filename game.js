@@ -17,17 +17,17 @@ const Data = {
     },
     {
       id: 'brute', name: '战士', emoji: '⚔️', color: '#2e86c1',
-      hp: 85, maxHp: 85, description: '就是力气大。同一回合越打越猛（每打 1 张攻击牌，本回合后续攻击 +2 伤害）。',
+      hp: 85, maxHp: 85, description: '就是力气大。攻击敌人会留下永久「重伤」标记，每层让你对该敌人 +1 伤害。',
       startingDeck: ['strike','strike','strike','strike','strike','strike','defend','defend','defend','clash'],
       detail: {
         gold: 85,
-        playstyle: '猛攻流。每回合排牌顺序很重要：小攻击垫在前面、大攻击放最后做收尾，每张攻击都比前一张更狠。区别于拳击手的"缺血爆发"，战士是"节奏爆发"——血量无关，看你一回合能塞下多少拳。',
+        playstyle: '集火滚雪球。攻击敌人会留下永久「重伤」标记，越往后打越疼。Boss 长战越拖越强；多敌人时要选 1 个集中打 vs 平摊伤害。新手友好（无需主动决策也能 scale），但有"集火 or 分散"的策略点。',
         mechanics: [
-          { name: '💪 被动·猛势', desc: '同一回合内，每打出 1 张攻击牌，**后续**攻击牌伤害 +2（叠加，回合结束重置）。第 1 张：+0；第 2 张：+2；第 3 张：+4；第 4 张：+6……鼓励一回合连续猛攻。' },
-          { name: '❤️ 高HP（85点）', desc: '血量厚，容错高，可以省下能量打全攻击型回合。' },
+          { name: '🩸 被动·重伤', desc: '战士对敌人造成伤害时，给该敌人施加 1 层「重伤」（永久叠加，回合结束不消失）。攻击带重伤敌人时，每层 +1 伤害。打到 20 次就 +19 伤害/击。**Boss 战滚雪球神技**。' },
+          { name: '❤️ 高HP（85点）', desc: '血量厚，可以扛过前期重伤层数还没堆起来的低输出期。' },
           { name: '💰 起始金币（85金）', desc: '初始资金较充裕，可以在商店优先购买强力遗物或删牌。' },
-          { name: '🔥 力量加成倍化', desc: '猛势 + 激怒(inflame) + 狂战士 + 力量类增益共同叠加，每张攻击的边际收益滚雪球。' },
-          { name: '💢 冲撞（0费）', desc: '当手牌全为攻击牌时造成 12 点高伤，否则仅 5 点。0费 + 全攻击触发 + 排在收尾位 = 单回合极限爆发。' },
+          { name: '🎯 集火决策', desc: '多敌人战要权衡：集中打 1 个堆重伤（快速击杀+滚雪球），还是分摊降低威胁（控所有敌人血量）。' },
+          { name: '💢 冲撞（0费）', desc: '当手牌全为攻击牌时造成 12 点高伤，否则仅 5 点。0费打出还能多堆 1 层重伤。' },
         ]
       }
     },
@@ -2941,8 +2941,8 @@ const Combat = {
     if(State.run?.character?.id==='archer'){ cs.charge=0; cs.chargeMax=5; cs._archerNextAttackDiscount=0; }
     // 拳击手：初始化愤怒系统
     if(State.run?.character?.id==='boxer'){ cs.damageTakenThisEnemyPhase=0; cs.damageTakenLastTurn=0; if(!cs.player.buffs) cs.player.buffs={}; cs.player.buffs.fury=0; }
-    // 战士被动「猛势」：每打 1 张攻击牌，本回合后续攻击牌 +2 伤害（回合末重置）
-    if(State.run?.character?.id==='brute'){ cs.bruteOnslaughtCounter=0; cs._bruteOnslaughtBonus=0; }
+    // 战士被动「重伤」：攻击敌人施加永久 1 层 wound（每层 +1 伤害）。无初始化字段，
+    // wound 直接挂在 enemy.debuffs.wound 上，由 dealDamage 处理
     // ── 升级映射：将 deck 索引升级数据转换为 {cardId: [level, level, ...]} ──
     // 每张牌可能在 deck 中有多份，upgradeMap[cardId] 是一个队列，战斗中抽牌时依次取用
     cs.upgradeMap = {};
@@ -3100,20 +3100,8 @@ const Combat = {
       });
       cs.handUpgrades = newHandUpgrades;
     }
-    // 战士被动「猛势」：本张攻击牌享受 (前面打过的攻击数 × 2) 加成
-    const _isBruteAttack = (State.run?.character?.id==='brute' && def.type==='attack');
-    if(_isBruteAttack){
-      cs._bruteOnslaughtBonus = (cs.bruteOnslaughtCounter||0) * 2;
-    } else {
-      cs._bruteOnslaughtBonus = 0;
-    }
     // 赛车手超车外线：3挡时免费（已在费用计算前处理，此处无需额外处理）
     def.effect(cs, targetEnemyIndex, _upgradeLevel);
-    // 战士「猛势」：打完一张攻击牌后计数器 +1
-    if(_isBruteAttack){
-      cs.bruteOnslaughtCounter = (cs.bruteOnslaughtCounter||0) + 1;
-    }
-    cs._bruteOnslaughtBonus = 0;
     // 射手：打出消耗蓄力的牌后，重渲染手牌更新实时伤害数值
     if(State.run?.character?.id === 'archer' && typeof UI !== 'undefined' && UI._renderHand){
       setTimeout(()=>{ const _cs2=State.run?.combat; if(_cs2 && _cs2.phase==='player') UI._renderHand(_cs2); }, 50);
@@ -3293,11 +3281,6 @@ const Combat = {
       }
     }
     cs.turn++;cs.phase='player';cs.energy=cs.maxEnergy;
-    // 战士被动「猛势」：每回合开始时重置攻击牌计数器
-    if(State.run?.character?.id==='brute'){
-      cs.bruteOnslaughtCounter=0;
-      cs._bruteOnslaughtBonus=0;
-    }
     // 武装：下回合 +N 能量
     if((cs._extraEnergyNextTurn||0)>0){
       cs.energy+=cs._extraEnergyNextTurn;
@@ -3444,11 +3427,19 @@ const Combat = {
       }
     });
   },
-  dealDamage(cs,targetIndex,amount){ const enemy=cs.enemies[targetIndex];if(!enemy||enemy._dead)return 0; let dmg=amount+(cs.player.buffs.strength||0)+(cs._bruteOnslaughtBonus||0);
+  dealDamage(cs,targetIndex,amount){ const enemy=cs.enemies[targetIndex];if(!enemy||enemy._dead)return 0;
+    // 战士被动「重伤」：每层 wound +1 伤害
+    const _bruteBonus = (State.run?.character?.id==='brute') ? (enemy.debuffs?.wound||0) : 0;
+    let dmg=amount+(cs.player.buffs.strength||0)+_bruteBonus;
     // 速度感攻击加成：30-59=+2，>=60=+5
     if(State.run?.character?.id==='racer'){ const _spd=cs.speed||0; if(_spd>=60) dmg+=5; else if(_spd>=30) dmg+=2; } if((enemy.debuffs.vulnerable||0)>0)dmg=Math.floor(dmg*1.5); if((cs.player.debuffs.weak||0)>0)dmg=Math.floor(dmg*0.75); if((cs.player.debuffs.slow||0)>0)dmg=Math.floor(dmg*0.70); const absorbed=Math.min(enemy.block,dmg);enemy.block=Math.max(0,enemy.block-absorbed);const actualDmg=dmg-absorbed;enemy.hp-=actualDmg;
     // 大头的西班牙语书：记录本回合是否对敌人造成过实际伤害
     if(actualDmg > 0) cs.dealtDamageThisTurn = true;
+    // 战士被动「重伤」：对该敌人造成伤害后施加 1 层 wound（永久叠加）
+    if(State.run?.character?.id==='brute' && dmg>0 && !enemy._dead){
+      if(!enemy.debuffs) enemy.debuffs={};
+      enemy.debuffs.wound = (enemy.debuffs.wound||0) + 1;
+    }
     // 死亡判定：HP≤0 立即标记死亡并归零（修复柠檬水等绕过 playCard 的伤害源）
     if(enemy.hp<=0 && !enemy._dead){ enemy._dead=true; enemy.hp=0; }
     return actualDmg; },
@@ -3555,7 +3546,7 @@ const Combat = {
     }
     target.debuffs=target.debuffs||{};target.debuffs[name]=(target.debuffs[name]||0)+amount;
   },
-  _tickDebuffs(entity){ const manual=new Set(['burn','freeze']); Object.keys(entity.debuffs||{}).forEach(k=>{ if(!manual.has(k)) entity.debuffs[k]=Math.max(0,entity.debuffs[k]-1); }); },
+  _tickDebuffs(entity){ const manual=new Set(['burn','freeze','wound']); Object.keys(entity.debuffs||{}).forEach(k=>{ if(!manual.has(k)) entity.debuffs[k]=Math.max(0,entity.debuffs[k]-1); }); },
   _onVictory(){ Audio.playVictory(); const run=State.run;run.character.hp=run.combat.player.hp;run.character.block=0;const node=run.map.nodes.find(n=>n.id===run.currentNodeId);if(node)node.done=true;
     // 金币奖励：普通10-18金，精英22-32金，Boss50金
     if(node){
@@ -4599,7 +4590,7 @@ const CoopGame = {
   },
 
   _tickDebuffs(entity) {
-    const manual = new Set(['burn', 'freeze']);
+    const manual = new Set(['burn', 'freeze', 'wound']);
     Object.keys(entity.debuffs || {}).forEach(k => {
       if (!manual.has(k)) entity.debuffs[k] = Math.max(0, entity.debuffs[k] - 1);
     });
@@ -5263,6 +5254,7 @@ el.innerHTML=`<div class="card-type-bar"></div>${rarityTag}<div class="card-cost
     slow:       { name: '减速', icon: '🐢', desc: '赛车手专属：攻击伤害减少 30%，每回合结束减 1 层' },
     burn:       { name: '燃烧', icon: '🔥', desc: '每回合结束受到等于层数的伤害，随后层数 -1' },
     freeze:     { name: '冻结', icon: '❄️', desc: '本回合跳过行动，回合结束层数 -1' },
+    wound:      { name: '重伤', icon: '🩸', desc: '战士专属：每层使战士对该敌人的伤害 +1（永久叠加，不消失）' },
   },
 
   renderBuffs(entity){
