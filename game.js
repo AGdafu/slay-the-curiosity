@@ -3281,6 +3281,10 @@ const Combat = {
       }
     }
     cs.turn++;cs.phase='player';cs.energy=cs.maxEnergy;
+    // 战士被动「重伤」：每回合重置敌人的"本回合是否已加 wound"标记
+    if(State.run?.character?.id==='brute'){
+      cs.enemies.forEach(e => { if(e) e._bruteWoundedThisTurn = false; });
+    }
     // 武装：下回合 +N 能量
     if((cs._extraEnergyNextTurn||0)>0){
       cs.energy+=cs._extraEnergyNextTurn;
@@ -3435,10 +3439,12 @@ const Combat = {
     if(State.run?.character?.id==='racer'){ const _spd=cs.speed||0; if(_spd>=60) dmg+=5; else if(_spd>=30) dmg+=2; } if((enemy.debuffs.vulnerable||0)>0)dmg=Math.floor(dmg*1.5); if((cs.player.debuffs.weak||0)>0)dmg=Math.floor(dmg*0.75); if((cs.player.debuffs.slow||0)>0)dmg=Math.floor(dmg*0.70); const absorbed=Math.min(enemy.block,dmg);enemy.block=Math.max(0,enemy.block-absorbed);const actualDmg=dmg-absorbed;enemy.hp-=actualDmg;
     // 大头的西班牙语书：记录本回合是否对敌人造成过实际伤害
     if(actualDmg > 0) cs.dealtDamageThisTurn = true;
-    // 战士被动「重伤」：对该敌人造成伤害后施加 1 层 wound（永久叠加）
-    if(State.run?.character?.id==='brute' && dmg>0 && !enemy._dead){
+    // 战士被动「重伤」：本回合首次对该敌人造成 HP 实伤时（穿透格挡）才施加 1 层 wound
+    // 一回合内同一敌人只叠加 1 层，全程被格挡抵消则不加
+    if(State.run?.character?.id==='brute' && actualDmg>0 && !enemy._dead && !enemy._bruteWoundedThisTurn){
       if(!enemy.debuffs) enemy.debuffs={};
       enemy.debuffs.wound = (enemy.debuffs.wound||0) + 1;
+      enemy._bruteWoundedThisTurn = true;
     }
     // 死亡判定：HP≤0 立即标记死亡并归零（修复柠檬水等绕过 playCard 的伤害源）
     if(enemy.hp<=0 && !enemy._dead){ enemy._dead=true; enemy.hp=0; }
