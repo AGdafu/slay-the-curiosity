@@ -4718,6 +4718,283 @@ const CoopGame = {
   },
 };
 
+// ── pvp-game.js ───────────────────────────────────────────────────────────────
+// PVP：双人对战。双方同时出牌（同步模式），互为"敌人"。
+// 复用 Combat.dealDamage / gainBlock 等函数，通过 fakeEnemy 映射对手状态。
+const PvpGame = {
+
+  init(hostCharId, guestCharId) {
+    const hChar = Data.characters.find(c => c.id === hostCharId);
+    const gChar = Data.characters.find(c => c.id === guestCharId);
+    const pvpCs = {
+      host:  { hp: hChar.hp, maxHp: hChar.maxHp, block: 0, buffs: {}, debuffs: {}, charId: hChar.id, charName: hChar.name, charEmoji: hChar.emoji },
+      guest: { hp: gChar.hp, maxHp: gChar.maxHp, block: 0, buffs: {}, debuffs: {}, charId: gChar.id, charName: gChar.name, charEmoji: gChar.emoji },
+      hostEnergy: 3, hostMaxEnergy: 3,
+      guestEnergy: 3, guestMaxEnergy: 3,
+      hostHand: [], hostDrawPile: [...hChar.startingDeck].sort(() => Math.random() - 0.5),
+      hostDiscardPile: [], hostHandUpgrades: {},
+      guestHand: [], guestDrawPile: [...gChar.startingDeck].sort(() => Math.random() - 0.5),
+      guestDiscardPile: [], guestHandUpgrades: {},
+      // 角色专属
+      hostGear: 2, hostSpeed: 0, hostMomentum: 0,
+      guestGear: 2, guestSpeed: 0, guestMomentum: 0,
+      hostCharge: 0, hostChargeMax: 5,
+      guestCharge: 0, guestChargeMax: 5,
+      hostDmgThisTurn: 0,   // 本回合受到的伤害（用于拳击手愤怒计算）
+      guestDmgThisTurn: 0,
+      phase: 'player',
+      hostEnded: false, guestEnded: false,
+      turn: 1,
+      winner: null,  // 'host' | 'guest' | 'draw'
+    };
+    // 初始化拳击手愤怒 buf
+    if (hChar.id === 'boxer') pvpCs.host.buffs.fury = 0;
+    if (gChar.id === 'boxer') pvpCs.guest.buffs.fury = 0;
+    this._drawCards(pvpCs, 'host',  hChar.id === 'archer' ? 6 : 5);
+    this._drawCards(pvpCs, 'guest', gChar.id === 'archer' ? 6 : 5);
+    return pvpCs;
+  },
+
+  _drawCards(pvpCs, who, n) {
+    const hand    = pvpCs[who + 'Hand'];
+    const draw    = pvpCs[who + 'DrawPile'];
+    const discard = pvpCs[who + 'DiscardPile'];
+    for (let i = 0; i < n; i++) {
+      if (draw.length === 0) {
+        if (discard.length === 0) break;
+        const shuffled = [...discard].sort(() => Math.random() - 0.5);
+        discard.length = 0;
+        draw.push(...shuffled);
+      }
+      hand.push(draw.shift());
+    }
+  },
+
+  // 为卡牌效果构造临时 cs，以对手为 enemies[0]
+  _makeTempCs(pvpCs, who) {
+    const me   = pvpCs[who];
+    const opp  = pvpCs[who === 'host' ? 'guest' : 'host'];
+    const isRacer  = me.charId === 'racer';
+    const isArcher = me.charId === 'archer';
+    // fakeEnemy 映射对手当前状态
+    const fakeEnemy = {
+      id: opp.charId, name: opp.charName, emoji: opp.charEmoji,
+      hp: opp.hp, maxHp: opp.maxHp, block: opp.block,
+      buffs: { ...opp.buffs }, debuffs: { ...opp.debuffs },
+      _dead: false, currentIntent: [{ type: 'attack', amount: 5, label: '⚔️5' }],
+      _bruteWoundedThisTurn: false, isPvpPlayer: true,
+    };
+    return {
+      player: { hp: me.hp, maxHp: me.maxHp, block: me.block, buffs: { ...me.buffs }, debuffs: { ...me.debuffs } },
+      enemies: [fakeEnemy],
+      energy: pvpCs[who + 'Energy'],
+      maxEnergy: pvpCs[who + 'MaxEnergy'],
+      // 数组用直接引用（原地修改），但在 _applyTempCs 也会明确同步回去处理 reshuffle
+      hand:         pvpCs[who + 'Hand'],
+      drawPile:     pvpCs[who + 'DrawPile'],
+      discardPile:  pvpCs[who + 'DiscardPile'],
+      exhaustPile:  [],
+      handUpgrades: pvpCs[who + 'HandUpgrades'],
+      upgradeMap:   null,
+      handTokens:   null,
+      turn: pvpCs.turn,
+      phase: 'player',
+      _pvpWho: who,
+      _pvpCs: pvpCs,
+      dealtDamageThisTurn: false,
+      // 角色专属
+      gear:      isRacer  ? (pvpCs[who + 'Gear']  != null ? pvpCs[who + 'Gear']  : 2) : undefined,
+      speed:     isRacer  ? (pvpCs[who + 'Speed']  || 0) : undefined,
+      momentum:  isRacer  ? (pvpCs[who + 'Momentum'] || 0) : undefined,
+      charge:    isArcher ? (pvpCs[who + 'Charge']  || 0) : undefined,
+      chargeMax: isArcher ? (pvpCs[who + 'ChargeMax'] || 5) : undefined,
+      _shiftedUpThisTurn: false,
+      _gearShiftCount: {},
+      _speedDrawnThisTurn: false,
+    };
+  },
+
+  _applyTempCs(pvpCs, who, tempCs) {
+    const me   = pvpCs[who];
+    const oppKey = who === 'host' ? 'guest' : 'host';
+    const opp  = pvpCs[oppKey];
+
+    // 同步我方状态
+    me.hp    = Math.max(0, tempCs.player.hp);
+    me.block = Math.max(0, tempCs.player.block);
+    me.buffs   = tempCs.player.buffs   || {};
+    me.debuffs = tempCs.player.debuffs || {};
+
+    // 同步对手状态（来自 fakeEnemy）
+    const fe = tempCs.enemies[0];
+    const oppHpBefore = opp.hp;
+    opp.hp    = Math.max(0, fe.hp);
+    opp.block = Math.max(0, fe.block);
+    opp.buffs   = fe.buffs   || {};
+    opp.debuffs = fe.debuffs || {};
+    // wound 保留（已在 debuffs 中）
+
+    // 追踪本回合对对手造成的实伤（用于 boxer fury）
+    const dmgToOpp = oppHpBefore - opp.hp;
+    if (dmgToOpp > 0) pvpCs[oppKey + 'DmgThisTurn'] = (pvpCs[oppKey + 'DmgThisTurn'] || 0) + dmgToOpp;
+
+    // 同步能量
+    pvpCs[who + 'Energy'] = tempCs.energy;
+
+    // 明确同步数组引用（修复 Combat.drawCards reshuffle 后引用变化的问题）
+    pvpCs[who + 'Hand']         = tempCs.hand;
+    pvpCs[who + 'DrawPile']     = tempCs.drawPile;
+    pvpCs[who + 'DiscardPile']  = tempCs.discardPile;
+    pvpCs[who + 'HandUpgrades'] = tempCs.handUpgrades || {};
+
+    // 角色专属
+    if (tempCs.gear      !== undefined) pvpCs[who + 'Gear']      = tempCs.gear;
+    if (tempCs.speed     !== undefined) pvpCs[who + 'Speed']     = tempCs.speed;
+    if (tempCs.momentum  !== undefined) pvpCs[who + 'Momentum']  = tempCs.momentum;
+    if (tempCs.charge    !== undefined) pvpCs[who + 'Charge']    = tempCs.charge;
+    if (tempCs.chargeMax !== undefined) pvpCs[who + 'ChargeMax'] = tempCs.chargeMax;
+
+    // 胜负判定
+    if (opp.hp <= 0 || me.hp <= 0) {
+      opp.hp = Math.max(0, opp.hp);
+      me.hp  = Math.max(0, me.hp);
+      if (opp.hp <= 0 && me.hp <= 0) {
+        pvpCs.winner = 'draw';
+      } else if (opp.hp <= 0) {
+        pvpCs.winner = who;
+      } else {
+        pvpCs.winner = oppKey;
+      }
+      pvpCs.phase = 'victory';
+    }
+  },
+
+  // 打出一张牌（房主端权威执行）
+  playCard(pvpCs, who, cardId, handIndex) {
+    if (pvpCs.phase !== 'player') return false;
+    if ((who === 'host' && pvpCs.hostEnded) || (who === 'guest' && pvpCs.guestEnded)) return false;
+
+    const hand      = pvpCs[who + 'Hand'];
+    const energyKey = who + 'Energy';
+    const handUpgKey = who + 'HandUpgrades';
+    const handUpg   = pvpCs[handUpgKey] || {};
+
+    const idx = (handIndex !== undefined && handIndex >= 0 && handIndex < hand.length && hand[handIndex] === cardId)
+      ? handIndex : hand.indexOf(cardId);
+    if (idx === -1) return false;
+
+    const def = Data.cards[cardId];
+    if (!def) return false;
+    if (pvpCs[energyKey] < def.cost) return false;
+
+    const upgradeLv = handUpg[idx] || 0;
+
+    // 扣费、从手牌移除
+    pvpCs[energyKey] -= def.cost;
+    hand.splice(idx, 1);
+    // 重建 handUpgrades 索引（splice 后后移）
+    const newHandUpg = {};
+    Object.keys(handUpg).forEach(k => {
+      const ki = parseInt(k);
+      if (ki < idx)      newHandUpg[ki]     = handUpg[ki];
+      else if (ki > idx) newHandUpg[ki - 1] = handUpg[ki];
+    });
+    pvpCs[handUpgKey] = newHandUpg;
+
+    // 构建临时 cs，注入 fakeRun
+    const tempCs = this._makeTempCs(pvpCs, who);
+    const prevRun = State.current.run;
+    State.current.run = { character: { id: pvpCs[who].charId }, relics: [], cardUpgrades: {}, deck: [], mode: 'pvp' };
+    try { def.effect(tempCs, 0, upgradeLv); }
+    catch(e) { console.error('PvpGame.playCard effect error', cardId, e); }
+    finally { State.current.run = prevRun; }
+
+    this._applyTempCs(pvpCs, who, tempCs);
+
+    // 非 power 牌进弃牌堆
+    if (def.type !== 'power') pvpCs[who + 'DiscardPile'].push(cardId);
+
+    return true;
+  },
+
+  // 标记某玩家结束回合，双方都结束时返回 true（调用方应接着调用 runTurnTransition）
+  markEnded(pvpCs, who) {
+    if (pvpCs.phase !== 'player') return false;
+    if (who === 'host')  { if (pvpCs.hostEnded)  return false; pvpCs.hostEnded  = true; }
+    else                 { if (pvpCs.guestEnded) return false; pvpCs.guestEnded = true; }
+    return pvpCs.hostEnded && pvpCs.guestEnded;
+  },
+
+  // 双方都结束后的回合结算：tick debuffs、重置格挡/能量/手牌、拳击手愤怒写入
+  runTurnTransition(pvpCs) {
+    // Tick debuffs（weak/vulnerable 减1层，poison 造伤害后减1，burn 固定伤害）
+    ['host', 'guest'].forEach(who => {
+      const p = pvpCs[who];
+      const d = p.debuffs;
+      if ((d.weak       || 0) > 0) d.weak--;
+      if ((d.vulnerable || 0) > 0) d.vulnerable--;
+      if ((d.slow       || 0) > 0) d.slow--;
+      if ((d.poison     || 0) > 0) { p.hp -= d.poison; p.hp = Math.max(0, p.hp); d.poison = Math.max(0, d.poison - 1); }
+      if ((d.burn       || 0) > 0) { p.hp -= d.burn;   p.hp = Math.max(0, p.hp); }
+    });
+
+    // DoT 胜负判定
+    if (pvpCs.host.hp <= 0 || pvpCs.guest.hp <= 0) {
+      pvpCs.host.hp  = Math.max(0, pvpCs.host.hp);
+      pvpCs.guest.hp = Math.max(0, pvpCs.guest.hp);
+      if (pvpCs.host.hp <= 0 && pvpCs.guest.hp <= 0) pvpCs.winner = 'draw';
+      else if (pvpCs.host.hp  <= 0) pvpCs.winner = 'guest';
+      else                           pvpCs.winner = 'host';
+      pvpCs.phase = 'victory';
+      return;
+    }
+
+    // 拳击手愤怒：本回合受到的伤害 ÷3 成为下回合愤怒
+    ['host', 'guest'].forEach(who => {
+      if (pvpCs[who].charId === 'boxer') {
+        const fury = Math.floor((pvpCs[who + 'DmgThisTurn'] || 0) / 3);
+        pvpCs[who].buffs.fury = fury;
+      }
+      pvpCs[who + 'DmgThisTurn'] = 0;
+    });
+
+    // 战士 wound 回合重置标记
+    ['host', 'guest'].forEach(who => {
+      if (pvpCs[who].charId === 'brute') {
+        const fakeEnemyForOpp = { debuffs: pvpCs[who === 'host' ? 'guest' : 'host'].debuffs };
+        // 无需额外操作，debuffs.wound 永久保留
+      }
+    });
+
+    // 新回合
+    pvpCs.turn++;
+    pvpCs.phase   = 'player';
+    pvpCs.hostEnded  = false;
+    pvpCs.guestEnded = false;
+
+    // 格挡清零（新回合开始）
+    pvpCs.host.block  = 0;
+    pvpCs.guest.block = 0;
+
+    // 能量重置
+    pvpCs.hostEnergy  = pvpCs.hostMaxEnergy;
+    pvpCs.guestEnergy = pvpCs.guestMaxEnergy;
+
+    // 弃手牌 + 重新摸牌
+    ['host', 'guest'].forEach(who => {
+      const hand    = pvpCs[who + 'Hand'];
+      const discard = pvpCs[who + 'DiscardPile'];
+      while (hand.length > 0) discard.push(hand.shift());
+      pvpCs[who + 'HandUpgrades'] = {};
+      this._drawCards(pvpCs, who, pvpCs[who].charId === 'archer' ? 6 : 5);
+    });
+  },
+
+  serialize(pvpCs) {
+    return JSON.parse(JSON.stringify(pvpCs, (k, v) => typeof v === 'function' ? undefined : v));
+  },
+};
+
 // ── ui.js ─────────────────────────────────────────────────────────────────────
 const DAYAN_IMG_SRC = 'manus-storage/img_03_574k_632f1438.png';
 const WANGWEI_IMG_SRC = 'manus-storage/wangwei_sprite_nobg_90111a38.png';
@@ -5459,10 +5736,11 @@ el.innerHTML=`<div class="card-type-bar"></div>${rarityTag}<div class="card-cost
   },
   menu(){
     const saves=Save.list();const hasSave=saves.some(s=>s.run!==null);
-    UI.app().innerHTML=`<div class="menu-screen slide-up"><div class="menu-title">Slay the<br>Curiosity</div><div class="menu-subtitle">一场好奇心的冒险</div><div style="display:flex;flex-direction:column;gap:12px;align-items:stretch;width:260px;margin:16px auto 0"><button class="btn primary" id="btn-new">✨ 新游戏</button>${hasSave?'<button class="btn" id="btn-continue">📂 继续游戏</button>':''}<button class="btn" id="btn-coop" style="background:rgba(80,200,140,0.14);border-color:rgba(80,200,140,0.45);color:#7fe0a8">🤝 联机合作</button><button class="btn" id="btn-saves">💾 存档管理</button><button class="btn" id="btn-tutorial" style="background:rgba(80,160,255,0.12);border-color:rgba(80,160,255,0.4);color:#90c8ff">📖 新手教程</button><button class="btn" id="btn-database" style="background:rgba(160,90,255,0.12);border-color:rgba(160,90,255,0.4);color:#c8a0ff">📚 图鉴</button><button class="btn" id="btn-debug" style="background:rgba(255,200,80,0.12);border-color:rgba(255,200,80,0.4);color:#ffd060;font-size:0.85rem">🧭 模拟罗盘</button></div><div style="font-size:0.85rem;color:var(--ink-light);margin-top:32px">Slay the Curiosity v0.1 demo</div></div>`;
+    UI.app().innerHTML=`<div class="menu-screen slide-up"><div class="menu-title">Slay the<br>Curiosity</div><div class="menu-subtitle">一场好奇心的冒险</div><div style="display:flex;flex-direction:column;gap:12px;align-items:stretch;width:260px;margin:16px auto 0"><button class="btn primary" id="btn-new">✨ 新游戏</button>${hasSave?'<button class="btn" id="btn-continue">📂 继续游戏</button>':''}<button class="btn" id="btn-coop" style="background:rgba(80,200,140,0.14);border-color:rgba(80,200,140,0.45);color:#7fe0a8">🤝 联机合作</button><button class="btn" id="btn-pvp" style="background:rgba(231,76,60,0.14);border-color:rgba(231,76,60,0.45);color:#ff9b8f">⚔️ PVP 对战</button><button class="btn" id="btn-saves">💾 存档管理</button><button class="btn" id="btn-tutorial" style="background:rgba(80,160,255,0.12);border-color:rgba(80,160,255,0.4);color:#90c8ff">📖 新手教程</button><button class="btn" id="btn-database" style="background:rgba(160,90,255,0.12);border-color:rgba(160,90,255,0.4);color:#c8a0ff">📚 图鉴</button><button class="btn" id="btn-debug" style="background:rgba(255,200,80,0.12);border-color:rgba(255,200,80,0.4);color:#ffd060;font-size:0.85rem">🧭 模拟罗盘</button></div><div style="font-size:0.85rem;color:var(--ink-light);margin-top:32px">Slay the Curiosity v0.1 demo</div></div>`;
     document.getElementById('btn-new').onclick=()=>State.go('char-select');
     if(hasSave)document.getElementById('btn-continue').onclick=()=>UI.showSaveSlots('load');
     document.getElementById('btn-coop').onclick=()=>State.go('coop-lobby');
+    document.getElementById('btn-pvp').onclick=()=>State.go('pvp-lobby');
     document.getElementById('btn-saves').onclick=()=>UI.showSaveSlots('manage');
     document.getElementById('btn-tutorial').onclick=()=>UI.tutorial();
     document.getElementById('btn-database').onclick=()=>UI.showDatabase();
@@ -9726,12 +10004,463 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
     UI._coopRun.currentNodeId = startNode ? startNode.id : null;
   },
 
+  // ── PVP 大厅 ─────────────────────────────────────────────────────────────────
+  pvpLobby() {
+    const initView = Net.connected ? 'connected' : 'choose';
+    const P = UI._pvp = { view: initView, error: '', code: Net.roomCode || '', myChar: null, oppChar: null };
+    const leave = () => { Net.disconnect(); UI._pvp = null; State.go('menu'); };
+
+    function render() {
+      const err = P.error
+        ? `<div style="background:rgba(231,76,60,0.15);border:1px solid rgba(231,76,60,0.5);color:#ff9b8f;border-radius:10px;padding:8px 14px;font-size:0.88rem;margin-bottom:14px">⚠️ ${P.error}</div>`
+        : '';
+      let body = '';
+
+      if (P.view === 'choose') {
+        body = `${err}
+          <div style="display:flex;flex-direction:column;gap:12px;align-items:stretch;width:280px;margin:8px auto 0">
+            <button class="btn primary" id="pvl-host">🏠 创建房间</button>
+            <button class="btn" id="pvl-join" style="background:rgba(231,76,60,0.12);border-color:rgba(231,76,60,0.4);color:#ff9b8f">🔑 加入房间</button>
+            <button class="btn" id="pvl-back">← 返回主菜单</button>
+          </div>`;
+      } else if (P.view === 'creating') {
+        body = `<div style="color:rgba(255,255,255,0.7);margin:20px 0">⏳ 正在创建房间…</div>
+          <button class="btn" id="pvl-cancel" style="width:200px;margin:0 auto">取消</button>`;
+      } else if (P.view === 'hosting') {
+        body = `${err}
+          <div style="font-size:0.95rem;color:rgba(255,255,255,0.65);margin-bottom:10px">把房间码发给对手：</div>
+          <div style="display:flex;align-items:center;gap:10px;justify-content:center;margin-bottom:8px">
+            <div style="font-family:monospace;font-size:2.4rem;font-weight:900;letter-spacing:6px;color:#ff9b8f;background:rgba(231,76,60,0.12);border:2px solid rgba(231,76,60,0.5);border-radius:14px;padding:10px 22px">${P.code}</div>
+            <button class="btn" id="pvl-copy" style="width:auto;padding:8px 14px;font-size:0.85rem">📋 复制</button>
+          </div>
+          <div style="font-size:0.95rem;color:rgba(255,255,255,0.55);margin:16px 0">⏳ 等待对手加入…</div>
+          <button class="btn" id="pvl-cancel" style="width:200px;margin:0 auto">取消房间</button>`;
+      } else if (P.view === 'joining') {
+        body = `${err}
+          <div style="font-size:0.95rem;color:rgba(255,255,255,0.65);margin-bottom:12px">输入对手的 5 位房间码：</div>
+          <input id="pvl-code" maxlength="5" placeholder="ABCDE" autocomplete="off"
+            style="font-family:monospace;font-size:1.8rem;font-weight:900;letter-spacing:6px;text-align:center;text-transform:uppercase;width:240px;padding:10px;border-radius:12px;border:2px solid rgba(231,76,60,0.5);background:rgba(255,255,255,0.06);color:#fff;outline:none;margin-bottom:14px">
+          <div style="display:flex;flex-direction:column;gap:10px;align-items:stretch;width:280px;margin:0 auto">
+            <button class="btn primary" id="pvl-connect">🔗 连接</button>
+            <button class="btn" id="pvl-back2">← 返回</button>
+          </div>`;
+      } else if (P.view === 'connecting') {
+        body = `<div style="color:rgba(255,255,255,0.7);margin:20px 0">🔗 连接中…</div>
+          <button class="btn" id="pvl-cancel" style="width:200px;margin:0 auto">取消</button>`;
+      } else if (P.view === 'connected') {
+        const myChar = P.myChar;
+        const oppChar = P.oppChar;
+        const myRole = Net.isHost ? '房主' : '访客';
+        const charBtns = Data.characters.map(ch => {
+          const sel = myChar === ch.id;
+          return `<button class="btn pvp-char-btn" data-char="${ch.id}" style="background:${sel?'rgba(231,76,60,0.22)':'rgba(255,255,255,0.06)'};border:${sel?'2px solid #ff9b8f':'2px solid rgba(255,255,255,0.18)'};color:${sel?'#ff9b8f':'#fff'};padding:8px 14px;display:flex;align-items:center;gap:8px;border-radius:12px;cursor:pointer;font-size:0.9rem;font-family:var(--font)">${ch.emoji} ${ch.name}<span style="font-size:0.75rem;color:rgba(255,255,255,0.45);margin-left:4px">HP ${ch.hp}</span></button>`;
+        }).join('');
+        const oppInfo = oppChar
+          ? `<div style="font-size:0.85rem;color:#ff9b8f;margin-top:6px">对手：${Data.characters.find(c=>c.id===oppChar)?.emoji||''} ${Data.characters.find(c=>c.id===oppChar)?.name||'?'}</div>`
+          : `<div style="font-size:0.85rem;color:rgba(255,255,255,0.4);margin-top:6px">⏳ 等待对手选择角色…</div>`;
+        const canStart = Net.isHost && myChar && oppChar;
+        body = `
+          <div style="font-size:1rem;font-weight:800;color:#ff9b8f;margin-bottom:4px">✅ 已连接 — ${myRole}</div>
+          <div style="font-size:0.85rem;color:rgba(255,255,255,0.5);margin-bottom:12px">房间码：<b style="color:#fff;font-family:monospace">${Net.roomCode||''}</b></div>
+          <div style="font-size:0.92rem;font-weight:700;color:#fff;margin-bottom:8px">选择你的角色：</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;max-width:340px;margin:0 auto 10px">${charBtns}</div>
+          ${myChar?`<div style="font-size:0.85rem;color:#fff;margin-bottom:4px">你选了：${Data.characters.find(c=>c.id===myChar)?.emoji||''} ${Data.characters.find(c=>c.id===myChar)?.name||''}</div>`:'<div style="font-size:0.85rem;color:rgba(255,255,255,0.4);margin-bottom:4px">请选择一个角色</div>'}
+          ${oppInfo}
+          ${canStart?'<button class="btn primary" id="pvl-start" style="margin-top:14px;width:220px;background:rgba(231,76,60,0.3);border-color:#ff9b8f;color:#fff">⚔️ 开始对战</button>':''}
+          ${!Net.isHost && myChar && oppChar?'<div style="font-size:0.85rem;color:rgba(255,255,255,0.5);margin-top:12px">⏳ 等待对手开始对战…</div>':''}
+          <button class="btn" id="pvl-back3" style="width:220px;margin:14px auto 0">← 断开并返回</button>`;
+      }
+
+      UI.app().innerHTML = `<div class="menu-screen slide-up">
+        <div class="screen-title" style="color:#ff9b8f">⚔️ PVP 对战</div>
+        <div style="margin-top:14px">${body}</div>
+      </div>`;
+      bind();
+    }
+
+    function bind() {
+      const $ = id => document.getElementById(id);
+      if ($('pvl-host'))    $('pvl-host').onclick    = () => { P.view='creating'; P.error=''; render(); Net.host(); };
+      if ($('pvl-join'))    $('pvl-join').onclick    = () => { P.view='joining';  P.error=''; render(); };
+      if ($('pvl-back'))    $('pvl-back').onclick    = leave;
+      if ($('pvl-back2'))   $('pvl-back2').onclick   = () => { P.view='choose'; P.error=''; render(); };
+      if ($('pvl-back3'))   $('pvl-back3').onclick   = leave;
+      if ($('pvl-cancel'))  $('pvl-cancel').onclick  = () => { Net.disconnect(); P.view='choose'; P.error=''; render(); };
+      if ($('pvl-copy'))    $('pvl-copy').onclick    = () => { try{ navigator.clipboard.writeText(P.code); $('pvl-copy').textContent='✓ 已复制'; }catch(e){} };
+      if ($('pvl-connect')) $('pvl-connect').onclick = () => {
+        const code = ($('pvl-code')?.value||'').trim().toUpperCase();
+        if (code.length !== 5) { P.error='请输入完整的 5 位房间码'; render(); return; }
+        P.view='connecting'; P.error=''; render(); Net.join(code);
+      };
+      if ($('pvl-code')) $('pvl-code').oninput = e => { e.target.value = e.target.value.toUpperCase(); };
+      document.querySelectorAll('.pvp-char-btn').forEach(btn => {
+        btn.onclick = () => {
+          P.myChar = btn.dataset.char;
+          Net.send({ t: 'pvp-pick', charId: P.myChar });
+          render();
+        };
+      });
+      if ($('pvl-start')) {
+        $('pvl-start').onclick = () => {
+          if (!Net.isHost || !P.myChar || !P.oppChar) return;
+          const pvpCs = PvpGame.init(P.myChar, P.oppChar);
+          UI._pvpCs = pvpCs;
+          Net.send({ t: 'pvp-start', hostChar: P.myChar, guestChar: P.oppChar });
+          Net.send({ t: 'pvp-state', cs: PvpGame.serialize(pvpCs) });
+          State.current.screen = 'pvp-battle';
+          UI.pvpBattle(pvpCs, false);
+        };
+      }
+    }
+
+    // Net 事件
+    Net.on('hosted', code => { if(!UI._pvp) return; P.code=code; P.view='hosting'; P.error=''; render(); });
+    Net.on('connected', () => {
+      if(!UI._pvp) return;
+      P.view='connected'; P.myChar=null; P.oppChar=null; render();
+      Net.send({ t:'hello' });
+    });
+    Net.on('error', msg => { if(!UI._pvp) return; P.error=msg||'连接失败'; if(P.view==='creating'||P.view==='connecting') P.view='choose'; render(); });
+    Net.on('disconnected', () => { if(!UI._pvp) return; P.error='与对手断开连接'; P.view='choose'; Net.disconnect(); render(); });
+    Net.on('message', data => {
+      if (!data) return;
+      if (data.t === 'hello' || data.t === 'hello-ack') { if(UI._pvp) render(); }
+      else if (data.t === 'pvp-pick') {
+        if (UI._pvp) {
+          P.oppChar = data.charId;
+          if (Net.isHost && P.myChar) Net.send({ t:'pvp-pick', charId: P.myChar });
+          render();
+        }
+      }
+      else if (data.t === 'pvp-start') {
+        // 访客收到对战开始
+        if (!Net.isHost && UI._pvp) {
+          P.myChar = data.guestChar;
+          P.oppChar = data.hostChar;
+        }
+      }
+      else if (data.t === 'pvp-state') {
+        // 访客（和房主）收到最新战斗状态
+        if (!Net.isHost && data.cs) {
+          UI._pvpCs = data.cs;
+          if (State.current.screen === 'pvp-battle') UI.pvpBattle(data.cs, true);
+          else { State.current.screen = 'pvp-battle'; UI.pvpBattle(data.cs, true); }
+        }
+      }
+      else if (data.t === 'pvp-card') {
+        // 房主收到访客出牌请求
+        if (Net.isHost && UI._pvpCs) {
+          PvpGame.playCard(UI._pvpCs, 'guest', data.cardId, data.handIndex);
+          Net.send({ t: 'pvp-state', cs: PvpGame.serialize(UI._pvpCs) });
+          UI.pvpBattle(UI._pvpCs, false);
+          if (UI._pvpCs.phase === 'victory') UI._pvpShowResult(UI._pvpCs);
+        }
+      }
+      else if (data.t === 'pvp-end-turn') {
+        // 房主收到访客结束回合
+        if (Net.isHost && UI._pvpCs) {
+          const both = PvpGame.markEnded(UI._pvpCs, 'guest');
+          if (both) {
+            PvpGame.runTurnTransition(UI._pvpCs);
+          }
+          Net.send({ t: 'pvp-state', cs: PvpGame.serialize(UI._pvpCs) });
+          UI.pvpBattle(UI._pvpCs, false);
+          if (UI._pvpCs.phase === 'victory') UI._pvpShowResult(UI._pvpCs);
+        }
+      }
+    });
+
+    render();
+  },
+
+  // ── PVP 战斗屏幕 ─────────────────────────────────────────────────────────────
+  pvpBattle(pvpCs, isGuestView) {
+    if (!pvpCs) return;
+    if (Net.isHost) UI._pvpCs = pvpCs;
+
+    const myRole  = Net.isHost ? 'host' : 'guest';
+    const oppRole = Net.isHost ? 'guest' : 'host';
+    const me  = pvpCs[myRole];
+    const opp = pvpCs[oppRole];
+    const myEnded  = !!pvpCs[myRole  + 'Ended'];
+    const oppEnded = !!pvpCs[oppRole + 'Ended'];
+    const canAct = pvpCs.phase === 'player' && !myEnded;
+    const myEnergy    = pvpCs[myRole  + 'Energy'];
+    const myMaxEnergy = pvpCs[myRole  + 'MaxEnergy'];
+    const myHand  = pvpCs[myRole  + 'Hand'];
+    const oppHandCount = pvpCs[oppRole + 'Hand'].length;
+
+    // 对手 debuffs 显示
+    const renderDebuffs = p => {
+      const tags = [];
+      const d = p.debuffs || {};
+      const b = p.buffs   || {};
+      if ((d.vulnerable||0)>0) tags.push(`<span class="buff-tag debuff" style="font-size:0.72rem">💢易伤×${d.vulnerable}</span>`);
+      if ((d.weak||0)>0)       tags.push(`<span class="buff-tag debuff" style="font-size:0.72rem">🌧弱化×${d.weak}</span>`);
+      if ((d.poison||0)>0)     tags.push(`<span class="buff-tag debuff" style="font-size:0.72rem">☠毒×${d.poison}</span>`);
+      if ((d.burn||0)>0)       tags.push(`<span class="buff-tag debuff" style="font-size:0.72rem">🔥灼烧×${d.burn}</span>`);
+      if ((d.wound||0)>0)      tags.push(`<span class="buff-tag debuff" style="font-size:0.72rem">🩸重伤×${d.wound}</span>`);
+      if ((b.strength||0)>0)   tags.push(`<span class="buff-tag buff" style="font-size:0.72rem">💪力量×${b.strength}</span>`);
+      if ((b.fury||0)>0)       tags.push(`<span class="buff-tag buff" style="font-size:0.72rem">💢怒×${b.fury}</span>`);
+      return tags.join('');
+    };
+
+    // 对手角色 HUD
+    const oppHud = () => {
+      const cid = opp.charId;
+      let s = '';
+      if (cid === 'racer') {
+        const g = pvpCs[oppRole+'Gear'] || 2;
+        const spd = pvpCs[oppRole+'Speed'] || 0;
+        const gNames = ['','1挡·防御','2挡·中立','3挡·攻击'];
+        const gColors = ['','#7dccff','#e8e8e8','#ff7d7d'];
+        s += `<span style="font-size:0.72rem;color:${gColors[g]||'#fff'};font-weight:800">⚙️${gNames[g]||''}</span>`;
+        if (spd > 0) s += ` <span style="font-size:0.72rem;color:#f9ca24">⚡${spd}</span>`;
+      }
+      if (cid === 'archer') {
+        const ch = pvpCs[oppRole+'Charge'] || 0;
+        const cm = pvpCs[oppRole+'ChargeMax'] || 5;
+        s += `<span style="font-size:0.72rem;color:${ch>=cm?'#f5c518':'#7dccff'}">🎯蓄力${ch}/${cm}</span>`;
+      }
+      return s ? `<div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:center;margin-top:3px">${s}</div>` : '';
+    };
+
+    // 我方角色 HUD（手牌区上方）
+    const myHud = () => {
+      const cid = me.charId;
+      let s = '';
+      if (cid === 'racer') {
+        const g = pvpCs[myRole+'Gear'] || 2;
+        const spd = pvpCs[myRole+'Speed'] || 0;
+        const mom = pvpCs[myRole+'Momentum'] || 0;
+        const gColors = ['','#7dccff','#e8e8e8','#ff7d7d'];
+        const gNames = ['','1挡·防御','2挡·中立','3挡·攻击'];
+        s += `<span style="color:${gColors[g]||'#fff'};font-weight:800">⚙️${gNames[g]||''}</span>`;
+        if (spd > 0) s += ` <span style="color:#f9ca24">⚡${spd}</span>`;
+        if (mom > 0) s += ` <span style="color:#a8e6cf">⬆动力${mom}</span>`;
+      }
+      if (cid === 'archer') {
+        const ch = pvpCs[myRole+'Charge'] || 0;
+        const cm = pvpCs[myRole+'ChargeMax'] || 5;
+        const pct = cm > 0 ? Math.min(100, ch/cm*100) : 0;
+        s += `<span style="color:${ch>=cm?'#f5c518':'#7dccff'}">🎯蓄力 ${ch}/${cm}</span>`;
+      }
+      if (cid === 'boxer') {
+        const fury = me.buffs?.fury || 0;
+        if (fury > 0) s += `<span style="color:#ff9b8f">💢愤怒 ${fury}</span>`;
+        const berserkLv = Math.min(3, Math.floor((1 - me.hp/me.maxHp) / 0.25));
+        if (berserkLv > 0) s += `<span style="color:#e74c3c">🩸搏命+${berserkLv*2}</span>`;
+      }
+      return s ? `<div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center;font-size:0.82rem;margin-bottom:4px">${s}</div>` : '';
+    };
+
+    // 面朝下的牌（对手手牌）
+    const faceDownCards = oppHandCount > 0
+      ? `<div style="display:flex;gap:4px;justify-content:center;margin:6px 0">
+          ${Array.from({length: Math.min(oppHandCount, 8)}, () =>
+            `<div style="width:32px;height:46px;background:linear-gradient(135deg,#2a2a4a,#1a1a2e);border:2px solid rgba(255,255,255,0.15);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:1.1rem">🂠</div>`
+          ).join('')}
+          ${oppHandCount > 8 ? `<span style="color:rgba(255,255,255,0.4);font-size:0.8rem;align-self:center">+${oppHandCount-8}</span>` : ''}
+        </div>` : `<div style="font-size:0.8rem;color:rgba(255,255,255,0.3);margin:6px 0">（手牌已空）</div>`;
+
+    // 手牌渲染（我方，可点击）
+    const prevRun = State.current.run;
+    State.current.run = { character: { id: me.charId }, relics: [], cardUpgrades: {}, deck: [], mode: 'pvp' };
+    let handHtml = '';
+    try {
+      handHtml = myHand.map((cardId, idx) => {
+        const def = Data.cards[cardId];
+        if (!def) return '';
+        const affordable = myEnergy >= def.cost;
+        const cardEl = UI.renderCard(cardId, 0, false, false);
+        const wrap = document.createElement('div');
+        wrap.className = 'pvp-hand-card';
+        wrap.dataset.idx = idx;
+        wrap.dataset.card = cardId;
+        if (!affordable || !canAct) wrap.style.opacity = '0.5';
+        wrap.appendChild(cardEl);
+        const tmp = document.createElement('div');
+        tmp.appendChild(wrap);
+        return tmp.innerHTML;
+      }).join('');
+    } finally {
+      State.current.run = prevRun;
+    }
+
+    // 阶段文字
+    let phaseText = '';
+    if (pvpCs.phase === 'victory') {
+      phaseText = pvpCs.winner === myRole ? '🏆 你赢了！' : pvpCs.winner === 'draw' ? '🤝 平局' : '💀 你输了';
+    } else if (myEnded && !oppEnded) {
+      phaseText = '✓ 你已结束回合，等待对手…';
+    } else if (!myEnded && oppEnded) {
+      phaseText = '⚡ 对手已结束，等你出完牌';
+    } else {
+      phaseText = `回合 ${pvpCs.turn}`;
+    }
+
+    UI.app().innerHTML = `<div class="pvp-battle-screen">
+      <!-- 对手区域（上方） -->
+      <div class="pvp-opp-area">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+          <span style="font-size:2rem">${opp.charEmoji||'?'}</span>
+          <div>
+            <div style="font-weight:800;font-size:1rem;color:#ff9b8f">${oppRole === 'host' ? '🏠 ' : '🔑 '}对手 · ${opp.charName||''}</div>
+            <div style="font-size:0.88rem;color:rgba(255,255,255,0.7)">${opp.hp}/${opp.maxHp} HP${opp.block>0?` · 🛡${opp.block}`:''}</div>
+          </div>
+          ${oppEnded ? '<span style="margin-left:auto;font-size:0.75rem;font-weight:800;color:#7fe0a8;background:rgba(127,224,168,0.18);border:1px solid rgba(127,224,168,0.5);border-radius:6px;padding:1px 7px">已结束 ✓</span>' : ''}
+        </div>
+        <div style="margin-bottom:2px">${UI.renderHpBar(opp.hp, opp.maxHp, '100%', opp.block)}</div>
+        <div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:4px">${renderDebuffs(opp)}</div>
+        ${oppHud()}
+        <div style="font-size:0.8rem;color:rgba(255,255,255,0.4);margin-top:2px">手牌：${oppHandCount} 张</div>
+        ${faceDownCards}
+      </div>
+
+      <!-- 中间：回合状态 + 能量 -->
+      <div class="pvp-mid-bar">
+        <div style="font-size:0.9rem;font-weight:800;color:rgba(255,255,255,0.85)">${phaseText}</div>
+        <div style="display:flex;gap:4px;align-items:center">
+          ${Array.from({length: myMaxEnergy}, (_, i) =>
+            `<div style="width:18px;height:18px;border-radius:50%;background:${i < myEnergy ? '#f5c518' : 'rgba(255,255,255,0.12)'};border:2px solid ${i < myEnergy ? '#f5c518' : 'rgba(255,255,255,0.2)'};"></div>`
+          ).join('')}
+          <span style="font-size:0.82rem;color:rgba(255,255,255,0.6);margin-left:4px">${myEnergy}/${myMaxEnergy}</span>
+        </div>
+      </div>
+
+      <!-- 我方区域（下方） -->
+      <div class="pvp-my-area">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+          <span style="font-size:2rem">${me.charEmoji||'?'}</span>
+          <div style="flex:1">
+            <div style="font-weight:800;font-size:1rem;color:#7fe0a8">${myRole === 'host' ? '🏠 ' : '🔑 '}你 · ${me.charName||''}</div>
+            <div style="font-size:0.88rem;color:rgba(255,255,255,0.7)">${me.hp}/${me.maxHp} HP${me.block>0?` · 🛡${me.block}`:''}</div>
+          </div>
+          <div style="display:flex;gap:4px;flex-wrap:wrap">${renderDebuffs(me)}</div>
+        </div>
+        <div style="margin-bottom:4px">${UI.renderHpBar(me.hp, me.maxHp, '100%', me.block)}</div>
+        ${myHud()}
+        <!-- 手牌 -->
+        <div class="pvp-hand" id="pvp-hand">${handHtml}</div>
+        <!-- 结束回合按钮 -->
+        <div style="display:flex;justify-content:center;margin-top:6px">
+          ${canAct
+            ? `<button class="btn primary" id="pvp-end-turn" style="min-width:160px;background:rgba(231,76,60,0.3);border-color:#ff9b8f">结束回合 →</button>`
+            : myEnded
+              ? `<button class="btn" disabled style="min-width:160px;opacity:0.5">已结束回合 ✓</button>`
+              : `<button class="btn" disabled style="min-width:160px;opacity:0.4">等待中…</button>`
+          }
+          ${pvpCs.phase === 'victory' ? `<button class="btn" id="pvp-leave" style="margin-left:10px;min-width:100px">← 返回</button>` : ''}
+        </div>
+      </div>
+    </div>`;
+
+    // 绑定事件
+    document.getElementById('pvp-end-turn')?.addEventListener('click', () => {
+      if (Net.isHost) {
+        const both = PvpGame.markEnded(UI._pvpCs, 'host');
+        if (both) {
+          PvpGame.runTurnTransition(UI._pvpCs);
+        }
+        Net.send({ t: 'pvp-state', cs: PvpGame.serialize(UI._pvpCs) });
+        UI.pvpBattle(UI._pvpCs, false);
+        if (UI._pvpCs.phase === 'victory') UI._pvpShowResult(UI._pvpCs);
+      } else {
+        Net.send({ t: 'pvp-end-turn' });
+        // 乐观更新：标记已结束（等服务器确认）
+        if (UI._pvpCs) { UI._pvpCs[myRole + 'Ended'] = true; UI.pvpBattle(UI._pvpCs, true); }
+      }
+    });
+
+    document.getElementById('pvp-leave')?.addEventListener('click', () => {
+      Net.disconnect(); UI._pvp = null; UI._pvpCs = null; State.go('menu');
+    });
+
+    // 手牌点击
+    document.getElementById('pvp-hand')?.querySelectorAll('.pvp-hand-card').forEach(cardEl => {
+      cardEl.addEventListener('click', () => {
+        if (!canAct) return;
+        const idx = parseInt(cardEl.dataset.idx);
+        const cardId = cardEl.dataset.card;
+        const pvp = UI._pvpCs;
+        if (!pvp) return;
+        const def = Data.cards[cardId];
+        if (!def || pvp[myRole + 'Energy'] < def.cost) return;
+
+        if (Net.isHost) {
+          const ok = PvpGame.playCard(pvp, 'host', cardId, idx);
+          if (ok) {
+            Net.send({ t: 'pvp-state', cs: PvpGame.serialize(pvp) });
+            UI.pvpBattle(pvp, false);
+            if (pvp.phase === 'victory') UI._pvpShowResult(pvp);
+          }
+        } else {
+          Net.send({ t: 'pvp-card', cardId, handIndex: idx });
+          // 乐观更新：从手牌中移除该牌（等服务器确认）
+          if (UI._pvpCs) {
+            const hand = UI._pvpCs[myRole + 'Hand'];
+            const i2 = (hand[idx] === cardId) ? idx : hand.indexOf(cardId);
+            if (i2 !== -1) { hand.splice(i2, 1); UI._pvpCs[myRole + 'Energy'] -= def.cost; }
+            UI.pvpBattle(UI._pvpCs, true);
+          }
+        }
+      });
+    });
+
+    // 结束后自动弹出结果
+    if (pvpCs.phase === 'victory') {
+      setTimeout(() => UI._pvpShowResult(pvpCs), 400);
+    }
+  },
+
+  _pvpShowResult(pvpCs) {
+    const myRole = Net.isHost ? 'host' : 'guest';
+    const won = pvpCs.winner === myRole;
+    const draw = pvpCs.winner === 'draw';
+    const overlay = document.createElement('div');
+    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:9000;display:flex;align-items:center;justify-content:center';
+    const panel = document.createElement('div');
+    panel.style.cssText = 'background:rgba(20,10,30,0.98);border:2px solid rgba(231,76,60,0.5);border-radius:20px;padding:36px 48px;text-align:center;max-width:340px';
+    const icon  = draw ? '🤝' : won ? '🏆' : '💀';
+    const title = draw ? '平局！' : won ? '胜利！' : '失败…';
+    const color = draw ? '#f5c518' : won ? '#7fe0a8' : '#ff9b8f';
+    panel.innerHTML = `
+      <div style="font-size:4rem;margin-bottom:8px">${icon}</div>
+      <div style="font-size:2rem;font-weight:900;color:${color};margin-bottom:8px">${title}</div>
+      <div style="font-size:0.95rem;color:rgba(255,255,255,0.65);margin-bottom:20px">
+        ${pvpCs.host.charEmoji} ${pvpCs.host.hp} HP · vs · ${pvpCs.guest.charEmoji} ${pvpCs.guest.hp} HP
+      </div>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <button class="btn primary" id="pvp-result-rematch" style="background:rgba(231,76,60,0.3);border-color:#ff9b8f">再来一局 ⚔️</button>
+        <button class="btn" id="pvp-result-menu">返回主菜单</button>
+      </div>`;
+    overlay.appendChild(panel);
+    document.body.appendChild(overlay);
+    document.getElementById('pvp-result-menu').onclick = () => { overlay.remove(); Net.disconnect(); UI._pvp=null; UI._pvpCs=null; State.go('menu'); };
+    document.getElementById('pvp-result-rematch').onclick = () => {
+      overlay.remove();
+      if (Net.isHost) {
+        // 用同样的角色重开
+        const pvpNew = PvpGame.init(pvpCs.host.charId, pvpCs.guest.charId);
+        UI._pvpCs = pvpNew;
+        Net.send({ t: 'pvp-start', hostChar: pvpCs.host.charId, guestChar: pvpCs.guest.charId });
+        Net.send({ t: 'pvp-state', cs: PvpGame.serialize(pvpNew) });
+        UI.pvpBattle(pvpNew, false);
+      } else {
+        // 访客等待 pvp-state
+        if (UI._pvpCs) UI.pvpBattle(UI._pvpCs, true);
+      }
+    };
+  },
+
 };
 
 // ── main.js ───────────────────────────────────────────────────────────────────
 window.addEventListener('DOMContentLoaded', () => {
   const screens = {
     'menu':        () => UI.menu(),
+    'pvp-lobby':   () => UI.pvpLobby(),
+    'pvp-battle':  () => { if(UI._pvpCs) UI.pvpBattle(UI._pvpCs, !Net.isHost); },
     'coop-lobby':  () => UI.coopLobby(),
     'coop-map':    () => UI.coopMap(),
     'coop-rest':   () => UI.coopRest(),
