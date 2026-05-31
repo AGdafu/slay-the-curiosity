@@ -8200,6 +8200,28 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
   },
 
   _startDrag(cardId,cardEl,e){
+    // PVP 模式：使用 PVP 状态而不是单人战斗
+    const isPvp = !!(UI._pvpCs && State.current.screen === 'pvp-battle');
+    if (isPvp) {
+      const pvp = UI._pvpCs;
+      if (pvp.phase !== 'player') return;
+      const myRole = Net.isHost ? 'host' : 'guest';
+      if (pvp[myRole + 'Ended']) return;
+      const def = Data.cards[cardId];
+      if (!def) return;
+      const _pHandIdx = cardEl?.dataset?.handIdx !== undefined ? parseInt(cardEl.dataset.handIdx) : (pvp[myRole + 'Hand']||[]).indexOf(cardId);
+      const _pCost = def.cost;
+      if (pvp[myRole + 'Energy'] < _pCost) return;
+      const rect = cardEl.getBoundingClientRect();
+      const fromX = rect.left + rect.width/2, fromY = rect.top + rect.height/2;
+      const svg = UI._createArrowSvg(); document.body.appendChild(svg);
+      UI._drag = { cardId, cardEl, fromX, fromY, svg, active: false, hoveredEnemy: null, startX: e.clientX, startY: e.clientY, handIdx: _pHandIdx, isPvp: true };
+      const onMove = ev => UI._onDragMove(ev), onUp = ev => UI._onDragEnd(ev);
+      document.addEventListener('mousemove', onMove);
+      document.addEventListener('mouseup', onUp, { once: true });
+      UI._drag._onMove = onMove; UI._drag._onUp = onUp;
+      return;
+    }
     const cs=State.run?.combat;if(!cs||cs.phase!=='player')return;const def=Data.cards[cardId];if(!def)return;
     // 优先使用 DOM 上的精确索引（_renderHand 注入），避免同名牌时 indexOf 返回错误位置
     const _dragHandIdx=cardEl?.dataset?.handIdx!==undefined?parseInt(cardEl.dataset.handIdx):cs.hand.indexOf(cardId);
@@ -8238,7 +8260,9 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
     drag._inCancelZone=inCancel;
     // 单怪时：向上拖出手牌区则箭头变绿色提示
     if(!inCancel){
-      const aliveEnemies2=(State.run?.combat?.enemies||[]).filter(en=>!en._dead);
+      const aliveEnemies2 = drag.isPvp
+        ? [1]   // PVP 模式：对手始终视为单个"活着"的目标
+        : (State.run?.combat?.enemies||[]).filter(en=>!en._dead);
       const isAutoTarget = aliveEnemies2.length===1 && e.clientY < window.innerHeight*0.85;
       const arrowColor = isAutoTarget ? '#2ecc71' : '#f5c518';
       const shadowColor = isAutoTarget ? 'rgba(46,204,113,0.35)' : 'rgba(0,0,0,0.35)';
@@ -8257,6 +8281,16 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
       // 在取消区松手 → 取消出牌
       if(drag._inCancelZone){UI._drag=null;return;}
       const def=Data.cards[drag.cardId];
+      // ── PVP 模式：始终对手为目标 ──
+      if (drag.isPvp) {
+        const draggedUp = e.clientY < window.innerHeight * 0.85;
+        // needsTarget 或拖到对手卡上 或 拖出手牌区 → 出牌
+        if (drag.hoveredEnemy !== null || draggedUp || !def.needsTarget) {
+          UI._pvpPlayCard(drag.cardId, drag.handIdx);
+        }
+        UI._drag = null;
+        return;
+      }
       if(def.needsTarget){
         // 单怪优化：场上只剩1只活着的怪物时，向上拖出手牌区（鼠标Y < 屏幕85%）即可自动攻击
         const aliveEnemies=(State.run?.combat?.enemies||[]).filter(en=>!en._dead);
@@ -8272,10 +8306,14 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
         UI._playCard(drag.cardId,drag.cardEl,undefined,drag.handIdx);
       }
     } else{
-      // 拖拽距离不足时当作点击，直接用 drag.handIdx 避免重新查找
-      const _fallbackEl = drag.cardEl;
-      if(_fallbackEl) _fallbackEl.dataset.handIdx = String(drag.handIdx);
-      UI._onCardClick(drag.cardId,_fallbackEl);
+      // 拖拽距离不足时当作点击
+      if (drag.isPvp) {
+        UI._pvpPlayCard(drag.cardId, drag.handIdx);
+      } else {
+        const _fallbackEl = drag.cardEl;
+        if(_fallbackEl) _fallbackEl.dataset.handIdx = String(drag.handIdx);
+        UI._onCardClick(drag.cardId,_fallbackEl);
+      }
     }
     UI._drag=null;
   },
@@ -10427,7 +10465,7 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
     ${renderCharHud(myRole, me)}
   </div>
   <div class="enemies-area" id="enemies-area">
-    <div class="enemy-card pvp-opponent-card" id="pvp-opp-card" style="border:2px solid rgba(231,76,60,0.4);border-radius:14px;padding:8px;background:rgba(231,76,60,0.06)">
+    <div class="enemy-card pvp-opponent-card" id="pvp-opp-card" data-enemy-index="0" style="border:2px solid rgba(231,76,60,0.4);border-radius:14px;padding:8px;background:rgba(231,76,60,0.06)">
       <div class="enemy-intent">${oppIntentHtml}</div>
       <div class="enemy-figure">${opp.charEmoji||'?'}</div>
       <div style="width:130px">${UI.renderHpBar(opp.hp, opp.maxHp, '130px', opp.block)}</div>
@@ -10481,6 +10519,9 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
 </div>`;
     app.appendChild(screen);
 
+    // 绑定 buff/debuff 悬浮 tooltip（玩家头像 + 敌人卡片上的角标）
+    UI._bindBuffTooltips(screen);
+
     // 渲染手牌（直接复用 single-player 风格的 .card + .hand-cards 扇形布局）
     const handCardsEl = document.getElementById('pvp-hand-cards');
     const prevRun = State.current.run;
@@ -10494,37 +10535,31 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
         cardEl.dataset.cardId  = cardId;
         const canPlay = canAct && myEnergy >= def.cost;
         if (!canPlay) cardEl.classList.add('unplayable');
-        // 点击出牌
-        cardEl.addEventListener('click', () => {
+        // ── 拖拽出牌（复用单人战斗的 _startDrag）+ 短距离作为点击 ──
+        const _pvpHandlePress = (e, isTouchEvent) => {
+          if (!isTouchEvent && e.button !== 0) return;
           if (!canAct) return;
-          const pvp = UI._pvpCs;
-          if (!pvp) return;
-          if (pvp[myRole + 'Energy'] < def.cost) return;
-          if (Net.isHost) {
-            const ok = PvpGame.playCard(pvp, 'host', cardId, idx);
-            if (ok) {
-              Net.send({ t: 'pvp-state', cs: PvpGame.serialize(pvp) });
-              UI.pvpBattle(pvp, false);
-              if (pvp.phase === 'victory') UI._pvpShowResult(pvp);
-            }
-          } else {
-            Net.send({ t: 'pvp-card', cardId, handIndex: idx });
-            // 乐观更新
-            const hand = pvp[myRole + 'Hand'];
-            const i2 = (hand[idx] === cardId) ? idx : hand.indexOf(cardId);
-            if (i2 !== -1) { hand.splice(i2, 1); pvp[myRole + 'Energy'] -= def.cost; }
-            // 重建 handUpgrades
-            const upg = pvp[myRole + 'HandUpgrades'] || {};
-            const newUpg = {};
-            Object.keys(upg).forEach(k => {
-              const ki = parseInt(k);
-              if (ki < i2) newUpg[ki] = upg[ki];
-              else if (ki > i2) newUpg[ki - 1] = upg[ki];
-            });
-            pvp[myRole + 'HandUpgrades'] = newUpg;
-            UI.pvpBattle(pvp, true);
+          if (!canPlay) return;
+          e.preventDefault();
+          // 双击直接出牌（无需拖拽）
+          if (!UI._tapTime) UI._tapTime = {};
+          const tapKey = 'pvp_' + cardId + '_' + idx;
+          const now = Date.now();
+          if (UI._tapTime[tapKey] && now - UI._tapTime[tapKey] < 280) {
+            UI._tapTime[tapKey] = 0;
+            UI._pvpPlayCard(cardId, idx);
+            return;
           }
-        });
+          UI._tapTime[tapKey] = now;
+          if (!isTouchEvent) UI._startDrag(cardId, cardEl, e);
+        };
+        cardEl.addEventListener('mousedown', e => _pvpHandlePress(e, false));
+        cardEl.addEventListener('touchstart', e => {
+          if (e.touches.length !== 1) return;
+          const touch = e.touches[0];
+          const fakeE = { button: 0, clientX: touch.clientX, clientY: touch.clientY, preventDefault: () => e.preventDefault() };
+          _pvpHandlePress(fakeE, true);
+        }, { passive: false });
         cardEl.addEventListener('mouseenter', () => UI._showCardHoverTip(cardEl));
         cardEl.addEventListener('mouseleave', () => UI._hideCardHoverTip());
         handCardsEl.appendChild(cardEl);
@@ -10566,6 +10601,43 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
     // 胜利时延迟弹出结果
     if (pvpCs.phase === 'victory') {
       setTimeout(() => UI._pvpShowResult(pvpCs), 600);
+    }
+  },
+
+  // PVP 出牌（拖拽/点击/双击 统一入口）
+  _pvpPlayCard(cardId, handIdx) {
+    const pvp = UI._pvpCs;
+    if (!pvp) return;
+    if (pvp.phase !== 'player') return;
+    const myRole = Net.isHost ? 'host' : 'guest';
+    if (pvp[myRole + 'Ended']) return;
+    const def = Data.cards[cardId];
+    if (!def) return;
+    if (pvp[myRole + 'Energy'] < def.cost) return;
+
+    if (Net.isHost) {
+      const ok = PvpGame.playCard(pvp, 'host', cardId, handIdx);
+      if (ok) {
+        if (!UI._pvpBotMode) Net.send({ t: 'pvp-state', cs: PvpGame.serialize(pvp) });
+        UI.pvpBattle(pvp, false);
+        if (pvp.phase === 'victory') UI._pvpShowResult(pvp);
+      }
+    } else {
+      Net.send({ t: 'pvp-card', cardId, handIndex: handIdx });
+      // 乐观更新：从手牌移除该牌
+      const hand = pvp[myRole + 'Hand'];
+      const i2 = (hand[handIdx] === cardId) ? handIdx : hand.indexOf(cardId);
+      if (i2 !== -1) { hand.splice(i2, 1); pvp[myRole + 'Energy'] -= def.cost; }
+      // 重建 handUpgrades 索引
+      const upg = pvp[myRole + 'HandUpgrades'] || {};
+      const newUpg = {};
+      Object.keys(upg).forEach(k => {
+        const ki = parseInt(k);
+        if (ki < i2) newUpg[ki] = upg[ki];
+        else if (ki > i2) newUpg[ki - 1] = upg[ki];
+      });
+      pvp[myRole + 'HandUpgrades'] = newUpg;
+      UI.pvpBattle(pvp, true);
     }
   },
 
