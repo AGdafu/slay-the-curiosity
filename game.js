@@ -10401,7 +10401,7 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
             // 双方都结束 → 统一结算
             PvpGame.resolveQueue(UI._pvpCs);
             Net.send({ t: 'pvp-state', cs: PvpGame.serialize(UI._pvpCs) });
-            if (UI._pvpCs.phase === 'victory') { UI._pvpShowResult(UI._pvpCs); break; }
+            if (UI._pvpCs.phase === 'victory') { UI._pvpShowResult(UI._pvpCs); return; }
             UI._pvpRevealAndTransition(UI._pvpCs, false);
           } else {
             Net.send({ t: 'pvp-state', cs: PvpGame.serialize(UI._pvpCs) });
