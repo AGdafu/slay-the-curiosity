@@ -4742,6 +4742,9 @@ const PvpGame = {
       guestCharge: 0, guestChargeMax: 5,
       hostDmgThisTurn: 0,   // 本回合受到的伤害（用于拳击手愤怒计算）
       guestDmgThisTurn: 0,
+      // 战士被动：每回合对对手是否已叠过重伤（防止同一回合多次叠加）
+      hostWoundedThisTurn: false,   // host 这回合是否已被 guest 叠过重伤
+      guestWoundedThisTurn: false,  // guest 这回合是否已被 host 叠过重伤
       phase: 'player',
       hostEnded: false, guestEnded: false,
       turn: 1,
@@ -4782,7 +4785,9 @@ const PvpGame = {
       hp: opp.hp, maxHp: opp.maxHp, block: opp.block,
       buffs: { ...opp.buffs }, debuffs: { ...opp.debuffs },
       _dead: false, currentIntent: [{ type: 'attack', amount: 5, label: '⚔️5' }],
-      _bruteWoundedThisTurn: false, isPvpPlayer: true,
+      // 从 pvpCs 读取持久化状态（fakeEnemy = opp，追踪 opp 是否已被本方叠过 wound）
+      _bruteWoundedThisTurn: pvpCs[(who === 'host' ? 'guest' : 'host') + 'WoundedThisTurn'] || false,
+      isPvpPlayer: true,
     };
     return {
       player: { hp: me.hp, maxHp: me.maxHp, block: me.block, buffs: { ...me.buffs }, debuffs: { ...me.debuffs } },
@@ -4832,7 +4837,8 @@ const PvpGame = {
     opp.block = Math.max(0, fe.block);
     opp.buffs   = fe.buffs   || {};
     opp.debuffs = fe.debuffs || {};
-    // wound 保留（已在 debuffs 中）
+    // 战士被动：同步对手本回合是否已被叠过 wound（持久化到 pvpCs）
+    pvpCs[oppKey + 'WoundedThisTurn'] = fe._bruteWoundedThisTurn || false;
 
     // 追踪本回合对对手造成的实伤（用于 boxer fury）
     const dmgToOpp = oppHpBefore - opp.hp;
@@ -4958,13 +4964,9 @@ const PvpGame = {
       pvpCs[who + 'DmgThisTurn'] = 0;
     });
 
-    // 战士 wound 回合重置标记
-    ['host', 'guest'].forEach(who => {
-      if (pvpCs[who].charId === 'brute') {
-        const fakeEnemyForOpp = { debuffs: pvpCs[who === 'host' ? 'guest' : 'host'].debuffs };
-        // 无需额外操作，debuffs.wound 永久保留
-      }
-    });
+    // 战士被动 wound：回合结束重置"本回合是否已叠过"标记，wound 层数永久保留
+    pvpCs.hostWoundedThisTurn  = false;
+    pvpCs.guestWoundedThisTurn = false;
 
     // 新回合
     pvpCs.turn++;
@@ -5007,10 +5009,11 @@ const UI = {
     const el=document.createElement('div');el.className='card';el.dataset.cardId=cardId;el.dataset.type=def.type;
     // 防御类技能（主效果为格挡）→ 蓝色色条；其余技能 → 紫色
     const DEFENSE_CARDS = new Set([
+      'defend',
       'box_guard','box_iron_step','box_footwork','box_endure','box_dodge_punch',
       'gear_defend','gear_lock','corner_line','corner_guard','pit_repair',
       'br_shield_wall','br_grit','armaments','shrug',
-      'ar_block_charge','ar_roll','ar_wind_step','ar_gale','ar_dodge'
+      'ar_block_charge','ar_roll','ar_wind_step','ar_gale','ar_dodge','ar_sprint','ar_dodge_counter'
     ]);
     if(def.type==='skill' && DEFENSE_CARDS.has(cardId)) el.dataset.subtype='defend';
     // 升级后可能改变费用
@@ -10050,31 +10053,20 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
     UI._pvp = null; UI._pvpCs = null;
     const C = { myChar: null, botChar: null };
 
-    function charBtnGrid(selected, gridId) {
-      return Data.characters.map(ch => {
-        const sel = selected === ch.id;
-        return `<button data-char="${ch.id}" data-grid="${gridId}" class="bot-char-btn" style="background:${sel?'rgba(255,200,80,0.22)':'rgba(255,255,255,0.06)'};border:${sel?'2.5px solid #ffd060':'2px solid rgba(255,255,255,0.18)'};color:${sel?'#ffd060':'#fff'};padding:10px 14px;display:flex;flex-direction:column;align-items:center;gap:3px;border-radius:12px;cursor:pointer;min-width:96px;font-family:var(--font);transition:all 0.15s">
-          <span style="font-size:1.8rem">${ch.emoji}</span>
-          <b style="font-size:0.9rem">${ch.name}</b>
-          <span style="font-size:0.7rem;color:rgba(255,255,255,0.55)">HP ${ch.hp}</span>
-        </button>`;
-      }).join('');
-    }
-
     function render() {
       UI.app().innerHTML = `<div class="menu-screen slide-up" style="padding:24px 12px;overflow-y:auto">
         <h2 class="screen-title" style="color:#ffd060;font-size:1.5rem;margin-bottom:4px">🤖 PVP 人机对战</h2>
-        <div style="text-align:center;font-size:0.88rem;color:rgba(255,255,255,0.6);margin-bottom:22px">单人测试 · 与 AI 对手对战，不需要联网</div>
+        <div style="text-align:center;font-size:0.88rem;color:rgba(255,255,255,0.6);margin-bottom:18px">单人测试 · 与 AI 对手对战，不需要联网 · <b style="color:rgba(255,255,255,0.5)">双击角色卡片查看详细介绍</b></div>
 
         <div style="margin-bottom:18px">
-          <div style="font-size:1rem;font-weight:800;color:#7fe0a8;margin-bottom:8px;text-align:center">🧑 你的角色</div>
-          <div id="bot-my-chars" style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap">${charBtnGrid(C.myChar,'me')}</div>
+          <div style="font-size:1rem;font-weight:800;color:#7fe0a8;margin-bottom:10px;text-align:center">🧑 你的角色</div>
+          <div id="bot-my-chars" class="char-grid"></div>
         </div>
 
         <div style="margin-bottom:14px">
-          <div style="font-size:1rem;font-weight:800;color:#ff9b8f;margin-bottom:8px;text-align:center">🤖 AI 对手</div>
-          <div id="bot-opp-chars" style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap">${charBtnGrid(C.botChar,'bot')}</div>
-          <div style="text-align:center;margin-top:8px">
+          <div style="font-size:1rem;font-weight:800;color:#ff9b8f;margin-bottom:10px;text-align:center">🤖 AI 对手</div>
+          <div id="bot-opp-chars" class="char-grid"></div>
+          <div style="text-align:center;margin-top:10px">
             <button id="bot-random" style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.3);color:#fff;border-radius:8px;padding:5px 14px;font-size:0.84rem;cursor:pointer;font-family:var(--font)">🎲 随机选</button>
           </div>
         </div>
@@ -10085,14 +10077,32 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
         </div>
       </div>`;
 
-      document.querySelectorAll('.bot-char-btn').forEach(btn => {
-        btn.onclick = () => {
-          const cid = btn.dataset.char;
-          if (btn.dataset.grid === 'me') C.myChar = cid;
-          else C.botChar = cid;
-          render();
-        };
-      });
+      // 构建角色卡片（复用单人选角样式）
+      function buildCharGrid(containerId, selected, gridKey) {
+        const container = document.getElementById(containerId);
+        Data.characters.forEach(ch => {
+          const card = document.createElement('div');
+          card.className = 'char-card panel' + (selected === ch.id ? ' selected' : '');
+          card.dataset.char = ch.id;
+          card.dataset.grid = gridKey;
+          card.innerHTML = `<div class="char-figure" style="background:${ch.color}22"><span style="font-size:4.5rem">${ch.emoji}</span></div>
+            <div class="char-info">
+              <div class="char-name" style="${selected===ch.id?'color:#ffd060':''}">${ch.name}</div>
+              <div class="char-stat">❤️ ${ch.maxHp} HP</div>
+              <div class="char-stat" style="font-size:1rem;margin-top:6px;color:rgba(255,255,255,0.75);line-height:1.5">${ch.description}</div>
+            </div>`;
+          card.onclick = () => {
+            if (gridKey === 'me') C.myChar = ch.id;
+            else C.botChar = ch.id;
+            render();
+          };
+          card.ondblclick = e => { e.preventDefault(); UI._showCharDetail(ch); };
+          container.appendChild(card);
+        });
+      }
+      buildCharGrid('bot-my-chars', C.myChar, 'me');
+      buildCharGrid('bot-opp-chars', C.botChar, 'bot');
+
       document.getElementById('bot-random').onclick = () => {
         C.botChar = Data.characters[Math.floor(Math.random()*Data.characters.length)].id;
         render();
@@ -10230,9 +10240,18 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
         const myChar = P.myChar;
         const oppChar = P.oppChar;
         const myRole = Net.isHost ? '房主' : '访客';
+        // 角色卡片（复用 char-card 样式，紧凑版）
         const charBtns = Data.characters.map(ch => {
           const sel = myChar === ch.id;
-          return `<button class="btn pvp-char-btn" data-char="${ch.id}" style="background:${sel?'rgba(231,76,60,0.22)':'rgba(255,255,255,0.06)'};border:${sel?'2px solid #ff9b8f':'2px solid rgba(255,255,255,0.18)'};color:${sel?'#ff9b8f':'#fff'};padding:8px 14px;display:flex;align-items:center;gap:8px;border-radius:12px;cursor:pointer;font-size:0.9rem;font-family:var(--font)">${ch.emoji} ${ch.name}<span style="font-size:0.75rem;color:rgba(255,255,255,0.45);margin-left:4px">HP ${ch.hp}</span></button>`;
+          return `<div class="char-card panel pvp-char-btn" data-char="${ch.id}" style="${sel?'outline:2px solid #ff9b8f;transform:translateY(-4px);':''}cursor:pointer">
+            <div class="char-figure" style="background:${ch.color}22;height:100px"><span style="font-size:3rem">${ch.emoji}</span></div>
+            <div class="char-info">
+              <div class="char-name" style="font-size:1.1rem;${sel?'color:#ff9b8f':''}">${ch.name}</div>
+              <div class="char-stat" style="font-size:0.82rem">❤️ ${ch.maxHp} HP</div>
+              <div class="char-stat" style="font-size:0.78rem;margin-top:4px;color:rgba(255,255,255,0.7);line-height:1.4">${ch.description}</div>
+              <div style="font-size:0.68rem;color:rgba(255,255,255,0.35);margin-top:3px">双击查看详情</div>
+            </div>
+          </div>`;
         }).join('');
         const oppInfo = oppChar
           ? `<div style="font-size:0.85rem;color:#ff9b8f;margin-top:6px">对手：${Data.characters.find(c=>c.id===oppChar)?.emoji||''} ${Data.characters.find(c=>c.id===oppChar)?.name||'?'}</div>`
@@ -10240,9 +10259,9 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
         const canStart = Net.isHost && myChar && oppChar;
         body = `
           <div style="font-size:1rem;font-weight:800;color:#ff9b8f;margin-bottom:4px">✅ 已连接 — ${myRole}</div>
-          <div style="font-size:0.85rem;color:rgba(255,255,255,0.5);margin-bottom:12px">房间码：<b style="color:#fff;font-family:monospace">${Net.roomCode||''}</b></div>
+          <div style="font-size:0.85rem;color:rgba(255,255,255,0.5);margin-bottom:8px">房间码：<b style="color:#fff;font-family:monospace">${Net.roomCode||''}</b> &nbsp;·&nbsp; <span style="color:rgba(255,255,255,0.4)">双击角色查看详情</span></div>
           <div style="font-size:0.92rem;font-weight:700;color:#fff;margin-bottom:8px">选择你的角色：</div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;max-width:340px;margin:0 auto 10px">${charBtns}</div>
+          <div class="char-grid" id="pvl-char-grid" style="gap:10px;margin-bottom:8px">${charBtns}</div>
           ${myChar?`<div style="font-size:0.85rem;color:#fff;margin-bottom:4px">你选了：${Data.characters.find(c=>c.id===myChar)?.emoji||''} ${Data.characters.find(c=>c.id===myChar)?.name||''}</div>`:'<div style="font-size:0.85rem;color:rgba(255,255,255,0.4);margin-bottom:4px">请选择一个角色</div>'}
           ${oppInfo}
           ${canStart?'<button class="btn primary" id="pvl-start" style="margin-top:14px;width:220px;background:rgba(231,76,60,0.3);border-color:#ff9b8f;color:#fff">⚔️ 开始对战</button>':''}
@@ -10277,6 +10296,11 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
           P.myChar = btn.dataset.char;
           Net.send({ t: 'pvp-pick', charId: P.myChar });
           render();
+        };
+        btn.ondblclick = e => {
+          e.preventDefault();
+          const ch = Data.characters.find(c => c.id === btn.dataset.char);
+          if (ch) UI._showCharDetail(ch);
         };
       });
       if ($('pvl-start')) {
