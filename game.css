@@ -1426,65 +1426,15 @@ body {
 }
 .gaoshan-theme .dayan-bubble::after { border-top-color: rgba(126,207,255,0.45); }
 
-/* ── PVP 对战 ───────────────────────────────────────────────────── */
-.pvp-battle-screen {
-  display: flex;
-  flex-direction: column;
-  height: 100vh;
-  max-height: 100dvh;
-  background: linear-gradient(180deg, rgba(60,10,10,0.6) 0%, rgba(8,8,18,0.95) 100%);
-  overflow: hidden;
-  padding: 8px;
-  gap: 6px;
-  box-sizing: border-box;
+/* ── PVP 对战（复用单人战斗布局，仅做少量颜色微调） ──────────────── */
+.pvp-combat .player-figure {
+  border-color: #7fe0a8 !important;
+  box-shadow: 0 0 24px rgba(127,224,168,0.4) !important;
 }
-.pvp-opp-area {
-  flex: 0 0 auto;
-  background: rgba(231,76,60,0.08);
-  border: 1.5px solid rgba(231,76,60,0.3);
-  border-radius: 14px;
-  padding: 10px 14px;
-  text-align: center;
-}
-.pvp-mid-bar {
-  flex: 0 0 auto;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 6px 14px;
-  background: rgba(255,255,255,0.04);
-  border: 1px solid rgba(255,255,255,0.1);
-  border-radius: 10px;
-}
-.pvp-my-area {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  background: rgba(127,224,168,0.06);
-  border: 1.5px solid rgba(127,224,168,0.25);
-  border-radius: 14px;
-  padding: 10px 14px;
-  overflow: hidden;
-}
-.pvp-hand {
-  display: flex;
-  gap: 6px;
-  justify-content: center;
-  flex-wrap: nowrap;
-  overflow-x: auto;
-  flex: 1;
-  align-items: flex-end;
-  padding-bottom: 4px;
-  min-height: 0;
-}
-.pvp-hand-card {
-  cursor: pointer;
-  transition: transform 0.15s, filter 0.15s;
-  flex-shrink: 0;
-}
-.pvp-hand-card:hover {
-  transform: translateY(-10px) scale(1.07);
-  filter: brightness(1.15);
-  z-index: 10;
+.pvp-opponent-card {
   position: relative;
+}
+.pvp-opponent-card .enemy-figure {
+  border-color: rgba(231,76,60,0.5);
+  box-shadow: 0 0 20px rgba(231,76,60,0.35);
 }
