@@ -5736,15 +5736,15 @@ el.innerHTML=`<div class="card-type-bar"></div>${rarityTag}<div class="card-cost
   },
   menu(){
     const saves=Save.list();const hasSave=saves.some(s=>s.run!==null);
-    UI.app().innerHTML=`<div class="menu-screen slide-up"><div class="menu-title">Slay the<br>Curiosity</div><div class="menu-subtitle">一场好奇心的冒险</div><div style="display:flex;flex-direction:column;gap:12px;align-items:stretch;width:260px;margin:16px auto 0"><button class="btn primary" id="btn-new">✨ 新游戏</button>${hasSave?'<button class="btn" id="btn-continue">📂 继续游戏</button>':''}<button class="btn" id="btn-coop" style="background:rgba(80,200,140,0.14);border-color:rgba(80,200,140,0.45);color:#7fe0a8">🤝 联机合作</button><button class="btn" id="btn-pvp" style="background:rgba(231,76,60,0.14);border-color:rgba(231,76,60,0.45);color:#ff9b8f">⚔️ PVP 对战</button><button class="btn" id="btn-saves">💾 存档管理</button><button class="btn" id="btn-tutorial" style="background:rgba(80,160,255,0.12);border-color:rgba(80,160,255,0.4);color:#90c8ff">📖 新手教程</button><button class="btn" id="btn-database" style="background:rgba(160,90,255,0.12);border-color:rgba(160,90,255,0.4);color:#c8a0ff">📚 图鉴</button><button class="btn" id="btn-debug" style="background:rgba(255,200,80,0.12);border-color:rgba(255,200,80,0.4);color:#ffd060;font-size:0.85rem">🧭 模拟罗盘</button></div><div style="font-size:0.85rem;color:var(--ink-light);margin-top:32px">Slay the Curiosity v0.1 demo</div></div>`;
+    UI.app().innerHTML=`<div class="menu-screen slide-up"><div class="menu-title">Slay the<br>Curiosity</div><div class="menu-subtitle">一场好奇心的冒险</div><div style="display:flex;flex-direction:column;gap:12px;align-items:stretch;width:260px;margin:16px auto 0"><button class="btn primary" id="btn-new">✨ 新游戏</button>${hasSave?'<button class="btn" id="btn-continue">📂 继续游戏</button>':''}<button class="btn" id="btn-coop" style="background:rgba(80,200,140,0.14);border-color:rgba(80,200,140,0.45);color:#7fe0a8">🤝 联机合作</button><button class="btn" id="btn-pvp" style="background:rgba(231,76,60,0.14);border-color:rgba(231,76,60,0.45);color:#ff9b8f">⚔️ PVP 对战</button><button class="btn" id="btn-pvp-bot" style="background:rgba(255,200,80,0.14);border-color:rgba(255,200,80,0.45);color:#ffd060">🤖 PVP 人机对战</button><button class="btn" id="btn-saves">💾 存档管理</button><button class="btn" id="btn-tutorial" style="background:rgba(80,160,255,0.12);border-color:rgba(80,160,255,0.4);color:#90c8ff">📖 新手教程</button><button class="btn" id="btn-database" style="background:rgba(160,90,255,0.12);border-color:rgba(160,90,255,0.4);color:#c8a0ff">📚 图鉴</button></div><div style="font-size:0.85rem;color:var(--ink-light);margin-top:32px">Slay the Curiosity v0.1 demo</div></div>`;
     document.getElementById('btn-new').onclick=()=>State.go('char-select');
     if(hasSave)document.getElementById('btn-continue').onclick=()=>UI.showSaveSlots('load');
     document.getElementById('btn-coop').onclick=()=>State.go('coop-lobby');
     document.getElementById('btn-pvp').onclick=()=>State.go('pvp-lobby');
+    document.getElementById('btn-pvp-bot').onclick=()=>UI.pvpBotSelect();
     document.getElementById('btn-saves').onclick=()=>UI.showSaveSlots('manage');
     document.getElementById('btn-tutorial').onclick=()=>UI.tutorial();
     document.getElementById('btn-database').onclick=()=>UI.showDatabase();
-    document.getElementById('btn-debug').onclick=()=>UI.showDebugPanel();
   },
 
   // ── 模拟罗盘：触发各种特效动画，无需进游戏 ───────────────────────
@@ -10004,6 +10004,147 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
     UI._coopRun.currentNodeId = startNode ? startNode.id : null;
   },
 
+  // ── PVP 人机对战（单人测试）─────────────────────────────────────────────────
+  // 选角界面：玩家挑自己 + AI 对手的角色，确认后直接进入战斗
+  pvpBotSelect() {
+    // 确保上一次的网络/状态干净
+    Net.disconnect();
+    UI._pvp = null; UI._pvpCs = null;
+    const C = { myChar: null, botChar: null };
+
+    function charBtnGrid(selected, gridId) {
+      return Data.characters.map(ch => {
+        const sel = selected === ch.id;
+        return `<button data-char="${ch.id}" data-grid="${gridId}" class="bot-char-btn" style="background:${sel?'rgba(255,200,80,0.22)':'rgba(255,255,255,0.06)'};border:${sel?'2.5px solid #ffd060':'2px solid rgba(255,255,255,0.18)'};color:${sel?'#ffd060':'#fff'};padding:10px 14px;display:flex;flex-direction:column;align-items:center;gap:3px;border-radius:12px;cursor:pointer;min-width:96px;font-family:var(--font);transition:all 0.15s">
+          <span style="font-size:1.8rem">${ch.emoji}</span>
+          <b style="font-size:0.9rem">${ch.name}</b>
+          <span style="font-size:0.7rem;color:rgba(255,255,255,0.55)">HP ${ch.hp}</span>
+        </button>`;
+      }).join('');
+    }
+
+    function render() {
+      UI.app().innerHTML = `<div class="menu-screen slide-up" style="padding:24px 12px;overflow-y:auto">
+        <h2 class="screen-title" style="color:#ffd060;font-size:1.5rem;margin-bottom:4px">🤖 PVP 人机对战</h2>
+        <div style="text-align:center;font-size:0.88rem;color:rgba(255,255,255,0.6);margin-bottom:22px">单人测试 · 与 AI 对手对战，不需要联网</div>
+
+        <div style="margin-bottom:18px">
+          <div style="font-size:1rem;font-weight:800;color:#7fe0a8;margin-bottom:8px;text-align:center">🧑 你的角色</div>
+          <div id="bot-my-chars" style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap">${charBtnGrid(C.myChar,'me')}</div>
+        </div>
+
+        <div style="margin-bottom:14px">
+          <div style="font-size:1rem;font-weight:800;color:#ff9b8f;margin-bottom:8px;text-align:center">🤖 AI 对手</div>
+          <div id="bot-opp-chars" style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap">${charBtnGrid(C.botChar,'bot')}</div>
+          <div style="text-align:center;margin-top:8px">
+            <button id="bot-random" style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.3);color:#fff;border-radius:8px;padding:5px 14px;font-size:0.84rem;cursor:pointer;font-family:var(--font)">🎲 随机选</button>
+          </div>
+        </div>
+
+        <div style="display:flex;gap:10px;justify-content:center;margin-top:22px">
+          <button class="btn" id="bot-back" style="min-width:120px">← 返回</button>
+          <button class="btn primary" id="bot-start" style="min-width:160px;${(!C.myChar||!C.botChar)?'opacity:0.4;pointer-events:none':'background:rgba(255,200,80,0.3);border-color:#ffd060;color:#ffd060'}">⚔️ 开始对战</button>
+        </div>
+      </div>`;
+
+      document.querySelectorAll('.bot-char-btn').forEach(btn => {
+        btn.onclick = () => {
+          const cid = btn.dataset.char;
+          if (btn.dataset.grid === 'me') C.myChar = cid;
+          else C.botChar = cid;
+          render();
+        };
+      });
+      document.getElementById('bot-random').onclick = () => {
+        C.botChar = Data.characters[Math.floor(Math.random()*Data.characters.length)].id;
+        render();
+      };
+      document.getElementById('bot-back').onclick = () => State.go('menu');
+      document.getElementById('bot-start').onclick = () => {
+        if (!C.myChar || !C.botChar) return;
+        // 进入 bot 模式：玩家当 host，AI 当 guest，跳过所有网络
+        Net.isHost = true;
+        Net.connected = false; // Net.send 会自动 no-op
+        UI._pvpBotMode = true;
+        UI._pvpCs = PvpGame.init(C.myChar, C.botChar);
+        State.current.screen = 'pvp-battle';
+        UI.pvpBattle(UI._pvpCs, false);
+      };
+    }
+    render();
+  },
+
+  // Bot AI：在自己的回合内自动选牌出牌，最后自动结束回合并触发回合切换
+  _pvpBotRun() {
+    const pvp = UI._pvpCs;
+    if (!pvp || !UI._pvpBotMode) return;
+    if (pvp.phase !== 'player') return;
+    if (pvp.guestEnded) return; // 已经结束了，不应该再被调用
+
+    const me  = pvp.guest;
+    const opp = pvp.host;
+    const hand   = pvp.guestHand || [];
+    const energy = pvp.guestEnergy;
+
+    // 找出当前能打的牌
+    const playable = [];
+    hand.forEach((cardId, idx) => {
+      const def = Data.cards[cardId];
+      if (!def || def.cost > energy) return;
+      playable.push({ cardId, idx, def });
+    });
+
+    // 没有可打的牌 → 结束 bot 回合
+    if (playable.length === 0) {
+      PvpGame.markEnded(pvp, 'guest');
+      // 双方都结束 → 切回合
+      if (pvp.hostEnded && pvp.guestEnded) {
+        PvpGame.runTurnTransition(pvp);
+      }
+      UI.pvpBattle(pvp, false);
+      if (pvp.phase === 'victory') UI._pvpShowResult(pvp);
+      return;
+    }
+
+    // 简单 AI 评分：低血时偏防御，否则偏进攻；高费的优先
+    const lowHp = me.hp / me.maxHp < 0.4;
+    playable.forEach(p => {
+      let score = 1;
+      const def = p.def;
+      const text = (def.desc || '') + (def.name || '');
+      if (def.type === 'attack') {
+        score += lowHp ? 1.0 : 3.5;
+        if (opp.block > 8) score -= 0.5; // 对手厚防御时降低优先级
+      } else if (def.type === 'skill') {
+        if (/格挡|防御|护甲|盾|block/i.test(text)) score += lowHp ? 5 : 2.2;
+        else if (/抽牌|抽 \d|多抽/.test(text)) score += 2;
+        else score += 1.5;
+      } else if (def.type === 'power') {
+        score += 2.8; // power 是长期收益，优先
+      }
+      score += (def.cost || 0) * 0.4; // 高费 = 强牌，多给点分
+      score += Math.random() * 0.5;
+      p.score = score;
+    });
+    playable.sort((a, b) => b.score - a.score);
+    const chosen = playable[0];
+
+    const ok = PvpGame.playCard(pvp, 'guest', chosen.cardId, chosen.idx);
+    UI.pvpBattle(pvp, false);
+    if (pvp.phase === 'victory') { UI._pvpShowResult(pvp); return; }
+    if (!ok) {
+      // 异常：直接结束
+      PvpGame.markEnded(pvp, 'guest');
+      if (pvp.hostEnded && pvp.guestEnded) PvpGame.runTurnTransition(pvp);
+      UI.pvpBattle(pvp, false);
+      if (pvp.phase === 'victory') UI._pvpShowResult(pvp);
+      return;
+    }
+
+    // 间隔 700ms 出下一张，给玩家时间看反应
+    setTimeout(() => UI._pvpBotRun(), 700);
+  },
+
   // ── PVP 大厅 ─────────────────────────────────────────────────────────────────
   pvpLobby() {
     const initView = Net.connected ? 'connected' : 'choose';
@@ -10274,7 +10415,7 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
   </div>
   <div style="display:flex;align-items:center;gap:10px;flex:1;justify-content:flex-end;flex-wrap:wrap">
     <div style="font-size:0.92rem;color:rgba(255,255,255,0.75)">VS · ${oppRole==='host'?'🏠 ':'🔑 '}<b style="color:#ff9b8f">${opp.charName||''}</b> ${opp.charEmoji||''}</div>
-    <button onclick="if(confirm('确定离开对战？')){Net.disconnect();UI._pvp=null;UI._pvpCs=null;State.go('menu');}" style="font-size:0.9rem;padding:4px 10px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.2);border-radius:8px;color:#fff;cursor:pointer">☰ 离开</button>
+    <button onclick="if(confirm('确定离开对战？')){Net.disconnect();UI._pvp=null;UI._pvpCs=null;UI._pvpBotMode=false;State.go('menu');}" style="font-size:0.9rem;padding:4px 10px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.2);border-radius:8px;color:#fff;cursor:pointer">☰ 离开</button>
   </div>
 </div>
 <div class="combat-field">
@@ -10401,11 +10542,19 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
       if (!canAct) return;
       if (Net.isHost) {
         const pvp = UI._pvpCs;
-        const both = PvpGame.markEnded(pvp, 'host');
-        if (both) PvpGame.runTurnTransition(pvp);
-        Net.send({ t: 'pvp-state', cs: PvpGame.serialize(pvp) });
-        UI.pvpBattle(pvp, false);
-        if (pvp.phase === 'victory') UI._pvpShowResult(pvp);
+        PvpGame.markEnded(pvp, 'host');
+        if (UI._pvpBotMode) {
+          // Bot 模式：先渲染"你已结束"，然后启动 bot
+          UI.pvpBattle(pvp, false);
+          setTimeout(() => UI._pvpBotRun(), 600);
+        } else {
+          // 联机模式
+          const both = pvp.hostEnded && pvp.guestEnded;
+          if (both) PvpGame.runTurnTransition(pvp);
+          Net.send({ t: 'pvp-state', cs: PvpGame.serialize(pvp) });
+          UI.pvpBattle(pvp, false);
+          if (pvp.phase === 'victory') UI._pvpShowResult(pvp);
+        }
       } else {
         Net.send({ t: 'pvp-end-turn' });
         // 乐观更新
@@ -10443,15 +10592,17 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
       </div>`;
     overlay.appendChild(panel);
     document.body.appendChild(overlay);
-    document.getElementById('pvp-result-menu').onclick = () => { overlay.remove(); Net.disconnect(); UI._pvp=null; UI._pvpCs=null; State.go('menu'); };
+    document.getElementById('pvp-result-menu').onclick = () => { overlay.remove(); Net.disconnect(); UI._pvp=null; UI._pvpCs=null; UI._pvpBotMode=false; State.go('menu'); };
     document.getElementById('pvp-result-rematch').onclick = () => {
       overlay.remove();
       if (Net.isHost) {
         // 用同样的角色重开
         const pvpNew = PvpGame.init(pvpCs.host.charId, pvpCs.guest.charId);
         UI._pvpCs = pvpNew;
-        Net.send({ t: 'pvp-start', hostChar: pvpCs.host.charId, guestChar: pvpCs.guest.charId });
-        Net.send({ t: 'pvp-state', cs: PvpGame.serialize(pvpNew) });
+        if (!UI._pvpBotMode) {
+          Net.send({ t: 'pvp-start', hostChar: pvpCs.host.charId, guestChar: pvpCs.guest.charId });
+          Net.send({ t: 'pvp-state', cs: PvpGame.serialize(pvpNew) });
+        }
         UI.pvpBattle(pvpNew, false);
       } else {
         // 访客等待 pvp-state
