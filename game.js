@@ -4745,6 +4745,12 @@ const PvpGame = {
       // 战士被动：每回合对对手是否已叠过重伤（防止同一回合多次叠加）
       hostWoundedThisTurn: false,   // host 这回合是否已被 guest 叠过重伤
       guestWoundedThisTurn: false,  // guest 这回合是否已被 host 叠过重伤
+      // 延迟结算队列：出牌入队，双方都结束后统一按类型顺序执行
+      hostQueue:  [],  // { cardId, upgradeLv }
+      guestQueue: [],
+      // 结算后保存供"亮牌"展示
+      _revealHostQueue:  [],
+      _revealGuestQueue: [],
       phase: 'player',
       hostEnded: false, guestEnded: false,
       turn: 1,
@@ -4907,20 +4913,57 @@ const PvpGame = {
     });
     pvpCs[handUpgKey] = newHandUpg;
 
-    // 构建临时 cs，注入 fakeRun
-    const tempCs = this._makeTempCs(pvpCs, who);
-    const prevRun = State.current.run;
-    State.current.run = { character: { id: pvpCs[who].charId }, relics: [], cardUpgrades: {}, deck: [], mode: 'pvp' };
-    try { def.effect(tempCs, 0, upgradeLv); }
-    catch(e) { console.error('PvpGame.playCard effect error', cardId, e); }
-    finally { State.current.run = prevRun; }
-
-    this._applyTempCs(pvpCs, who, tempCs);
-
-    // 非 power 牌进弃牌堆
-    if (def.type !== 'power') pvpCs[who + 'DiscardPile'].push(cardId);
+    // 加入延迟队列（不立即执行，等双方都结束后统一 resolveQueue）
+    pvpCs[who + 'Queue'].push({ cardId, upgradeLv });
 
     return true;
+  },
+
+  // 双方都结束后，按类型顺序执行出牌队列：power(增益) → skill(防御/技能) → attack(进攻)
+  resolveQueue(pvpCs) {
+    // 保存供"亮牌"展示
+    pvpCs._revealHostQueue  = [...pvpCs.hostQueue];
+    pvpCs._revealGuestQueue = [...pvpCs.guestQueue];
+
+    // 收集全部出牌，按类型排序
+    const allItems = [];
+    pvpCs.hostQueue.forEach(item  => allItems.push({ ...item, who: 'host'  }));
+    pvpCs.guestQueue.forEach(item => allItems.push({ ...item, who: 'guest' }));
+    const typeOrder = { power: 0, skill: 1, attack: 2, curse: 3 };
+    allItems.sort((a, b) => {
+      const ta = typeOrder[Data.cards[a.cardId]?.type] ?? 2;
+      const tb = typeOrder[Data.cards[b.cardId]?.type] ?? 2;
+      return ta - tb;
+    });
+
+    // 逐张执行
+    for (const item of allItems) {
+      if (pvpCs.phase === 'victory') break;
+      const def = Data.cards[item.cardId];
+      if (!def) continue;
+      const tempCs  = this._makeTempCs(pvpCs, item.who);
+      const prevRun = State.current.run;
+      State.current.run = { character: { id: pvpCs[item.who].charId }, relics: [], cardUpgrades: {}, deck: [], mode: 'pvp' };
+      try { def.effect(tempCs, 0, item.upgradeLv); }
+      catch(e) { console.error('PvpGame.resolveQueue error', item.cardId, e); }
+      finally { State.current.run = prevRun; }
+      this._applyTempCs(pvpCs, item.who, tempCs);
+      if (def.type !== 'power') pvpCs[item.who + 'DiscardPile'].push(item.cardId);
+
+      // 死亡判定
+      if (pvpCs.host.hp <= 0 || pvpCs.guest.hp <= 0) {
+        pvpCs.host.hp  = Math.max(0, pvpCs.host.hp);
+        pvpCs.guest.hp = Math.max(0, pvpCs.guest.hp);
+        if (pvpCs.host.hp <= 0 && pvpCs.guest.hp <= 0) pvpCs.winner = 'draw';
+        else if (pvpCs.host.hp <= 0) pvpCs.winner = 'guest';
+        else pvpCs.winner = 'host';
+        pvpCs.phase = 'victory';
+      }
+    }
+
+    // 清空队列（reveal 队列在 runTurnTransition 后清）
+    pvpCs.hostQueue  = [];
+    pvpCs.guestQueue = [];
   },
 
   // 标记某玩家结束回合，双方都结束时返回 true（调用方应接着调用 runTurnTransition）
@@ -4967,6 +5010,10 @@ const PvpGame = {
     // 战士被动 wound：回合结束重置"本回合是否已叠过"标记，wound 层数永久保留
     pvpCs.hostWoundedThisTurn  = false;
     pvpCs.guestWoundedThisTurn = false;
+
+    // 亮牌队列清空（已展示完毕）
+    pvpCs._revealHostQueue  = [];
+    pvpCs._revealGuestQueue = [];
 
     // 新回合
     pvpCs.turn++;
@@ -10123,74 +10170,53 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
   },
 
   // Bot AI：在自己的回合内自动选牌出牌，最后自动结束回合并触发回合切换
-  _pvpBotRun() {
-    const pvp = UI._pvpCs;
+  // Bot 同步规划：把所有牌依次入队（不执行），再 markEnded
+  _pvpBotPlan(pvp) {
     if (!pvp || !UI._pvpBotMode) return;
     if (pvp.phase !== 'player') return;
-    if (pvp.guestEnded) return; // 已经结束了，不应该再被调用
 
     const me  = pvp.guest;
     const opp = pvp.host;
-    const hand   = pvp.guestHand || [];
-    const energy = pvp.guestEnergy;
-
-    // 找出当前能打的牌
-    const playable = [];
-    hand.forEach((cardId, idx) => {
-      const def = Data.cards[cardId];
-      if (!def || def.cost > energy) return;
-      playable.push({ cardId, idx, def });
-    });
-
-    // 没有可打的牌 → 结束 bot 回合
-    if (playable.length === 0) {
-      PvpGame.markEnded(pvp, 'guest');
-      // 双方都结束 → 切回合
-      if (pvp.hostEnded && pvp.guestEnded) {
-        PvpGame.runTurnTransition(pvp);
-      }
-      UI.pvpBattle(pvp, false);
-      if (pvp.phase === 'victory') UI._pvpShowResult(pvp);
-      return;
-    }
-
-    // 简单 AI 评分：低血时偏防御，否则偏进攻；高费的优先
     const lowHp = me.hp / me.maxHp < 0.4;
-    playable.forEach(p => {
-      let score = 1;
-      const def = p.def;
-      const text = (def.desc || '') + (def.name || '');
-      if (def.type === 'attack') {
-        score += lowHp ? 1.0 : 3.5;
-        if (opp.block > 8) score -= 0.5; // 对手厚防御时降低优先级
-      } else if (def.type === 'skill') {
-        if (/格挡|防御|护甲|盾|block/i.test(text)) score += lowHp ? 5 : 2.2;
-        else if (/抽牌|抽 \d|多抽/.test(text)) score += 2;
-        else score += 1.5;
-      } else if (def.type === 'power') {
-        score += 2.8; // power 是长期收益，优先
-      }
-      score += (def.cost || 0) * 0.4; // 高费 = 强牌，多给点分
-      score += Math.random() * 0.5;
-      p.score = score;
-    });
-    playable.sort((a, b) => b.score - a.score);
-    const chosen = playable[0];
 
-    const ok = PvpGame.playCard(pvp, 'guest', chosen.cardId, chosen.idx);
-    UI.pvpBattle(pvp, false);
-    if (pvp.phase === 'victory') { UI._pvpShowResult(pvp); return; }
-    if (!ok) {
-      // 异常：直接结束
-      PvpGame.markEnded(pvp, 'guest');
-      if (pvp.hostEnded && pvp.guestEnded) PvpGame.runTurnTransition(pvp);
-      UI.pvpBattle(pvp, false);
-      if (pvp.phase === 'victory') UI._pvpShowResult(pvp);
-      return;
+    // 循环直到没有可打的牌
+    while (true) {
+      const hand    = pvp.guestHand || [];
+      const energy  = pvp.guestEnergy;
+      const playable = [];
+      hand.forEach((cardId, idx) => {
+        const def = Data.cards[cardId];
+        if (!def || def.cost > energy) return;
+        playable.push({ cardId, idx, def });
+      });
+      if (playable.length === 0) break;
+
+      // AI 评分：低血偏防，否则偏攻；高费优先
+      playable.forEach(p => {
+        let score = 1;
+        const def = p.def;
+        const text = (def.description || '') + (def.name || '');
+        if (def.type === 'attack') {
+          score += lowHp ? 1.0 : 3.5;
+          if ((pvp.host.block||0) > 8) score -= 0.5;
+        } else if (def.type === 'skill') {
+          if (/格挡|防御|护甲|盾|block/i.test(text)) score += lowHp ? 5 : 2.2;
+          else if (/抽牌|抽 \d|多抽/.test(text))      score += 2;
+          else                                          score += 1.5;
+        } else if (def.type === 'power') {
+          score += 2.8;
+        }
+        score += (def.cost || 0) * 0.4;
+        score += Math.random() * 0.5;
+        p.score = score;
+      });
+      playable.sort((a, b) => b.score - a.score);
+      const chosen = playable[0];
+      const ok = PvpGame.playCard(pvp, 'guest', chosen.cardId, chosen.idx);
+      if (!ok) break; // 防止死循环
     }
 
-    // 间隔 700ms 出下一张，给玩家时间看反应
-    setTimeout(() => UI._pvpBotRun(), 700);
+    PvpGame.markEnded(pvp, 'guest');
   },
 
   // ── PVP 大厅 ─────────────────────────────────────────────────────────────────
@@ -10345,18 +10371,26 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
       else if (data.t === 'pvp-state') {
         // 访客（和房主）收到最新战斗状态
         if (!Net.isHost && data.cs) {
+          const wasInBattle = State.current.screen === 'pvp-battle';
           UI._pvpCs = data.cs;
-          if (State.current.screen === 'pvp-battle') UI.pvpBattle(data.cs, true);
-          else { State.current.screen = 'pvp-battle'; UI.pvpBattle(data.cs, true); }
+          if (!wasInBattle) State.current.screen = 'pvp-battle';
+          // 如果有 reveal 队列说明刚刚结算完，展示亮牌
+          const hasReveal = (data.cs._revealHostQueue||[]).length > 0 || (data.cs._revealGuestQueue||[]).length > 0;
+          if (hasReveal && data.cs.phase !== 'victory') {
+            UI.pvpBattle(data.cs, true);
+            UI._pvpRevealAndTransition(data.cs, true);
+          } else {
+            UI.pvpBattle(data.cs, true);
+            if (data.cs.phase === 'victory') UI._pvpShowResult(data.cs);
+          }
         }
       }
       else if (data.t === 'pvp-card') {
-        // 房主收到访客出牌请求
+        // 房主收到访客出牌请求（入队，不执行）
         if (Net.isHost && UI._pvpCs) {
           PvpGame.playCard(UI._pvpCs, 'guest', data.cardId, data.handIndex);
           Net.send({ t: 'pvp-state', cs: PvpGame.serialize(UI._pvpCs) });
           UI.pvpBattle(UI._pvpCs, false);
-          if (UI._pvpCs.phase === 'victory') UI._pvpShowResult(UI._pvpCs);
         }
       }
       else if (data.t === 'pvp-end-turn') {
@@ -10364,11 +10398,15 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
         if (Net.isHost && UI._pvpCs) {
           const both = PvpGame.markEnded(UI._pvpCs, 'guest');
           if (both) {
-            PvpGame.runTurnTransition(UI._pvpCs);
+            // 双方都结束 → 统一结算
+            PvpGame.resolveQueue(UI._pvpCs);
+            Net.send({ t: 'pvp-state', cs: PvpGame.serialize(UI._pvpCs) });
+            if (UI._pvpCs.phase === 'victory') { UI._pvpShowResult(UI._pvpCs); break; }
+            UI._pvpRevealAndTransition(UI._pvpCs, false);
+          } else {
+            Net.send({ t: 'pvp-state', cs: PvpGame.serialize(UI._pvpCs) });
+            UI.pvpBattle(UI._pvpCs, false);
           }
-          Net.send({ t: 'pvp-state', cs: PvpGame.serialize(UI._pvpCs) });
-          UI.pvpBattle(UI._pvpCs, false);
-          if (UI._pvpCs.phase === 'victory') UI._pvpShowResult(UI._pvpCs);
         }
       }
     });
@@ -10447,17 +10485,21 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
     }
 
     // 对手作为"敌人卡片"，使用单人模式 .enemy-card 样式
+    const oppQueueCount = (pvpCs[oppRole + 'Queue'] || []).length;
+    const myQueueCount  = (pvpCs[myRole  + 'Queue'] || []).length;
     const oppIntentHtml = oppEnded
-      ? `<span class="intent-badge defend" style="background:rgba(127,224,168,0.2);border-color:#7fe0a8;color:#7fe0a8">✓ 已结束</span>`
-      : `<span class="intent-badge unknown" style="background:rgba(255,200,80,0.15);border-color:#ffd060;color:#ffd060">🤔 思考中</span>`;
+      ? `<span class="intent-badge defend" style="background:rgba(127,224,168,0.2);border-color:#7fe0a8;color:#7fe0a8">✓ 已结束${oppQueueCount>0?` · 出了 ${oppQueueCount} 张`:''}</span>`
+      : oppQueueCount > 0
+        ? `<span class="intent-badge unknown" style="background:rgba(255,155,60,0.15);border-color:#ff9b3c;color:#ff9b3c">🃏 已出 ${oppQueueCount} 张</span>`
+        : `<span class="intent-badge unknown" style="background:rgba(255,200,80,0.15);border-color:#ffd060;color:#ffd060">🤔 出牌中…</span>`;
 
     // 阶段提示文字
     let topPhaseText = '';
     if (pvpCs.phase === 'victory') {
       topPhaseText = pvpCs.winner === myRole ? '🏆 胜利！' : pvpCs.winner === 'draw' ? '🤝 平局' : '💀 失败';
-    } else if (myEnded && !oppEnded) topPhaseText = '✓ 已结束 · 等待对手';
+    } else if (myEnded && !oppEnded) topPhaseText = `✓ 已结束 · 等待对手${myQueueCount>0?` (你出了${myQueueCount}张)`:''}`;
     else if (!myEnded && oppEnded)   topPhaseText = '⚡ 对手已结束 · 把牌打完';
-    else                              topPhaseText = `第 ${pvpCs.turn} 回合`;
+    else                              topPhaseText = `第 ${pvpCs.turn} 回合${myQueueCount>0?` · 已出 ${myQueueCount} 张`:''}`;
 
     // 主结构：复用 .combat-screen / .combat-topbar / .combat-field / .combat-hand-area
     const app = UI.app();
@@ -10549,7 +10591,22 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
     // 渲染手牌（直接复用 single-player 风格的 .card + .hand-cards 扇形布局）
     const handCardsEl = document.getElementById('pvp-hand-cards');
     const prevRun = State.current.run;
-    State.current.run = { character: { id: me.charId }, relics: [], cardUpgrades: {}, deck: [], mode: 'pvp', combat: null };
+    // 注入 fake combat：让 renderCard 能正确读取力量/档位/蓄力/愤怒等 buff 并实时计算卡面数值
+    const _pvpFakeCombat = {
+      player: { hp: me.hp, maxHp: me.maxHp, block: me.block, buffs: { ...me.buffs }, debuffs: { ...me.debuffs } },
+      enemies: [{ id: opp.charId, hp: opp.hp, maxHp: opp.maxHp, block: opp.block,
+                  buffs: { ...opp.buffs }, debuffs: { ...opp.debuffs }, _dead: false }],
+      hand: myHand,
+      gear:         me.charId === 'racer'  ? (pvpCs[myRole+'Gear']  || 2) : undefined,
+      speed:        me.charId === 'racer'  ? (pvpCs[myRole+'Speed'] || 0) : undefined,
+      momentum:     me.charId === 'racer'  ? (pvpCs[myRole+'Momentum'] || 0) : undefined,
+      charge:       me.charId === 'archer' ? (pvpCs[myRole+'Charge']    || 0) : undefined,
+      chargeMax:    me.charId === 'archer' ? (pvpCs[myRole+'ChargeMax'] || 5) : undefined,
+      _shiftedUpThisTurn: false,
+      damageTakenLastTurn: 0,
+      defensePlayedThisTurn: false,
+    };
+    State.current.run = { character: { id: me.charId }, relics: [], cardUpgrades: {}, deck: [], mode: 'pvp', combat: _pvpFakeCombat };
     try {
       myHand.forEach((cardId, idx) => {
         const def = Data.cards[cardId];
@@ -10603,16 +10660,25 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
         const pvp = UI._pvpCs;
         PvpGame.markEnded(pvp, 'host');
         if (UI._pvpBotMode) {
-          // Bot 模式：先渲染"你已结束"，然后启动 bot
+          // Bot 模式：渲染"你已结束"后，bot 立即同步规划所有牌，然后结算
           UI.pvpBattle(pvp, false);
-          setTimeout(() => UI._pvpBotRun(), 600);
+          setTimeout(() => {
+            UI._pvpBotPlan(pvp);               // bot 同步入队所有牌
+            PvpGame.resolveQueue(pvp);          // 按类型顺序统一结算
+            if (pvp.phase === 'victory') { UI._pvpShowResult(pvp); return; }
+            UI._pvpRevealAndTransition(pvp, false);  // 亮牌 → 下一回合
+          }, 500);
         } else {
-          // 联机模式
-          const both = pvp.hostEnded && pvp.guestEnded;
-          if (both) PvpGame.runTurnTransition(pvp);
-          Net.send({ t: 'pvp-state', cs: PvpGame.serialize(pvp) });
-          UI.pvpBattle(pvp, false);
-          if (pvp.phase === 'victory') UI._pvpShowResult(pvp);
+          // 联机模式（host 已在上面 markEnded，检查 guest 是否也结束）
+          if (pvp.hostEnded && pvp.guestEnded) {
+            PvpGame.resolveQueue(pvp);
+            Net.send({ t: 'pvp-state', cs: PvpGame.serialize(pvp) });
+            if (pvp.phase === 'victory') { UI._pvpShowResult(pvp); return; }
+            UI._pvpRevealAndTransition(pvp, false);
+          } else {
+            Net.send({ t: 'pvp-state', cs: PvpGame.serialize(pvp) });
+            UI.pvpBattle(pvp, false);
+          }
         }
       } else {
         Net.send({ t: 'pvp-end-turn' });
@@ -10663,6 +10729,52 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
       pvp[myRole + 'HandUpgrades'] = newUpg;
       UI.pvpBattle(pvp, true);
     }
+  },
+
+  // 亮牌 + 进入下一回合（结算完成后调用）
+  _pvpRevealAndTransition(pvp, isGuestView) {
+    const myRole  = Net.isHost ? 'host' : 'guest';
+    const oppRole = Net.isHost ? 'guest' : 'host';
+    const myQ     = pvp['_revealHostQueue'.replace('Host', myRole.charAt(0).toUpperCase()+myRole.slice(1))]   || pvp._revealHostQueue  || [];
+    const oppQ    = pvp['_revealGuestQueue'.replace('Guest', oppRole.charAt(0).toUpperCase()+oppRole.slice(1))] || pvp._revealGuestQueue || [];
+    // 更直接的写法
+    const myReveal  = myRole  === 'host' ? (pvp._revealHostQueue  || []) : (pvp._revealGuestQueue || []);
+    const oppReveal = oppRole === 'host' ? (pvp._revealHostQueue  || []) : (pvp._revealGuestQueue || []);
+
+    const typeColors = { attack: '#ff9b8f', skill: '#7eb6ff', power: '#c8a0ff', curse: '#888' };
+    const fmtQueue = q => q.length === 0
+      ? '<span style="opacity:0.45">（没有出牌）</span>'
+      : q.map(item => {
+          const def = Data.cards[item.cardId];
+          const c   = typeColors[def?.type] || '#fff';
+          return `<span style="color:${c};white-space:nowrap">${def?.emoji||'🃏'} ${def?.name||item.cardId}</span>`;
+        }).join('<span style="color:rgba(255,255,255,0.3)"> · </span>');
+
+    const overlay = document.createElement('div');
+    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.72);z-index:8500;display:flex;align-items:center;justify-content:center';
+    overlay.innerHTML = `
+      <div style="background:rgba(12,8,22,0.98);border:2px solid rgba(127,224,168,0.45);border-radius:20px;padding:26px 28px;max-width:420px;width:92%;font-family:var(--font)">
+        <div style="font-size:1.25rem;font-weight:900;color:#7fe0a8;text-align:center;margin-bottom:16px">⚔️ 本回合结算完毕</div>
+        <div style="background:rgba(255,255,255,0.04);border-radius:10px;padding:12px 14px;margin-bottom:10px">
+          <div style="font-size:0.75rem;font-weight:700;color:rgba(255,255,255,0.45);margin-bottom:6px">🧑 你打出了</div>
+          <div style="font-size:0.92rem;line-height:1.9;min-height:22px">${fmtQueue(myReveal)}</div>
+        </div>
+        <div style="background:rgba(255,255,255,0.04);border-radius:10px;padding:12px 14px;margin-bottom:18px">
+          <div style="font-size:0.75rem;font-weight:700;color:rgba(255,255,255,0.45);margin-bottom:6px">🤖 对手打出了</div>
+          <div style="font-size:0.92rem;line-height:1.9;min-height:22px">${fmtQueue(oppReveal)}</div>
+        </div>
+        <div style="text-align:center">
+          <button id="pvp-reveal-ok" style="background:rgba(127,224,168,0.18);border:2px solid #7fe0a8;color:#7fe0a8;border-radius:12px;padding:10px 34px;font-size:1rem;font-weight:800;cursor:pointer;font-family:var(--font);transition:all 0.15s">下一回合 →</button>
+        </div>
+      </div>`;
+    document.body.appendChild(overlay);
+
+    overlay.querySelector('#pvp-reveal-ok').onclick = () => {
+      overlay.remove();
+      PvpGame.runTurnTransition(pvp);
+      UI.pvpBattle(pvp, isGuestView);
+      if (pvp.phase === 'victory') UI._pvpShowResult(pvp);
+    };
   },
 
   _pvpShowResult(pvpCs) {
