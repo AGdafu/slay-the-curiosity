@@ -4723,17 +4723,19 @@ const CoopGame = {
 // 复用 Combat.dealDamage / gainBlock 等函数，通过 fakeEnemy 映射对手状态。
 const PvpGame = {
 
-  init(hostCharId, guestCharId) {
+  init(hostCharId, guestCharId, opts) {
     const hChar = Data.characters.find(c => c.id === hostCharId);
     const gChar = Data.characters.find(c => c.id === guestCharId);
+    const hDeck = (opts && opts.hostDeck) ? opts.hostDeck : hChar.startingDeck;
+    const gDeck = (opts && opts.guestDeck) ? opts.guestDeck : gChar.startingDeck;
     const pvpCs = {
       host:  { hp: hChar.hp, maxHp: hChar.maxHp, block: 0, buffs: {}, debuffs: {}, charId: hChar.id, charName: hChar.name, charEmoji: hChar.emoji },
       guest: { hp: gChar.hp, maxHp: gChar.maxHp, block: 0, buffs: {}, debuffs: {}, charId: gChar.id, charName: gChar.name, charEmoji: gChar.emoji },
       hostEnergy: 3, hostMaxEnergy: 3,
       guestEnergy: 3, guestMaxEnergy: 3,
-      hostHand: [], hostDrawPile: [...hChar.startingDeck].sort(() => Math.random() - 0.5),
+      hostHand: [], hostDrawPile: [...hDeck].sort(() => Math.random() - 0.5),
       hostDiscardPile: [], hostHandUpgrades: {},
-      guestHand: [], guestDrawPile: [...gChar.startingDeck].sort(() => Math.random() - 0.5),
+      guestHand: [], guestDrawPile: [...gDeck].sort(() => Math.random() - 0.5),
       guestDiscardPile: [], guestHandUpgrades: {},
       // 角色专属
       hostGear: 2, hostSpeed: 0, hostMomentum: 0,
@@ -10092,12 +10094,290 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
     UI._coopRun.currentNodeId = startNode ? startNode.id : null;
   },
 
+  // ── PVP Draft 选牌模式 ───────────────────────────────────────────────────────
+  // 每局对战前：从12张共享牌池轮流各选6张，加上4张核心起始牌 = 10张起始牌组
+
+  // 初始化 draft 状态并存入 UI._pvpDraft，返回 draft 对象
+  _pvpInitDraft(hostCharId, guestCharId) {
+    const hPool = (Data.cardsByCharacter[hostCharId] || []).slice().sort(() => Math.random() - 0.5).slice(0, 6);
+    const gPool = (Data.cardsByCharacter[guestCharId] || []).slice().sort(() => Math.random() - 0.5).slice(0, 6);
+    const pool = [...hPool, ...gPool].sort(() => Math.random() - 0.5);
+    UI._pvpDraft = {
+      hostCharId, guestCharId,
+      pool,
+      hostPicks: [], guestPicks: [],
+      currentPicker: 'host',
+      totalPicks: 0,
+      selectedIdx: null,
+      _botPickScheduled: false,
+    };
+    return UI._pvpDraft;
+  },
+
+  // 应用一次选牌（更新本地 draft 状态后重新渲染）
+  _pvpDraftPick(who, cardId) {
+    const D = UI._pvpDraft;
+    if (!D) return;
+    const idx = D.pool.indexOf(cardId);
+    if (idx === -1) return; // 防止重复应用（card already removed）
+    D.pool.splice(idx, 1);
+    D[who + 'Picks'].push(cardId);
+    D.totalPicks++;
+    D.currentPicker = D.currentPicker === 'host' ? 'guest' : 'host';
+    D.selectedIdx = null;
+    D._botPickScheduled = false;
+    UI.pvpDraft(D.hostCharId, D.guestCharId, !Net.isHost);
+  },
+
+  // Bot 评分选牌：优先选己方角色的牌，其次抢对手强力牌
+  _pvpBotDraftPick(D) {
+    const botCards = new Set(Data.cardsByCharacter[D.guestCharId] || []);
+    let bestId = D.pool[0], bestScore = -Infinity;
+    D.pool.forEach(cardId => {
+      const def = Data.cards[cardId];
+      if (!def) return;
+      let score = botCards.has(cardId) ? 7 : 1;
+      if (def.type === 'power')       score += 5;
+      else if (def.type === 'attack') score += 3;
+      else if (def.type === 'skill')  score += 2;
+      score += (def.cost || 0) * 0.5;
+      score += Math.random() * 2;
+      if (score > bestScore) { bestScore = score; bestId = cardId; }
+    });
+    return bestId;
+  },
+
+  // 选牌全部完成后：构建起始牌组并进入战斗
+  _pvpDraftStartBattle() {
+    const D = UI._pvpDraft;
+    if (!D) return;
+    const CORE = {
+      boxer:  ['box_jab', 'box_jab', 'box_guard', 'box_cross'],
+      brute:  ['strike', 'strike', 'defend', 'defend'],
+      racer:  ['gear_strike', 'gear_defend', 'gear_shift', 'gear_brake'],
+      archer: ['ar_shoot', 'ar_shoot', 'ar_dodge', 'ar_aim'],
+    };
+    const hostCore  = CORE[D.hostCharId]  || ['strike', 'strike', 'defend', 'defend'];
+    const guestCore = CORE[D.guestCharId] || ['strike', 'strike', 'defend', 'defend'];
+    const hostDeck  = [...hostCore,  ...D.hostPicks];
+    const guestDeck = [...guestCore, ...D.guestPicks];
+    const pvpCs = PvpGame.init(D.hostCharId, D.guestCharId, { hostDeck, guestDeck });
+    UI._pvpCs = pvpCs;
+    UI._pvpDraft = null;
+    if (!UI._pvpBotMode) {
+      Net.send({ t: 'pvp-start', hostChar: D.hostCharId, guestChar: D.guestCharId });
+      Net.send({ t: 'pvp-state', cs: PvpGame.serialize(pvpCs) });
+    }
+    State.current.screen = 'pvp-battle';
+    UI.pvpBattle(pvpCs, false);
+  },
+
+  // 主选牌界面
+  pvpDraft(hostCharId, guestCharId, isGuestView) {
+    const D = UI._pvpDraft;
+    if (!D) return;
+
+    const myRole   = Net.isHost ? 'host' : 'guest';
+    const isMyTurn = D.currentPicker === myRole;
+    const isDone   = D.hostPicks.length >= 6 && D.guestPicks.length >= 6;
+    const hChar    = Data.characters.find(c => c.id === hostCharId);
+    const gChar    = Data.characters.find(c => c.id === guestCharId);
+    const myPicks  = isGuestView ? D.guestPicks : D.hostPicks;
+    const oppPicks = isGuestView ? D.hostPicks  : D.guestPicks;
+    const myChar   = isGuestView ? gChar : hChar;
+    const oppChar  = isGuestView ? hChar : gChar;
+    const pickNum  = myPicks.length + 1;
+
+    // 紧凑型迷你牌（用于牌池展示）
+    function miniCard(cardId, isSelected, isClickable, idx) {
+      const def = Data.cards[cardId];
+      if (!def) return '';
+      const typeColors = { attack:'#ff9b8f', skill:'#7eb6ff', power:'#c8a0ff', curse:'#aaa' };
+      const tc = typeColors[def.type] || '#ccc';
+      const typeLabel = { attack:'攻击', skill:'技能', power:'能力', curse:'诅咒' }[def.type] || '?';
+      const plainDesc = (def.description || '').replace(/<[^>]*>/g, '');
+      const selBorder = isSelected ? '2px solid #ffd060' : `1px solid ${tc}44`;
+      const selBg     = isSelected ? 'rgba(255,208,96,0.18)' : 'rgba(20,10,35,0.92)';
+      const selGlow   = isSelected ? '0 0 14px rgba(255,208,96,0.7)' : '0 2px 6px rgba(0,0,0,0.4)';
+      const selY      = isSelected ? 'translateY(-10px)' : 'translateY(0)';
+      return `<div class="draft-mini-card" data-idx="${idx}" style="
+        width:72px;height:100px;overflow:hidden;flex-shrink:0;
+        background:${selBg};border:${selBorder};border-radius:10px;
+        padding:5px 4px 3px;text-align:center;
+        cursor:${isClickable ? 'pointer' : 'default'};
+        box-shadow:${selGlow};transform:${selY};
+        transition:transform 0.12s,box-shadow 0.12s;
+        display:flex;flex-direction:column;align-items:center;gap:1px;
+      ">
+        <div style="font-size:0.52rem;font-weight:800;color:${tc};background:${tc}22;border-radius:3px;padding:1px 4px;white-space:nowrap">${typeLabel} · ${def.cost===0?'0费':(def.cost||1)+'费'}</div>
+        <div style="font-size:1.55rem;line-height:1.1">${def.emoji || '🃏'}</div>
+        <div style="font-size:0.62rem;font-weight:800;color:#e8e8f0;line-height:1.2">${def.name}</div>
+        <div style="font-size:0.46rem;color:rgba(255,255,255,0.48);line-height:1.3;overflow:hidden;max-height:26px">${plainDesc}</div>
+      </div>`;
+    }
+
+    // 已选牌槽展示
+    function pickedRow(picks, label, color) {
+      let slots = '';
+      for (let i = 0; i < 6; i++) {
+        if (picks[i]) {
+          const def = Data.cards[picks[i]];
+          const tc = { attack:'#ff9b8f', skill:'#7eb6ff', power:'#c8a0ff' }[def?.type] || '#aaa';
+          slots += `<div title="${def?.name||''}" style="width:34px;height:46px;background:rgba(20,10,30,0.9);border:1.5px solid ${tc}77;border-radius:6px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px">
+            <span style="font-size:1rem;line-height:1">${def?.emoji||'🃏'}</span>
+            <span style="font-size:0.38rem;color:${tc};font-weight:700;max-width:32px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">${def?.name||''}</span>
+          </div>`;
+        } else {
+          slots += `<div style="width:34px;height:46px;background:rgba(255,255,255,0.03);border:1.5px dashed rgba(255,255,255,0.12);border-radius:6px"></div>`;
+        }
+      }
+      return `<div style="display:flex;flex-direction:column;align-items:center;gap:5px">
+        <div style="font-size:0.72rem;font-weight:800;color:${color}">${label}</div>
+        <div style="display:flex;gap:3px">${slots}</div>
+      </div>`;
+    }
+
+    // 阶段文字
+    let phaseHtml = '';
+    if (isDone) {
+      phaseHtml = `<span style="color:#7fe0a8;font-weight:800">✓ 选牌完成！</span>`;
+    } else if (isMyTurn) {
+      phaseHtml = `<span style="color:#ffd060;font-weight:800">轮到你选了（第 ${pickNum} / 6 张）</span>`;
+    } else {
+      phaseHtml = `<span style="color:rgba(255,255,255,0.5)">等待对手选牌…</span>`;
+    }
+
+    const myPicksHtml  = pickedRow(myPicks,  `🙋 你 · ${myChar?.name||''}`,  '#7fe0a8');
+    const oppPicksHtml = pickedRow(oppPicks, `🤖 对手 · ${oppChar?.name||''}`, '#ff9b8f');
+
+    // 牌池 HTML
+    let poolHtml = '';
+    D.pool.forEach((cid, i) => {
+      poolHtml += miniCard(cid, D.selectedIdx === i, isMyTurn, i);
+    });
+
+    // 选中牌的确认按钮
+    let confirmHtml = '';
+    if (!isDone && isMyTurn && D.selectedIdx !== null) {
+      const sel = Data.cards[D.pool[D.selectedIdx]];
+      confirmHtml = `<button class="btn primary" id="draft-confirm-btn" style="min-width:200px;background:rgba(127,224,168,0.22);border-color:#7fe0a8;color:#7fe0a8;font-size:0.95rem">✓ 确认选择：${sel?.name||'?'}</button>`;
+    } else if (!isDone && isMyTurn) {
+      confirmHtml = `<div style="font-size:0.78rem;color:rgba(255,255,255,0.3);padding:6px 0">点击上方卡牌选择，再次点击可取消</div>`;
+    } else if (!isDone && !isMyTurn) {
+      confirmHtml = `<div style="font-size:0.82rem;color:rgba(255,200,80,0.5);padding:6px 0;animation:pulse 1.5s ease-in-out infinite">⏳ 等待对手选牌…</div>`;
+    }
+
+    State.current.screen = 'pvp-draft';
+    UI.app().innerHTML = `<div class="menu-screen slide-up" style="padding:14px 8px 24px;overflow-y:auto;display:flex;flex-direction:column;align-items:center">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+        <span style="font-size:1.6rem">🃏</span>
+        <h2 style="font-size:1.3rem;color:#ffd060;margin:0;font-weight:900">选牌阶段</h2>
+      </div>
+      <div style="font-size:0.85rem;margin-bottom:16px;text-align:center">${phaseHtml}</div>
+
+      <div style="display:flex;gap:16px;justify-content:center;width:100%;max-width:400px;margin-bottom:18px">
+        ${myPicksHtml}
+        <div style="width:1px;background:rgba(255,255,255,0.1);align-self:stretch"></div>
+        ${oppPicksHtml}
+      </div>
+
+      ${!isDone ? `
+      <div style="font-size:0.75rem;color:rgba(255,255,255,0.4);margin-bottom:10px;text-align:center">
+        剩余 <b style="color:#ffd060">${D.pool.length}</b> 张 · ${D.hostCharId===D.guestCharId?'同角色':'两角色'}牌池混合
+      </div>
+      <div id="draft-pool-grid" style="display:flex;flex-wrap:wrap;gap:8px;justify-content:center;max-width:440px;margin-bottom:14px">
+        ${poolHtml}
+      </div>
+      <div id="draft-confirm-area" style="min-height:42px;display:flex;justify-content:center;align-items:center">
+        ${confirmHtml}
+      </div>
+      ` : `
+      <div style="margin:6px 0 16px;padding:16px 24px;background:rgba(127,224,168,0.1);border:1.5px solid rgba(127,224,168,0.4);border-radius:14px;text-align:center;max-width:340px">
+        <div style="font-size:2rem;margin-bottom:6px">🎉</div>
+        <div style="font-size:1rem;font-weight:900;color:#7fe0a8;margin-bottom:5px">选牌完成！</div>
+        <div style="font-size:0.82rem;color:rgba(255,255,255,0.58)">4 张核心牌 + 6 张自选 = 10 张起始牌组</div>
+      </div>
+      ${Net.isHost ? `<button class="btn primary" id="draft-battle-btn" style="min-width:200px;background:rgba(231,76,60,0.28);border-color:#ff9b8f;color:#ff9b8f;font-size:1rem;margin-bottom:10px">⚔️ 开始对战！</button>` : `<div style="font-size:0.88rem;color:rgba(255,200,80,0.6);margin-bottom:10px">⏳ 等待房主确认开始…</div>`}
+      `}
+
+      <button class="btn" id="draft-back-btn" style="min-width:130px;font-size:0.85rem;margin-top:4px">← 返回</button>
+    </div>`;
+
+    // 绑定牌池点击
+    if (!isDone && isMyTurn) {
+      document.querySelectorAll('.draft-mini-card').forEach(el => {
+        el.onclick = () => {
+          const i = parseInt(el.dataset.idx);
+          if (isNaN(i) || i >= D.pool.length) return;
+          D.selectedIdx = (D.selectedIdx === i) ? null : i;
+          // 仅更新视觉，不整体重渲
+          document.querySelectorAll('.draft-mini-card').forEach((card, j) => {
+            const sel = D.selectedIdx === j;
+            card.style.border = sel ? '2px solid #ffd060' : `1px solid rgba(255,255,255,0.15)`;
+            card.style.background = sel ? 'rgba(255,208,96,0.18)' : 'rgba(20,10,35,0.92)';
+            card.style.boxShadow = sel ? '0 0 14px rgba(255,208,96,0.7)' : '0 2px 6px rgba(0,0,0,0.4)';
+            card.style.transform = sel ? 'translateY(-10px)' : 'translateY(0)';
+          });
+          // 更新确认按钮区域
+          const confirmArea = document.getElementById('draft-confirm-area');
+          if (confirmArea) {
+            if (D.selectedIdx !== null) {
+              const sel = Data.cards[D.pool[D.selectedIdx]];
+              confirmArea.innerHTML = `<button class="btn primary" id="draft-confirm-btn" style="min-width:200px;background:rgba(127,224,168,0.22);border-color:#7fe0a8;color:#7fe0a8;font-size:0.95rem">✓ 确认选择：${sel?.name||'?'}</button>`;
+              document.getElementById('draft-confirm-btn').onclick = doDraftPick;
+            } else {
+              confirmArea.innerHTML = `<div style="font-size:0.78rem;color:rgba(255,255,255,0.3);padding:6px 0">点击上方卡牌选择，再次点击可取消</div>`;
+            }
+          }
+        };
+      });
+    }
+
+    // 确认选牌函数
+    function doDraftPick() {
+      if (D.selectedIdx === null || D.selectedIdx >= D.pool.length) return;
+      const chosen = D.pool[D.selectedIdx];
+      if (UI._pvpBotMode) {
+        UI._pvpDraftPick(myRole, chosen);
+      } else {
+        // 在线模式：先本地应用，再广播（MQTT 自收时 card 已不在 pool 里，不会重复执行）
+        UI._pvpDraftPick(myRole, chosen);
+        Net.send({ t: 'pvp-draft-pick', who: myRole, cardId: chosen });
+      }
+    }
+
+    // 初始渲染时如果 selectedIdx 已有效，绑定确认按钮
+    const initConfirmBtn = document.getElementById('draft-confirm-btn');
+    if (initConfirmBtn) initConfirmBtn.onclick = doDraftPick;
+
+    // 完成后的开战按钮
+    const battleBtn = document.getElementById('draft-battle-btn');
+    if (battleBtn) battleBtn.onclick = () => UI._pvpDraftStartBattle();
+
+    // 返回按钮
+    document.getElementById('draft-back-btn').onclick = () => {
+      UI._pvpDraft = null;
+      if (UI._pvpBotMode) { UI._pvpBotMode = false; UI.pvpBotSelect(); }
+      else { State.go('pvp-lobby'); }
+    };
+
+    // Bot 自动选牌（bot 模式 + 轮到 guest 出牌）
+    if (UI._pvpBotMode && !isDone && D.currentPicker === 'guest' && !D._botPickScheduled) {
+      D._botPickScheduled = true;
+      setTimeout(() => {
+        if (!UI._pvpDraft || UI._pvpDraft.currentPicker !== 'guest') return;
+        const botCardId = UI._pvpBotDraftPick(UI._pvpDraft);
+        UI._pvpDraftPick('guest', botCardId);
+      }, 750);
+    }
+  },
+
   // ── PVP 人机对战（单人测试）─────────────────────────────────────────────────
   // 选角界面：玩家挑自己 + AI 对手的角色，确认后直接进入战斗
   pvpBotSelect() {
     // 确保上一次的网络/状态干净
     Net.disconnect();
-    UI._pvp = null; UI._pvpCs = null;
+    UI._pvp = null; UI._pvpCs = null; UI._pvpDraft = null;
     const C = { myChar: null, botChar: null };
 
     function render() {
@@ -10161,9 +10441,9 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
         Net.isHost = true;
         Net.connected = false; // Net.send 会自动 no-op
         UI._pvpBotMode = true;
-        UI._pvpCs = PvpGame.init(C.myChar, C.botChar);
-        State.current.screen = 'pvp-battle';
-        UI.pvpBattle(UI._pvpCs, false);
+        // 先进入选牌阶段
+        UI._pvpInitDraft(C.myChar, C.botChar);
+        UI.pvpDraft(C.myChar, C.botChar, false);
       };
     }
     render();
@@ -10332,12 +10612,10 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
       if ($('pvl-start')) {
         $('pvl-start').onclick = () => {
           if (!Net.isHost || !P.myChar || !P.oppChar) return;
-          const pvpCs = PvpGame.init(P.myChar, P.oppChar);
-          UI._pvpCs = pvpCs;
-          Net.send({ t: 'pvp-start', hostChar: P.myChar, guestChar: P.oppChar });
-          Net.send({ t: 'pvp-state', cs: PvpGame.serialize(pvpCs) });
-          State.current.screen = 'pvp-battle';
-          UI.pvpBattle(pvpCs, false);
+          // 进入选牌阶段，生成牌池后广播给访客
+          const draft = UI._pvpInitDraft(P.myChar, P.oppChar);
+          Net.send({ t: 'pvp-draft-start', pool: draft.pool, hostCharId: P.myChar, guestCharId: P.oppChar });
+          UI.pvpDraft(P.myChar, P.oppChar, false);
         };
       }
     }
@@ -10361,8 +10639,43 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
           render();
         }
       }
+      else if (data.t === 'pvp-draft-start') {
+        // 访客（or 房主自收）收到选牌开始
+        if (!Net.isHost && !UI._pvpDraft) {
+          // 访客：初始化选牌状态
+          UI._pvpDraft = {
+            hostCharId: data.hostCharId, guestCharId: data.guestCharId,
+            pool: data.pool ? [...data.pool] : [],
+            hostPicks: [], guestPicks: [],
+            currentPicker: 'host',
+            totalPicks: 0,
+            selectedIdx: null,
+            _botPickScheduled: false,
+          };
+          if (UI._pvp) { P.myChar = data.guestCharId; P.oppChar = data.hostCharId; }
+          UI.pvpDraft(data.hostCharId, data.guestCharId, true);
+        }
+        // 房主自收：_pvpDraft 已设置，忽略
+      }
+      else if (data.t === 'pvp-draft-pick') {
+        // 双方收到选牌（包括自己发出的消息自收）
+        if (UI._pvpDraft) {
+          const D = UI._pvpDraft;
+          // 只有 card 还在 pool 里才执行（防止自收重复应用）
+          if (D.pool.includes(data.cardId)) {
+            D.pool.splice(D.pool.indexOf(data.cardId), 1);
+            D[data.who + 'Picks'].push(data.cardId);
+            D.totalPicks++;
+            D.currentPicker = D.currentPicker === 'host' ? 'guest' : 'host';
+            D.selectedIdx = null;
+            D._botPickScheduled = false;
+            const isDone = D.hostPicks.length >= 6 && D.guestPicks.length >= 6;
+            UI.pvpDraft(D.hostCharId, D.guestCharId, !Net.isHost);
+          }
+        }
+      }
       else if (data.t === 'pvp-start') {
-        // 访客收到对战开始
+        // 访客收到对战开始（draft 结束后房主发出）
         if (!Net.isHost && UI._pvp) {
           P.myChar = data.guestChar;
           P.oppChar = data.hostChar;
@@ -10804,17 +11117,16 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
     document.getElementById('pvp-result-rematch').onclick = () => {
       overlay.remove();
       if (Net.isHost) {
-        // 用同样的角色重开
-        const pvpNew = PvpGame.init(pvpCs.host.charId, pvpCs.guest.charId);
-        UI._pvpCs = pvpNew;
+        // 重新选牌再开战（Bot / 在线均走 draft）
+        const draft = UI._pvpInitDraft(pvpCs.host.charId, pvpCs.guest.charId);
         if (!UI._pvpBotMode) {
-          Net.send({ t: 'pvp-start', hostChar: pvpCs.host.charId, guestChar: pvpCs.guest.charId });
-          Net.send({ t: 'pvp-state', cs: PvpGame.serialize(pvpNew) });
+          Net.send({ t: 'pvp-draft-start', pool: draft.pool, hostCharId: pvpCs.host.charId, guestCharId: pvpCs.guest.charId });
         }
-        UI.pvpBattle(pvpNew, false);
+        UI.pvpDraft(pvpCs.host.charId, pvpCs.guest.charId, false);
       } else {
-        // 访客等待 pvp-state
-        if (UI._pvpCs) UI.pvpBattle(UI._pvpCs, true);
+        // 访客：等待房主发出 pvp-draft-start
+        UI._pvpDraft = null;
+        UI._pvpCs = null;
       }
     };
   },
@@ -10826,6 +11138,7 @@ window.addEventListener('DOMContentLoaded', () => {
   const screens = {
     'menu':        () => UI.menu(),
     'pvp-lobby':   () => UI.pvpLobby(),
+    'pvp-draft':   () => { if(UI._pvpDraft) UI.pvpDraft(UI._pvpDraft.hostCharId, UI._pvpDraft.guestCharId, !Net.isHost); },
     'pvp-battle':  () => { if(UI._pvpCs) UI.pvpBattle(UI._pvpCs, !Net.isHost); },
     'coop-lobby':  () => UI.coopLobby(),
     'coop-map':    () => UI.coopMap(),
