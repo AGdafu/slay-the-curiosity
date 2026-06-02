@@ -5788,13 +5788,36 @@ el.innerHTML=`<div class="card-type-bar"></div>${rarityTag}<div class="card-cost
   },
   menu(){
     const saves=Save.list();const hasSave=saves.some(s=>s.run!==null);
-    UI.app().innerHTML=`<div class="menu-screen slide-up"><div class="menu-title">Slay the<br>Curiosity</div><div class="menu-subtitle">一场好奇心的冒险</div><div style="display:flex;flex-direction:column;gap:12px;align-items:stretch;width:260px;margin:16px auto 0"><button class="btn primary" id="btn-new">✨ 新游戏</button>${hasSave?'<button class="btn" id="btn-continue">📂 继续游戏</button>':''}<button class="btn" id="btn-coop" style="background:rgba(80,200,140,0.14);border-color:rgba(80,200,140,0.45);color:#7fe0a8">🤝 联机合作</button><button class="btn" id="btn-saves">💾 存档管理</button><button class="btn" id="btn-tutorial" style="background:rgba(80,160,255,0.12);border-color:rgba(80,160,255,0.4);color:#90c8ff">📖 新手教程</button><button class="btn" id="btn-database" style="background:rgba(160,90,255,0.12);border-color:rgba(160,90,255,0.4);color:#c8a0ff">📚 图鉴</button></div><div style="font-size:0.85rem;color:var(--ink-light);margin-top:32px">Slay the Curiosity v0.1 demo</div></div>`;
+    UI.app().innerHTML=`<div class="menu-screen slide-up"><div class="menu-title">Slay the<br>Curiosity</div><div class="menu-subtitle">一场好奇心的冒险</div><div style="display:flex;flex-direction:column;gap:12px;align-items:stretch;width:260px;margin:16px auto 0"><button class="btn primary" id="btn-new">✨ 新游戏</button>${hasSave?'<button class="btn" id="btn-continue">📂 继续游戏</button>':''}<button class="btn" id="btn-coop" style="background:rgba(80,200,140,0.14);border-color:rgba(80,200,140,0.45);color:#7fe0a8">🤝 联机合作</button><button class="btn" id="btn-saves">💾 存档管理</button><button class="btn" id="btn-tutorial" style="background:rgba(80,160,255,0.12);border-color:rgba(80,160,255,0.4);color:#90c8ff">📖 新手教程</button><button class="btn" id="btn-database" style="background:rgba(160,90,255,0.12);border-color:rgba(160,90,255,0.4);color:#c8a0ff">📚 图鉴</button></div><div style="margin-top:20px"><button id="btn-test-datou" style="background:rgba(255,255,255,0.04);border:1px dashed rgba(255,255,255,0.2);color:rgba(255,255,255,0.35);border-radius:8px;padding:5px 14px;font-size:0.78rem;cursor:pointer;font-family:var(--font)">🧪 测试：大头兜风事件</button></div><div style="font-size:0.85rem;color:var(--ink-light);margin-top:16px">Slay the Curiosity v0.1 demo</div></div>`;
     document.getElementById('btn-new').onclick=()=>State.go('char-select');
     if(hasSave)document.getElementById('btn-continue').onclick=()=>UI.showSaveSlots('load');
     document.getElementById('btn-coop').onclick=()=>State.go('coop-lobby');
     document.getElementById('btn-saves').onclick=()=>UI.showSaveSlots('manage');
     document.getElementById('btn-tutorial').onclick=()=>UI.tutorial();
     document.getElementById('btn-database').onclick=()=>UI.showDatabase();
+    document.getElementById('btn-test-datou').onclick=()=>{
+      State.current.run = {
+        gold: 100, relics: [], deck: [], cardUpgrades: {},
+        character: { id:'brute', name:'战士', hp:80, maxHp:80 },
+        currentNodeId: 'tq',
+        map: {
+          nodes: [
+            { id:'tq',   type:'question' },
+            { id:'tn1',  type:'combat'   },
+            { id:'tn2',  type:'combat'   },
+            { id:'tboss',type:'boss'     }
+          ],
+          paths: [
+            { from:'tq',  to:'tn1'  },
+            { from:'tq',  to:'tn2'  },
+            { from:'tn1', to:'tboss'},
+            { from:'tn2', to:'tboss'}
+          ]
+        }
+      };
+      State.current.screen = 'question';
+      UI.question('datou_drive');
+    };
   },
 
   // ── 模拟罗盘：触发各种特效动画，无需进游戏 ───────────────────────
@@ -7307,7 +7330,7 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
     setTimeout(()=>State.go(next),400);
   },
 
-   question(){
+   question(testEventId){
     const run = State.run;
     const app = document.getElementById('app');
     app.innerHTML = '';
@@ -7316,8 +7339,8 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
       hp: run.character.hp,
       maxHp: run.character.maxHp,
       gold: run.gold,
-      relics: [...run.relics],
-      deck: [...run.deck],
+      relics: [...(run.relics||[])],
+      deck: [...(run.deck||[])],
     };
     // 随机选一个问号事件（过滤掉已拿到对应遗物的事件）
     const _ownedRelics = run.relics||[];
@@ -7330,7 +7353,9 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
     let events = Data.questionEvents.filter(e => !e.relicId || !_ownedRelics.includes(e.relicId));
     if (_nextHasBoss) events = events.filter(e => !e.noBeforeBoss);
     const _evtPool = events.length > 0 ? events : Data.questionEvents; // 全部过滤完时保底随机
-    const evt = _evtPool[Math.floor(Math.random() * _evtPool.length)];
+    const evt = testEventId
+      ? (Data.questionEvents.find(e => e.id === testEventId) || _evtPool[0])
+      : _evtPool[Math.floor(Math.random() * _evtPool.length)];
 
     const wrap = document.createElement('div');
     wrap.style.cssText = 'min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;background:#1a1a2e;';
@@ -7396,6 +7421,7 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
         const continueBtn = wrap.querySelector('#q-continue');
         continueBtn.style.display = 'block';
         continueBtn.onclick = () => {
+          if (testEventId) { State.current.run = null; State.go('menu'); return; } // 测试模式直接返回菜单
           // 点击继续旅程时：标记节点完成并保存存档
           const node = run.map.nodes.find(n => n.id === run.currentNodeId);
           if (node) node.done = true;
