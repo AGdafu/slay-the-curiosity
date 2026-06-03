@@ -5788,36 +5788,13 @@ el.innerHTML=`<div class="card-type-bar"></div>${rarityTag}<div class="card-cost
   },
   menu(){
     const saves=Save.list();const hasSave=saves.some(s=>s.run!==null);
-    UI.app().innerHTML=`<div class="menu-screen slide-up"><div class="menu-title">Slay the<br>Curiosity</div><div class="menu-subtitle">一场好奇心的冒险</div><div style="display:flex;flex-direction:column;gap:12px;align-items:stretch;width:260px;margin:16px auto 0"><button class="btn primary" id="btn-new">✨ 新游戏</button>${hasSave?'<button class="btn" id="btn-continue">📂 继续游戏</button>':''}<button class="btn" id="btn-coop" style="background:rgba(80,200,140,0.14);border-color:rgba(80,200,140,0.45);color:#7fe0a8">🤝 联机合作</button><button class="btn" id="btn-saves">💾 存档管理</button><button class="btn" id="btn-tutorial" style="background:rgba(80,160,255,0.12);border-color:rgba(80,160,255,0.4);color:#90c8ff">📖 新手教程</button><button class="btn" id="btn-database" style="background:rgba(160,90,255,0.12);border-color:rgba(160,90,255,0.4);color:#c8a0ff">📚 图鉴</button><button class="btn" id="btn-test-datou" style="background:rgba(255,220,80,0.1);border:1px dashed rgba(255,220,80,0.45);color:rgba(255,220,80,0.7);font-size:0.82rem">🧪 测试：大头兜风事件</button></div><div style="font-size:0.85rem;color:var(--ink-light);margin-top:24px">Slay the Curiosity v0.1 demo</div></div>`;
+    UI.app().innerHTML=`<div class="menu-screen slide-up"><div class="menu-title">Slay the<br>Curiosity</div><div class="menu-subtitle">一场好奇心的冒险</div><div style="display:flex;flex-direction:column;gap:12px;align-items:stretch;width:260px;margin:16px auto 0"><button class="btn primary" id="btn-new">✨ 新游戏</button>${hasSave?'<button class="btn" id="btn-continue">📂 继续游戏</button>':''}<button class="btn" id="btn-coop" style="background:rgba(80,200,140,0.14);border-color:rgba(80,200,140,0.45);color:#7fe0a8">🤝 联机合作</button><button class="btn" id="btn-saves">💾 存档管理</button><button class="btn" id="btn-tutorial" style="background:rgba(80,160,255,0.12);border-color:rgba(80,160,255,0.4);color:#90c8ff">📖 新手教程</button><button class="btn" id="btn-database" style="background:rgba(160,90,255,0.12);border-color:rgba(160,90,255,0.4);color:#c8a0ff">📚 图鉴</button></div><div style="font-size:0.85rem;color:var(--ink-light);margin-top:24px">Slay the Curiosity v0.1 demo</div></div>`;
     document.getElementById('btn-new').onclick=()=>State.go('char-select');
     if(hasSave)document.getElementById('btn-continue').onclick=()=>UI.showSaveSlots('load');
     document.getElementById('btn-coop').onclick=()=>State.go('coop-lobby');
     document.getElementById('btn-saves').onclick=()=>UI.showSaveSlots('manage');
     document.getElementById('btn-tutorial').onclick=()=>UI.tutorial();
     document.getElementById('btn-database').onclick=()=>UI.showDatabase();
-    document.getElementById('btn-test-datou').onclick=()=>{
-      State.current.run = {
-        gold: 100, relics: [], deck: [], cardUpgrades: {},
-        character: { id:'brute', name:'战士', hp:80, maxHp:80 },
-        currentNodeId: 'tq',
-        map: {
-          nodes: [
-            { id:'tq',   type:'question' },
-            { id:'tn1',  type:'combat'   },
-            { id:'tn2',  type:'combat'   },
-            { id:'tboss',type:'boss'     }
-          ],
-          paths: [
-            { from:'tq',  to:'tn1'  },
-            { from:'tq',  to:'tn2'  },
-            { from:'tn1', to:'tboss'},
-            { from:'tn2', to:'tboss'}
-          ]
-        }
-      };
-      State.current.screen = 'question';
-      UI.question('datou_drive');
-    };
   },
 
   // ── 模拟罗盘：触发各种特效动画，无需进游戏 ───────────────────────
