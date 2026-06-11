@@ -1677,7 +1677,11 @@ const Audio = {
   // 自定义音频
   _customBgmMap: null,
   _customBgmCombat: null,
+  _customBgmMenu: null,
+  _customBgmBoss: null,
+  _customBgmShop: null,
   _customSfx: {},
+  _filesLoaded: false,
 
   _getCtx() {
     if (!this._ctx) {
@@ -1931,6 +1935,7 @@ const Audio = {
   },
 
   playClick() {
+    if (this._customSfx.click) { this._playCustom(this._customSfx.click); return; }
     const ctx = this._getCtx(), t = ctx.currentTime;
     const osc = this._osc(ctx, 'sine', 900);
     const g = this._gain(ctx, 0.12);
@@ -1954,6 +1959,7 @@ const Audio = {
   },
 
   playGoldReward() {
+    if (this._customSfx.goldreward) { this._playCustom(this._customSfx.goldreward); return; }
     const ctx = this._getCtx(), t = ctx.currentTime;
     // 硬币叮当音：多个高频正弦波快速衰减，模拟硬币碰撞声
     const coinFreqs = [1200, 1500, 1800, 2100, 1350];
@@ -2310,6 +2316,35 @@ const Audio = {
     }, halfMs);
   },
 
+  // ── 新增 BGM 模式（文件优先，程序化兜底）─────────────────────────────────
+
+  startBgmMenu() {
+    this._stopBgm();
+    this._bgmMode = 'menu';
+    if (this._customBgmMenu) { this._playCustomBgm(this._customBgmMenu); return; }
+    // 程序化兜底：复用探索主题（G大调温暖流动）
+    this.startBgmCombat();
+    this._bgmMode = 'menu';
+  },
+
+  startBgmBoss() {
+    this._stopBgm();
+    this._bgmMode = 'boss';
+    if (this._customBgmBoss) { this._playCustomBgm(this._customBgmBoss); return; }
+    // 程序化兜底：复用战斗主题（C大调高能量），但更快更有压迫感
+    this.startBgmMap();
+    this._bgmMode = 'boss';
+  },
+
+  startBgmShop() {
+    this._stopBgm();
+    this._bgmMode = 'shop';
+    if (this._customBgmShop) { this._playCustomBgm(this._customBgmShop); return; }
+    // 程序化兜底：复用探索主题但更轻
+    this.startBgmCombat();
+    this._bgmMode = 'shop';
+  },
+
   _stopBgm() {
     this._bgmPlaying = false;
     if (this._bgmInterval) { clearInterval(this._bgmInterval); this._bgmInterval = null; }
@@ -2319,6 +2354,65 @@ const Audio = {
   },
 
   stopAll() { this._stopBgm(); },
+
+  // ── 音频文件加载器（文件优先，程序化兜底）─────────────────────────────────
+  // 从 audio/ 加载 .ogg 文件，成功则替换对应槽位，失败静默回退程序化合成。
+
+  async _loadAudioFile(url) {
+    try {
+      const resp = await fetch(url);
+      if (!resp.ok) return null;
+      const buf = await resp.arrayBuffer();
+      return await this._getCtx().decodeAudioData(buf);
+    } catch (e) { return null; }
+  },
+
+  async loadAudioFiles() {
+    if (this._filesLoaded) return;
+    this._filesLoaded = true;
+    console.log('🎵 音频文件加载中…');
+
+    // ── BGM（4 首 + 地图探索）──
+    const bgmSlots = [
+      ['menu',   '_customBgmMenu'],
+      ['combat', '_customBgmCombat'],
+      ['boss',   '_customBgmBoss'],
+      ['shop',   '_customBgmShop'],
+      ['map',    '_customBgmMap'],     // 地图探索（兼容原有 _customBgmMap 槽）
+    ];
+    for (const [name, slot] of bgmSlots) {
+      const buf = await this._loadAudioFile('audio/bgm_' + name + '.ogg');
+      if (buf) {
+        this[slot] = buf;
+        console.log('  ✅ BGM ' + name + ' 已加载');
+      }
+    }
+
+    // ── SFX（11 个）──
+    const sfxMap = {
+      attack:      'sfx_attack.ogg',
+      block:       'sfx_block.ogg',
+      hurt:        'sfx_hurt.ogg',
+      draw:        'sfx_carddraw.ogg',
+      play:        'sfx_cardplay.ogg',
+      death:       'sfx_enemydeath.ogg',
+      victory:     'sfx_victory.ogg',
+      endturn:     'sfx_endturn.ogg',
+      buy:         'sfx_relic.ogg',
+      power:       'sfx_powerup.ogg',
+      click:       'sfx_click.ogg',
+      goldreward:  'sfx_goldreward.ogg',
+    };
+    for (const [key, filename] of Object.entries(sfxMap)) {
+      const buf = await this._loadAudioFile('audio/' + filename);
+      if (buf) {
+        this._customSfx[key] = buf;
+        console.log('  ✅ SFX ' + key + ' 已加载');
+      }
+    }
+
+    console.log('🎵 音频文件加载完成（未找到的将用程序化合成兜底）');
+  },
 
   // ── 音频设置面板 ──────────────────────────────────────────────────────────
   showSettings() {
@@ -6740,7 +6834,18 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
     };
   },
 
-  combat(){ UI._selectedCard=null;UI._renderCombat(); },
+  combat(){
+    UI._selectedCard=null;
+    // Boss 检测：若当前地图节点为 boss，切 Boss BGM
+    const run = State.run;
+    if (run && run.map) {
+      const curNode = run.map.nodes?.find(n => n.id === run.currentNodeId);
+      if (curNode && curNode.type === 'boss' && Audio._bgmMode !== 'boss') {
+        Audio.startBgmBoss();
+      }
+    }
+    UI._renderCombat();
+  },
 
   _renderCombat(){
     const run=State.run,cs=run.combat;if(!cs)return;const app=UI.app();app.innerHTML='';
@@ -11173,13 +11278,26 @@ window.addEventListener('DOMContentLoaded', () => {
     if (fn) fn();
     else console.warn('Unknown screen:', screen);
     Tutorial.handleScreen(screen);
-    // BGM 切换：仅在模式需要变化时才重启（避免同类屏幕间的打断）
-    if (screen === 'combat') {
-      if (Audio._bgmMode !== 'map') Audio.startBgmMap();
-    } else {
-      if (Audio._bgmMode !== 'combat') Audio.startBgmCombat();
+    // BGM 切换：根据场景选择合适的音乐模式
+    // 注：startBgmMap = 战斗音乐(C大调) / startBgmCombat = 探索音乐(G大调) —— 历史命名反了
+    const menuScreens   = ['menu', 'char-select', 'game-over', 'victory'];
+    const combatScreens = ['combat', 'pvp-battle'];
+    const shopScreens   = ['shop', 'rest', 'coop-shop', 'coop-rest'];
+    const mapScreens    = ['map', 'coop-map'];
+    const bossScreens   = []; // Boss 由 UI.combat() 内部根据 _curNode.type 自行调用 startBgmBoss()
+
+    if (menuScreens.includes(screen) && Audio._bgmMode !== 'menu') {
+      Audio.startBgmMenu();
+    } else if (combatScreens.includes(screen) && Audio._bgmMode !== 'map' && Audio._bgmMode !== 'boss') {
+      Audio.startBgmMap();  // 战斗音乐
+    } else if (shopScreens.includes(screen) && Audio._bgmMode !== 'shop') {
+      Audio.startBgmShop();
+    } else if (mapScreens.includes(screen) && Audio._bgmMode !== 'combat') {
+      Audio.startBgmCombat();  // 探索音乐
     }
   });
-  Audio.startBgmCombat();
+  // 启动时加载音频文件（异步，不阻塞 UI）
+  Audio.loadAudioFiles();
+  Audio.startBgmMenu();
   UI.menu();
 });
