@@ -621,10 +621,16 @@ body {
   position: relative;
   overflow: hidden;
   background: 
-    radial-gradient(ellipse at 50% 0%, rgba(60,40,120,0.08) 0%, transparent 50%),
-    radial-gradient(ellipse at 50% 50%, rgba(100,70,180,0.05) 0%, transparent 70%),
-    linear-gradient(0deg, rgba(12,8,20,0.9) 0%, rgba(14,12,26,0.3) 30%, transparent 60%),
-    linear-gradient(180deg, #0a0f1e 0%, #0d1428 100%);
+    /* 顶部穹顶暗角 */
+    radial-gradient(ellipse at 50% 0%, rgba(80,50,160,0.1) 0%, transparent 45%),
+    /* 底部地面雾气 */
+    radial-gradient(ellipse at 50% 100%, rgba(20,10,40,0.7) 0%, transparent 40%),
+    /* 中心微光 */
+    radial-gradient(ellipse at 50% 45%, rgba(100,70,180,0.06) 0%, transparent 60%),
+    /* 扫描线纹理 */
+    repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(255,255,255,0.008) 2px, rgba(255,255,255,0.008) 4px),
+    /* 底色 */
+    linear-gradient(180deg, #090d18 0%, #0d1325 50%, #0a0e1a 100%);
 }
 /* 🏟️ 竞技场地面线 + 中央 VS */
 .combat-field::before {
@@ -690,11 +696,10 @@ body {
   gap: 0;
   padding: 10px 0 14px;
   background: linear-gradient(180deg, rgba(8,8,18,0.98) 0%, rgba(12,12,26,0.98) 100%);
-  border-top: 1px solid rgba(160,120,240,0.2);
   min-height: 210px;
   position: relative;
   flex-shrink: 0;
-  box-shadow: 0 -6px 30px rgba(0,0,0,0.5);
+  box-shadow: 0 -8px 28px rgba(0,0,0,0.55);
   z-index: 5;
 }
 .hand-cards {
