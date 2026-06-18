@@ -7136,7 +7136,7 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
   </div>
   <div style="display:flex;align-items:center;gap:12px;flex:1;justify-content:flex-end">
     <div class="potion-bar" id="combat-potion-bar"></div>
-    <button onclick="Audio.showSettings()" style="font-size:0.9rem;padding:4px 10px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.2);border-radius:8px;color:#fff;cursor:pointer;">🎵</button><button onclick="UI.showPauseMenu()" style="font-size:0.9rem;padding:4px 10px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.2);border-radius:8px;color:#fff;cursor:pointer;">☰</button>
+    <button onclick="Audio.showSettings()" class="btn" style="padding:5px 12px;font-size:0.95rem">🎵</button><button onclick="UI.showPauseMenu()" class="btn" style="padding:5px 12px;font-size:0.95rem">☰</button>
   </div>
 </div>
 <div class="combat-field">
@@ -7238,8 +7238,13 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
         setTimeout(()=>{ tip.remove(); el._hintShown=false; },1500);
       }
     });
-    // 点击人物头像显示角色说明
-    document.getElementById('player-figure')?.addEventListener('click',()=>UI.showCharacterGuide(run.character.id));
+    // 点击/双击人物头像显示角色说明
+    const pf = document.getElementById('player-figure');
+    if (pf) {
+      pf.style.cursor = 'pointer';
+      pf.addEventListener('dblclick', () => UI.showCharacterGuide(run.character.id));
+      pf.addEventListener('click', () => UI.showCharacterGuide(run.character.id));
+    }
     // 渲染战斗药水槽位
     const combatPotionBar = document.getElementById('combat-potion-bar');
     if(combatPotionBar){ UI.renderPotionSlots(combatPotionBar, run.potions||[null,null,null], true); }
