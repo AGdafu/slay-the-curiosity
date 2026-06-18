@@ -3847,10 +3847,10 @@ const Combat = {
     {
       let boneEarned = 0;
       if (node) {
-        if (node.type === 'elite') boneEarned += 5;
-        else if (node.type === 'boss') boneEarned += 20;
+        if (node.type === 'boss') boneEarned += 10;
+        else if (node.type === 'elite') boneEarned += 3;
+        else if (node.type === 'combat') boneEarned += 1;
       }
-      // 注意：通关大结算在 victory() 里做；这里只算精英/Boss额外
       if (boneEarned > 0) {
         Meta.addCoins(boneEarned);
         setTimeout(() => {
@@ -8277,7 +8277,7 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
         <span style="font-size:2rem">💀</span>
         <div>
           <div style="font-size:1.4rem;font-weight:800;color:#d8c0ff">${Meta.boneCoins} 骨灰币</div>
-          <div style="font-size:0.82rem;color:rgba(255,255,255,0.5)">死亡留下金币÷5 · 通关金币÷4+30 · 精英+5 · Boss+20</div>
+          <div style="font-size:0.82rem;color:rgba(255,255,255,0.5)">普通战斗+1 · 精英+3 · Boss+10</div>
         </div>
       </div>
       <div style="display:flex;flex-direction:column;gap:10px">
@@ -8343,21 +8343,7 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
   },
 
   gameOver(){ Audio.playGameOver(); Audio.stopAll();
-    // ── 骨灰币结算：死亡 = 当局金币 ÷ 5 ──
     const run=State.current.run;
-    if(run) {
-      const earned = Math.floor((run.gold || 0) / 5);
-      if (earned > 0) {
-        Meta.addCoins(earned);
-        setTimeout(() => {
-          const tip = document.createElement('div');
-          tip.style.cssText = 'position:fixed;top:40%;left:50%;transform:translate(-50%,-50%);background:rgba(20,15,30,0.95);color:#d8c0ff;font-size:1.1rem;font-weight:800;padding:12px 28px;border-radius:14px;border:2px solid #a080e0;z-index:9999;pointer-events:none;box-shadow:0 0 20px rgba(160,128,224,0.4)';
-          tip.textContent = '💀 留下了 ' + earned + ' 骨灰币（拥有 ' + Meta.boneCoins + ' 枚）';
-          document.body.appendChild(tip);
-          setTimeout(() => tip.remove(), 2500);
-        }, 400);
-      }
-    }
     UI.app().innerHTML=`<div class="menu-screen slide-up"><div style="font-size:5rem">💀</div><div class="screen-title" style="color:#e74c3c;text-shadow:0 0 20px rgba(231,76,60,0.5)">你倒下了</div><div style="font-size:1.2rem;color:rgba(255,255,255,0.8);margin-top:-8px">到达第 ${run?.floor??0} 层 · ${run?.character?.name??''}</div><button class="btn danger" style="margin-top:24px" onclick="State.current.run=null;State.go('menu')">返回主菜单</button></div>`;
   },
 
@@ -8750,19 +8736,6 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
     };
   },
   victory(){
-    // ── 骨灰币结算：通关 = 金币 ÷ 4 + 30 ──
-    const run = State.current.run;
-    if (run) {
-      const earned = Math.floor((run.gold || 0) / 4) + 30;
-      Meta.addCoins(earned);
-      setTimeout(() => {
-        const tip = document.createElement('div');
-        tip.style.cssText = 'position:fixed;top:32%;left:50%;transform:translate(-50%,-50%);background:rgba(20,15,30,0.95);color:#ffd060;font-size:1.3rem;font-weight:900;padding:14px 30px;border-radius:16px;border:2px solid #f5c518;z-index:9999;pointer-events:none;box-shadow:0 0 28px rgba(245,197,24,0.5)';
-        tip.textContent = '🏆 通关！获得 ' + earned + ' 骨灰币（拥有 ' + Meta.boneCoins + ' 枚）';
-        document.body.appendChild(tip);
-        setTimeout(() => tip.remove(), 3000);
-      }, 300);
-    }
     UI.app().innerHTML=`<div class="menu-screen bounce-in"><div style="font-size:5rem">🏆</div><div class="screen-title" style="color:var(--gold);text-shadow:0 0 30px rgba(241,196,15,0.6)">通关!</div><div style="font-size:1.2rem;color:rgba(255,255,255,0.85)">你击败了守护者！</div><button class="btn primary" style="margin-top:24px" onclick="State.current.run=null;State.go('menu')">返回主菜单</button></div>`;
   },
 
