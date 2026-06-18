@@ -6108,7 +6108,21 @@ el.innerHTML=`<div class="card-type-bar"></div>${rarityTag}<div class="card-cost
   },
   menu(){
     const saves=Save.list();const hasSave=saves.some(s=>s.run!==null);
-    UI.app().innerHTML=`<div class="menu-screen slide-up"><div class="menu-title">Slay the<br>Curiosity</div><div class="menu-subtitle">一场好奇心的冒险</div><div style="display:flex;flex-direction:column;gap:12px;align-items:stretch;width:260px;margin:16px auto 0"><button class="btn primary" id="btn-new">✨ 新游戏</button>${hasSave?'<button class="btn" id="btn-continue">📂 继续游戏</button>':''}<button class="btn" id="btn-coop" style="background:rgba(80,200,140,0.14);border-color:rgba(80,200,140,0.45);color:#7fe0a8">🤝 联机合作</button><button class="btn" id="btn-saves">💾 存档管理</button><button class="btn" id="btn-tutorial" style="background:rgba(80,160,255,0.12);border-color:rgba(80,160,255,0.4);color:#90c8ff">📖 新手教程</button><button class="btn" id="btn-database" style="background:rgba(160,90,255,0.12);border-color:rgba(160,90,255,0.4);color:#c8a0ff">📚 图鉴</button><button class="btn" id="btn-altar" style="background:rgba(200,150,255,0.12);border-color:rgba(200,150,255,0.5);color:#d8c0ff">🕯️ 祭坛 <span style="font-size:0.8rem;opacity:0.7">💀${Meta.boneCoins}</span></button></div><div style="font-size:0.85rem;color:var(--ink-light);margin-top:24px">Slay the Curiosity v0.1 demo</div></div>`;
+    UI.app().innerHTML=`<div class="menu-screen slide-up">
+      <div class="menu-title">好奇尖塔</div>
+      <div class="menu-subtitle">SLAY THE CURIOSITY</div>
+      <div class="menu-btn-group" style="margin-top:28px">
+        <button class="menu-btn primary-btn" id="btn-new">✨ 新游戏</button>
+        ${hasSave?'<button class="menu-btn" id="btn-continue">📂 继续游戏</button>':''}
+        <button class="menu-btn" id="btn-coop">🤝 联机合作</button>
+        <div class="menu-divider"></div>
+        <button class="menu-btn" id="btn-database">📚 图鉴</button>
+        <button class="menu-btn" id="btn-altar">🕯️ 祭坛 <span style="font-size:0.8rem;opacity:0.6">💀${Meta.boneCoins}</span></button>
+        <button class="menu-btn" id="btn-saves">💾 存档</button>
+        <button class="menu-btn" id="btn-tutorial">📖 教程</button>
+      </div>
+      <div class="menu-footer" style="margin-top:20px">v0.2 · 好奇心驱动</div>
+    </div>`;
     document.getElementById('btn-new').onclick=()=>State.go('char-select');
     if(hasSave)document.getElementById('btn-continue').onclick=()=>UI.showSaveSlots('load');
     document.getElementById('btn-coop').onclick=()=>State.go('coop-lobby');

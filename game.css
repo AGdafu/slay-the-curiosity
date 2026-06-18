@@ -432,22 +432,96 @@ body {
   align-items: center; justify-content: center;
   height: 100%;
   gap: 20px;
-  background: radial-gradient(ellipse at 50% 40%, #0f1f35 0%, #0a0a1a 70%);
+  background: 
+    radial-gradient(ellipse at 50% 0%, rgba(74,144,217,0.08) 0%, transparent 60%),
+    radial-gradient(ellipse at 85% 100%, rgba(160,100,240,0.06) 0%, transparent 50%),
+    radial-gradient(ellipse at 15% 100%, rgba(40,180,200,0.05) 0%, transparent 50%),
+    linear-gradient(180deg, #0a0f1e 0%, #0d1525 40%, #0a0f1e 100%);
+  position: relative;
+  overflow: hidden;
+}
+.menu-screen::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: 
+    repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(255,255,255,0.008) 2px, rgba(255,255,255,0.008) 4px);
+  pointer-events: none;
+  z-index: 0;
 }
 .menu-title {
-  font-size: 4rem; font-weight: 700;
-  line-height: 1;
+  font-family: 'ZCOOL KuaiLe', cursive;
+  font-size: 4.2rem; font-weight: 700;
+  line-height: 1.15;
   text-align: center;
-  color: #e8e8f0;
-  border-bottom: 1px solid rgba(255,255,255,0.15);
-  padding-bottom: 8px;
-  text-shadow: 0 0 30px rgba(74,144,217,0.4);
-  filter: url(#doodle);
+  color: #f0e8ff;
+  text-shadow: 
+    0 0 40px rgba(140,120,220,0.5),
+    0 0 80px rgba(100,140,240,0.25),
+    0 2px 4px rgba(0,0,0,0.6);
+  letter-spacing: 0.04em;
+  position: relative;
+  z-index: 1;
+  margin-bottom: 4px;
 }
 .menu-subtitle {
-  font-size: 1.45rem;
-  color: rgba(255,255,255,0.8);
-  margin-top: -12px;
+  font-size: 1.2rem;
+  color: rgba(200,190,230,0.65);
+  letter-spacing: 0.2em;
+  font-weight: 400;
+  position: relative;
+  z-index: 1;
+}
+.menu-btn-group {
+  display: flex; flex-direction: column;
+  gap: 10px; align-items: stretch;
+  width: 280px;
+  position: relative; z-index: 1;
+}
+.menu-btn {
+  font-family: 'ZCOOL KuaiLe', cursive;
+  font-size: 1.15rem;
+  padding: 11px 20px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.04);
+  backdrop-filter: blur(6px);
+  color: #c8c0d8;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: center;
+  letter-spacing: 0.03em;
+}
+.menu-btn:hover {
+  transform: translateY(-2px);
+  background: rgba(255,255,255,0.1);
+  border-color: rgba(255,255,255,0.25);
+  box-shadow: 0 4px 20px rgba(0,0,0,0.4), 0 0 20px rgba(140,120,220,0.15);
+  color: #fff;
+}
+.menu-btn:active { transform: translateY(0); }
+.menu-btn.primary-btn {
+  background: rgba(120,100,220,0.15);
+  border-color: rgba(140,120,240,0.4);
+  color: #d8d0f8;
+  font-size: 1.3rem;
+  padding: 13px 20px;
+}
+.menu-btn.primary-btn:hover {
+  background: rgba(140,120,240,0.22);
+  border-color: rgba(160,140,255,0.55);
+  box-shadow: 0 4px 24px rgba(0,0,0,0.5), 0 0 28px rgba(140,120,220,0.25);
+}
+.menu-divider {
+  width: 60px; height: 1px;
+  background: rgba(255,255,255,0.08);
+  margin: 6px auto;
+}
+.menu-footer {
+  font-size: 0.8rem;
+  color: rgba(255,255,255,0.25);
+  letter-spacing: 0.15em;
+  position: relative; z-index: 1;
 }
 
 .char-select-screen {
