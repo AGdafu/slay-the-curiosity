@@ -6022,6 +6022,18 @@ el.innerHTML=`<div class="card-type-bar"></div>${rarityTag}<div class="card-cost
             { icon:'⚖️', label:'策略核心', desc:'在累积蓄力与消耗爆发之间找到最佳时机<br><span style="opacity:0.65;font-size:0.82em">不必每次都等满蓄再打出</span>' },
           ]},
         ]
+      },
+      brute:{
+        emoji:'⚔️', name:'战士',
+        color:'#a8d8ff', accent:'rgba(168,216,255,0.15)',
+        sections:[
+          { title:'🩸 重伤 wound', color:'#e74c3c', rows:[
+            { icon:'🗡️', label:'重伤积累', desc:'造成真实 HP 伤害时，在敌人身上叠加永久重伤标记<br><span style="opacity:0.65;font-size:0.82em">每回合结算一次额外伤害</span>' },
+          ]},
+          { title:'💪 力量优势', color:'#f9ca24', rows:[
+            { icon:'💥', label:'攻击力强', desc:'战士的初始攻击力和伤害成长高于其他角色' },
+          ]},
+        ]
       }
     };
 
