@@ -595,13 +595,17 @@ body {
 .combat-screen {
   display: flex; flex-direction: column;
   height: 100%;
-  background: linear-gradient(180deg, #060b14 0%, #0a0f1e 30%, #0d1325 100%);
+  background: 
+    radial-gradient(ellipse at 28% 55%, rgba(100,60,200,0.12) 0%, transparent 50%),
+    radial-gradient(ellipse at 72% 55%, rgba(200,50,50,0.08) 0%, transparent 45%),
+    radial-gradient(ellipse at 50% 0%, rgba(60,40,140,0.08) 0%, transparent 45%),
+    radial-gradient(ellipse at 50% 100%, rgba(10,5,20,0.4) 0%, transparent 40%),
+    linear-gradient(180deg, #0b0f1c 0%, #0d1325 50%, #0b0f1c 100%);
 }
 .combat-topbar {
   display: flex; align-items: center; justify-content: space-between;
   padding: 8px 24px;
-  background: rgba(10,12,22,0.9);
-  border-bottom: 1px solid rgba(255,255,255,0.04);
+  background: transparent;
   font-size: 1rem;
   flex-shrink: 0;
   color: #d0c8e0;
@@ -616,22 +620,10 @@ body {
   align-items: center;
   justify-content: center;
   gap: 60px;
-  padding: 10px 30px 40px;
+  padding: 10px 30px 0;
   position: relative;
   overflow: hidden;
-  background: 
-    /* 玩家侧紫光 */
-    radial-gradient(ellipse at 28% 50%, rgba(100,60,200,0.12) 0%, transparent 45%),
-    /* 敌人侧红光 */
-    radial-gradient(ellipse at 72% 50%, rgba(200,50,50,0.08) 0%, transparent 40%),
-    /* 顶部穹顶 */
-    radial-gradient(ellipse at 50% 0%, rgba(60,40,140,0.1) 0%, transparent 50%),
-    /* 底部地面暗角 */
-    radial-gradient(ellipse at 50% 100%, rgba(10,5,20,0.65) 0%, transparent 40%),
-    /* 中心微弱辉光 */
-    radial-gradient(circle at 50% 50%, rgba(80,50,140,0.04) 0%, transparent 70%),
-    /* 底色 */
-    linear-gradient(180deg, #080c16 0%, #0c1222 40%, #0a0e1a 100%);
+  background: transparent;
 }
 /* 🏟️ 竞技场地面线 */
 .combat-field::before {
@@ -686,11 +678,11 @@ body {
   justify-content: center;
   gap: 0;
   padding: 10px 0 14px;
-  background: linear-gradient(180deg, rgba(8,8,18,0.98) 0%, rgba(12,12,26,0.98) 100%);
+  background: transparent;
   min-height: 210px;
   position: relative;
   flex-shrink: 0;
-  box-shadow: 0 -8px 28px rgba(0,0,0,0.55);
+  box-shadow: 0 -1px 0 rgba(255,255,255,0.04);
   z-index: 5;
 }
 .hand-cards {
