@@ -2636,6 +2636,88 @@ const Save = {
   list(){ return Array.from({length:this.SLOTS},(_,i)=>({slot:i,run:this.read(i)})); }
 };
 
+// ── metaverse.js ── 骨灰币 · 祭坛 · 永夜模式 ────────────────────────────────
+const Meta = {
+  _KEY: 'stc_meta',
+  boneCoins: 0,
+  purchases: {},     // { itemId: true } — 永久解锁
+  consumables: {},   // { itemId: 1 } — 下局消耗型（key='starterPick_archer'/'upgradeTicket'/'heirloom'）
+
+  // ── 商品目录 ──
+  ITEMS: {
+    starterPick:   { name:'🎴 起手选牌',  cost:25, desc:'下局开局自选 1 张起始牌', consumable:true, perChar:true },
+    upgradeTicket: { name:'🎴 卡牌升级券', cost:20, desc:'下局商店免费升级 1 张牌', consumable:true },
+    heirloom:      { name:'🧪 传家宝',    cost:35, desc:'下局开局自带 1 个随机普通遗物', consumable:true },
+    expandPool:    { name:'扩展卡池',     cost:30, desc:'解锁稀有卡牌掉落', permanent:true, perChar:true },
+    extraPotion:   { name:'🧪 第二药水位', cost:50, desc:'战斗可带 2 瓶药水', permanent:true },
+    ascension:     { name:'🌬️ 塔顶有风',  cost:200, desc:'Ascension 难度 +1', permanent:true },
+    nightMode:     { name:'🌑 永夜模式',   cost:300, desc:'暗黑视觉 + 暴风雪 + 失温值', permanent:true },
+    critFX:        { name:'✨ 暴击特效',   cost:80, desc:'暴击金色数字 + 特殊粒子', permanent:true },
+    musicBox:      { name:'🎵 音乐盒',    cost:30, desc:'BGM 自由切换', permanent:true },
+  },
+
+  // ── 存档 ──
+  load() {
+    try {
+      const raw = localStorage.getItem(this._KEY);
+      if (raw) {
+        const d = JSON.parse(raw);
+        this.boneCoins = d.boneCoins || 0;
+        this.purchases = d.purchases || {};
+        this.consumables = d.consumables || {};
+      }
+    } catch(e) { /* 静默回退 */ }
+  },
+  save() {
+    try {
+      localStorage.setItem(this._KEY, JSON.stringify({
+        boneCoins: this.boneCoins,
+        purchases: this.purchases,
+        consumables: this.consumables,
+      }));
+    } catch(e) { console.warn('[Meta] 保存失败'); }
+  },
+
+  // ── 经济 ──
+  addCoins(n) { this.boneCoins += n; this.save(); },
+  spend(n) { if (this.boneCoins < n) return false; this.boneCoins -= n; this.save(); return true; },
+
+  // ── 商品 ──
+  isPurchased(itemId, charId) {
+    if (charId && this.ITEMS[itemId]?.perChar) return !!this.purchases[itemId + '_' + charId];
+    return !!this.purchases[itemId];
+  },
+  buy(itemId, charId) {
+    const item = this.ITEMS[itemId]; if (!item) return false;
+    const key = (item.perChar && charId) ? (itemId + '_' + charId) : itemId;
+    if (this.purchases[key]) return false; // 已买过
+    const cost = item.cost;
+    if (!this.spend(cost)) return false;
+    if (item.consumable) {
+      this.consumables[key] = (this.consumables[key] || 0) + 1;
+    } else {
+      this.purchases[key] = true;
+    }
+    this.save();
+    return true;
+  },
+  consumeNextRun(itemId, charId) {
+    const key = (this.ITEMS[itemId]?.perChar && charId) ? (itemId + '_' + charId) : itemId;
+    if ((this.consumables[key] || 0) <= 0) return false;
+    this.consumables[key]--;
+    this.save();
+    return true;
+  },
+  hasConsumable(itemId, charId) {
+    const key = (this.ITEMS[itemId]?.perChar && charId) ? (itemId + '_' + charId) : itemId;
+    return (this.consumables[key] || 0) > 0;
+  },
+
+  // ── 永夜状态（运行时）──
+  _nightActive: false,
+  isNightMode() { return this._nightActive && this.isPurchased('nightMode'); },
+};
+
 // ── map.js ────────────────────────────────────────────────────────────────────
 const MapGen = {
   FLOORS:7,
@@ -3230,6 +3312,11 @@ const Combat = {
     }
     cs.enemies.forEach(e=>{if(e.hp<=0&&!e._dead){e._dead=true;e.hp=0;}});
     if(cs.enemies.every(e=>e._dead)){cs.phase='victory';Combat._onVictory();}
+    // ── 🌑 永夜：打出卡牌取暖 ──
+    if (Meta.isNightMode() && cs._temp !== undefined && def) {
+      if (def.type === 'power') cs._temp = Math.max(0, cs._temp - 2);
+      else if (def.type === 'attack') cs._temp = Math.max(0, cs._temp - 1);
+    }
     return true;
   },
   // 判断一个行动是否属于防御型（格挡/不包含攻击）
@@ -3375,6 +3462,53 @@ const Combat = {
       }
     }
     cs.turn++;cs.phase='player';cs.energy=cs.maxEnergy;
+    // ── 🌑 永夜模式：失温值 + 暴风雪 ──
+    if (Meta.isNightMode()) {
+      // 失温值初始化
+      if (cs._temp === undefined) cs._temp = 0;
+      // 每回合 +3
+      cs._temp += 3;
+      if (cs._temp >= 10) {
+        cs._temp = 10;
+        const penalty = Math.floor(cs.player.maxHp * 0.1);
+        cs.player.hp = Math.max(1, cs.player.hp - penalty);
+        setTimeout(() => {
+          const tip = document.createElement('div');
+          tip.style.cssText = 'position:fixed;top:48%;left:50%;transform:translate(-50%,-50%);background:rgba(80,200,240,0.9);color:#0a1a2a;font-size:1.1rem;font-weight:900;padding:10px 22px;border-radius:12px;border:2px solid #c8f0ff;z-index:9999;pointer-events:none;box-shadow:0 0 20px rgba(128,220,255,0.7)';
+          tip.textContent = '🥶 失温！-' + penalty + ' HP';
+          document.body.appendChild(tip);
+          setTimeout(() => tip.remove(), 1500);
+        }, 100);
+      }
+      // 暴风雪：每 3 回合触发
+      if (cs.turn % 3 === 0) {
+        cs._blizzard = true;
+        // 隐藏敌人意图
+        cs.enemies.forEach(e => { if (e && !e._dead) e._hideIntent = true; });
+        // 随机选 2 张手牌变盲（可打出但看不到）
+        if (cs.hand.length >= 2) {
+          const indices = [...Array(cs.hand.length).keys()];
+          for (let i = indices.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i+1)); [indices[i], indices[j]] = [indices[j], indices[i]]; }
+          cs._blindIndices = new Set(indices.slice(0, Math.min(2, cs.hand.length)));
+        } else if (cs.hand.length === 1) {
+          cs._blindIndices = new Set([0]);
+        } else {
+          cs._blindIndices = new Set();
+        }
+        setTimeout(() => {
+          const tip = document.createElement('div');
+          tip.style.cssText = 'position:fixed;top:44%;left:50%;transform:translate(-50%,-50%);background:rgba(200,220,240,0.9);color:#1a2a3a;font-size:1.2rem;font-weight:900;padding:12px 24px;border-radius:14px;border:2px solid #d8e8ff;z-index:9999;pointer-events:none;box-shadow:0 0 24px rgba(180,220,255,0.8)';
+          tip.textContent = '🌨️ 暴风雪来袭！';
+          document.body.appendChild(tip);
+          setTimeout(() => tip.remove(), 1500);
+        }, 200);
+      } else {
+        cs._blizzard = false;
+        cs.enemies.forEach(e => { if (e) e._hideIntent = false; });
+      }
+      // 渲染温度条
+      setTimeout(() => UI._renderNightTemp(cs), 50);
+    }
     // 战士被动「重伤」：每回合重置敌人的"本回合是否已加 wound"标记
     if(State.run?.character?.id==='brute'){
       cs.enemies.forEach(e => { if(e) e._bruteWoundedThisTurn = false; });
@@ -3564,6 +3698,10 @@ const Combat = {
     // 拳击手愤怒累计：基于原始来袭伤害（含被格挡部分），不受血量是否被扣影响
     if(dmg>0 && State.run?.character?.id==='boxer') cs.damageTakenThisEnemyPhase=(cs.damageTakenThisEnemyPhase||0)+dmg;
     const absorbed=Math.min(cs.player.block,dmg);cs.player.block=Math.max(0,cs.player.block-absorbed);const actualPlayerDmg=dmg-absorbed;cs.player.hp-=actualPlayerDmg;
+    // 🌑 永夜：格挡成功取暖 -1
+    if (Meta.isNightMode() && absorbed > 0 && cs._temp !== undefined) {
+      cs._temp = Math.max(0, cs._temp - 1);
+    }
     if(actualPlayerDmg>0){
       // 超载：受到伤害时额外获得格挡（每层+1，最多3层）
       const overloadStacks=cs.player.buffs?.overload||0;
@@ -3647,7 +3785,27 @@ const Combat = {
     target.debuffs=target.debuffs||{};target.debuffs[name]=(target.debuffs[name]||0)+amount;
   },
   _tickDebuffs(entity){ const manual=new Set(['burn','freeze','wound']); Object.keys(entity.debuffs||{}).forEach(k=>{ if(!manual.has(k)) entity.debuffs[k]=Math.max(0,entity.debuffs[k]-1); }); },
-  _onVictory(){ Audio.playVictory(); const run=State.run;run.character.hp=run.combat.player.hp;run.character.block=0;const node=run.map.nodes.find(n=>n.id===run.currentNodeId);if(node)node.done=true;
+  _onVictory(){ Audio.playVictory();
+    // ── 骨灰币结算 ──
+    const run=State.run;run.character.hp=run.combat.player.hp;run.character.block=0;const node=run.map.nodes.find(n=>n.id===run.currentNodeId);if(node)node.done=true;
+    {
+      let boneEarned = 0;
+      if (node) {
+        if (node.type === 'elite') boneEarned += 5;
+        else if (node.type === 'boss') boneEarned += 20;
+      }
+      // 注意：通关大结算在 victory() 里做；这里只算精英/Boss额外
+      if (boneEarned > 0) {
+        Meta.addCoins(boneEarned);
+        setTimeout(() => {
+          const tip = document.createElement('div');
+          tip.style.cssText = 'position:fixed;top:35%;left:50%;transform:translate(-50%,-50%);background:rgba(20,15,30,0.95);color:#d8c0ff;font-size:1rem;font-weight:800;padding:10px 24px;border-radius:12px;border:2px solid #a080e0;z-index:9999;pointer-events:none;box-shadow:0 0 16px rgba(160,128,224,0.4)';
+          tip.textContent = '💀 +' + boneEarned + ' 骨灰币（拥有 ' + Meta.boneCoins + ' 枚）';
+          document.body.appendChild(tip);
+          setTimeout(() => tip.remove(), 2000);
+        }, 200);
+      }
+    }
     // 金币奖励：普通10-18金，精英22-32金，Boss50金
     if(node){
       let goldReward=0;
@@ -5642,6 +5800,10 @@ el.innerHTML=`<div class="card-type-bar"></div>${rarityTag}<div class="card-cost
     const cs = run.combat;
     const msg = pData.use(run, cs);
     run.potions[idx] = null;
+    // 🌑 永夜：使用药水取暖 -3
+    if (Meta.isNightMode() && cs && cs._temp !== undefined) {
+      cs._temp = Math.max(0, cs._temp - 3);
+    }
     State.saveRun(0);
     // 显示提示
     const toast = document.createElement('div');
@@ -5890,13 +6052,33 @@ el.innerHTML=`<div class="card-type-bar"></div>${rarityTag}<div class="card-cost
   },
   menu(){
     const saves=Save.list();const hasSave=saves.some(s=>s.run!==null);
-    UI.app().innerHTML=`<div class="menu-screen slide-up"><div class="menu-title">Slay the<br>Curiosity</div><div class="menu-subtitle">一场好奇心的冒险</div><div style="display:flex;flex-direction:column;gap:12px;align-items:stretch;width:260px;margin:16px auto 0"><button class="btn primary" id="btn-new">✨ 新游戏</button>${hasSave?'<button class="btn" id="btn-continue">📂 继续游戏</button>':''}<button class="btn" id="btn-coop" style="background:rgba(80,200,140,0.14);border-color:rgba(80,200,140,0.45);color:#7fe0a8">🤝 联机合作</button><button class="btn" id="btn-saves">💾 存档管理</button><button class="btn" id="btn-tutorial" style="background:rgba(80,160,255,0.12);border-color:rgba(80,160,255,0.4);color:#90c8ff">📖 新手教程</button><button class="btn" id="btn-database" style="background:rgba(160,90,255,0.12);border-color:rgba(160,90,255,0.4);color:#c8a0ff">📚 图鉴</button></div><div style="font-size:0.85rem;color:var(--ink-light);margin-top:24px">Slay the Curiosity v0.1 demo</div></div>`;
+    UI.app().innerHTML=`<div class="menu-screen slide-up"><div class="menu-title">Slay the<br>Curiosity</div><div class="menu-subtitle">一场好奇心的冒险</div><div style="display:flex;flex-direction:column;gap:12px;align-items:stretch;width:260px;margin:16px auto 0"><button class="btn primary" id="btn-new">✨ 新游戏</button>${hasSave?'<button class="btn" id="btn-continue">📂 继续游戏</button>':''}<button class="btn" id="btn-coop" style="background:rgba(80,200,140,0.14);border-color:rgba(80,200,140,0.45);color:#7fe0a8">🤝 联机合作</button><button class="btn" id="btn-saves">💾 存档管理</button><button class="btn" id="btn-tutorial" style="background:rgba(80,160,255,0.12);border-color:rgba(80,160,255,0.4);color:#90c8ff">📖 新手教程</button><button class="btn" id="btn-database" style="background:rgba(160,90,255,0.12);border-color:rgba(160,90,255,0.4);color:#c8a0ff">📚 图鉴</button><button class="btn" id="btn-altar" style="background:rgba(200,150,255,0.12);border-color:rgba(200,150,255,0.5);color:#d8c0ff">🕯️ 祭坛 <span style="font-size:0.8rem;opacity:0.7">💀${Meta.boneCoins}</span></button></div><div style="font-size:0.85rem;color:var(--ink-light);margin-top:24px">Slay the Curiosity v0.1 demo</div></div>`;
     document.getElementById('btn-new').onclick=()=>State.go('char-select');
     if(hasSave)document.getElementById('btn-continue').onclick=()=>UI.showSaveSlots('load');
     document.getElementById('btn-coop').onclick=()=>State.go('coop-lobby');
     document.getElementById('btn-saves').onclick=()=>UI.showSaveSlots('manage');
     document.getElementById('btn-tutorial').onclick=()=>UI.tutorial();
     document.getElementById('btn-database').onclick=()=>UI.showDatabase();
+    document.getElementById('btn-altar').onclick=()=>UI.showAltar();
+  },
+
+  // ── 🌑 永夜：渲染温度条 ──
+  _renderNightTemp(cs) {
+    let el = document.getElementById('night-temp-bar');
+    if (!el) {
+      el = document.createElement('div');
+      el.id = 'night-temp-bar';
+      el.style.cssText = 'position:fixed;top:10px;left:50%;transform:translateX(-50%);z-index:5000;display:flex;align-items:center;gap:8px;background:rgba(10,15,25,0.85);border:1px solid rgba(100,180,220,0.4);border-radius:12px;padding:4px 14px;pointer-events:none';
+      document.body.appendChild(el);
+    }
+    const temp = cs._temp || 0;
+    const blocks = Array.from({length:10}, (_,i) => {
+      return `<span style="display:inline-block;width:12px;height:6px;border-radius:2px;background:${i<temp?'#60c0f0':'rgba(255,255,255,0.12)'}"></span>`;
+    }).join('');
+    el.innerHTML = `🥶<span style="font-size:0.8rem;color:#a0d8f0;font-weight:700">${temp}/10</span>${blocks}`;
+    if (temp >= 8) el.style.borderColor = 'rgba(240,100,100,0.6)';
+    else if (temp >= 5) el.style.borderColor = 'rgba(240,180,60,0.5)';
+    else el.style.borderColor = 'rgba(100,180,220,0.4)';
   },
 
   // ── 模拟罗盘：触发各种特效动画，无需进游戏 ───────────────────────
@@ -6844,6 +7026,19 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
         Audio.startBgmBoss();
       }
     }
+    // ── 🌑 永夜模式：激活仅本次战斗 ──
+    if (Meta.isPurchased('nightMode')) {
+      Meta._nightActive = true;
+      // 暗黑覆盖层
+      let veil = document.getElementById('night-veil');
+      if (!veil) {
+        veil = document.createElement('div');
+        veil.id = 'night-veil';
+        veil.style.cssText = 'position:fixed;inset:0;z-index:100;pointer-events:none;background:rgba(5,8,18,0.35);backdrop-filter:brightness(0.75) saturate(0.6);';
+        document.body.appendChild(veil);
+      }
+      veil.style.display = 'block';
+    }
     UI._renderCombat();
   },
 
@@ -7106,6 +7301,11 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
       const _handUpgradeLv = cs.handUpgrades ? (cs.handUpgrades[idx] || 0) : 0;
       const cardEl=UI.renderCard(cardId, displayOverride, _handUpgradeLv, true);
       cardEl.dataset.handIdx = String(idx); // 精确手牌位置，供打牌逻辑使用
+      // 🌑 永夜暴风雪：盲打卡牌显示牌背
+      if (cs._blizzard && cs._blindIndices && cs._blindIndices.has(idx)) {
+        cardEl.classList.add('card-blind');
+        cardEl.title = '🌨️ 盲打 — 看不清牌面，但可以打出';
+      }
       const canPlay=cs.energy>=effectiveCost&&cs.phase==='player'&&effectiveCost!==99;
       if(!canPlay)cardEl.classList.add('unplayable');if(UI._selectedCard===cardId)cardEl.classList.add('selected');
       // 放大镜高亮效果
@@ -7523,6 +7723,11 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
   },
 
   rest(){
+    // 🌑 永夜：进入休息站清零失温
+    if (Meta.isNightMode()) {
+      const cs = State.run?.combat;
+      if (cs && cs._temp !== undefined) cs._temp = 0;
+    }
     const run=State.run,char=run.character;
     // 初始化本次市井行动点（每次进入市井时重置）
     if(run.restPoints===undefined) run.restPoints=2;
@@ -7965,8 +8170,107 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
     document.body.appendChild(overlay);
   },
 
+  // ── 🕯️ 祭坛 ──────────────────────────────────────────────────────────────────
+  showAltar() {
+    const app = UI.app();
+    const chars = Data.characters;
+    app.innerHTML = `<div class="altar-screen slide-up" style="padding:30px;max-width:700px;margin:0 auto;color:#e0d8f0">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+        <h2 style="color:#d8c0ff;margin:0;font-size:1.8rem">🕯️ 祭坛</h2>
+        <button class="btn" style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.2);color:#fff;padding:6px 16px;border-radius:8px;cursor:pointer" onclick="State.go('menu')">← 返回</button>
+      </div>
+      <div style="background:rgba(20,15,30,0.8);border:1.5px solid rgba(180,140,240,0.4);border-radius:14px;padding:16px 20px;margin-bottom:20px;display:flex;align-items:center;gap:12px">
+        <span style="font-size:2rem">💀</span>
+        <div>
+          <div style="font-size:1.4rem;font-weight:800;color:#d8c0ff">${Meta.boneCoins} 骨灰币</div>
+          <div style="font-size:0.82rem;color:rgba(255,255,255,0.5)">死亡留下金币÷5 · 通关金币÷4+30 · 精英+5 · Boss+20</div>
+        </div>
+      </div>
+      <div id="altar-items" style="display:flex;flex-direction:column;gap:10px"></div>
+    </div>`;
+
+    const container = document.getElementById('altar-items');
+    if (!container) return;
+
+    const itemEntries = Object.entries(Meta.ITEMS);
+    itemEntries.forEach(([id, item]) => {
+      const isPerChar = item.perChar;
+      const isConsumable = item.consumable;
+
+      if (isPerChar) {
+        // 每个角色显示为子行
+        const group = document.createElement('div');
+        group.style.cssText = 'background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:12px 16px';
+        group.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+          <span style="font-size:1rem;font-weight:700;color:#e0d8f0">${item.name}</span>
+          <span style="font-size:0.85rem;color:rgba(255,255,255,0.5)">💀${item.cost}/角色 · ${item.desc}</span>
+        </div>`;
+        const subRow = document.createElement('div');
+        subRow.style.cssText = 'display:flex;gap:8px;flex-wrap:wrap';
+        chars.forEach(ch => {
+          const purchased = Meta.isPurchased(id, ch.id);
+          const hasStock = isConsumable && Meta.hasConsumable(id, ch.id);
+          const btn = document.createElement('button');
+          btn.style.cssText = `flex:1;min-width:100px;padding:6px 10px;border-radius:8px;border:1px solid ${purchased ? 'rgba(127,224,168,0.4)' : 'rgba(180,140,240,0.3)'};background:${purchased ? 'rgba(127,224,168,0.1)' : 'rgba(180,140,240,0.08)'};color:${purchased ? '#7fe0a8' : '#c8b0f0'};cursor:${purchased && !hasStock ? 'default' : 'pointer'};font-size:0.85rem;opacity:${purchased && !hasStock ? '0.6' : '1'}`;
+          btn.textContent = ch.emoji + ' ' + ch.name + (purchased ? (hasStock ? ' ✅×'+Meta.consumables[id+'_'+ch.id] : ' ✅') : '');
+          if (!purchased || hasStock) {
+            btn.onclick = () => {
+              if (Meta.buy(id, ch.id)) {
+                UI.showAltar(); // 刷新
+              } else if (Meta.boneCoins < item.cost) {
+                alert('骨灰币不足！');
+              }
+            };
+          }
+          btn.title = item.desc;
+          subRow.appendChild(btn);
+        });
+        group.appendChild(subRow);
+        container.appendChild(group);
+      } else {
+        // 普通商品
+        const purchased = Meta.isPurchased(id);
+        const hasStock = isConsumable && Meta.hasConsumable(id);
+        const canBuy = (!purchased || hasStock) && Meta.boneCoins >= item.cost;
+        const row = document.createElement('div');
+        row.style.cssText = `display:flex;justify-content:space-between;align-items:center;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:12px 16px;opacity:${purchased && !hasStock ? '0.55' : '1'}`;
+        row.innerHTML = `<div>
+          <span style="font-size:1rem;font-weight:700;color:#e0d8f0">${item.name}</span>
+          <span style="margin-left:8px;font-size:0.82rem;color:rgba(255,255,255,0.5)">${item.desc}</span>
+          ${purchased ? (hasStock ? '<span style="margin-left:8px;color:#7fe0a8;font-size:0.85rem">库存: ×'+Meta.consumables[id]+'</span>' : '<span style="margin-left:8px;color:#7fe0a8;font-size:0.85rem">✅ 已解锁</span>') : ''}
+        </div>`;
+        const btn = document.createElement('button');
+        btn.style.cssText = `padding:6px 16px;border-radius:8px;border:1px solid ${canBuy ? 'rgba(180,140,240,0.4)' : 'rgba(255,255,255,0.1)'};background:${canBuy ? 'rgba(180,140,240,0.15)' : 'rgba(255,255,255,0.05)'};color:${canBuy ? '#d8c0ff' : 'rgba(255,255,255,0.3)'};cursor:${canBuy ? 'pointer' : 'default'};font-size:0.9rem;font-weight:700`;
+        btn.textContent = purchased && !hasStock ? '已解锁' : ('💀' + item.cost);
+        if (canBuy) {
+          btn.onclick = () => {
+            if (Meta.buy(id)) {
+              UI.showAltar();
+            }
+          };
+        }
+        row.appendChild(btn);
+        container.appendChild(row);
+      }
+    });
+  },
+
   gameOver(){ Audio.playGameOver(); Audio.stopAll();
+    // ── 骨灰币结算：死亡 = 当局金币 ÷ 5 ──
     const run=State.current.run;
+    if(run) {
+      const earned = Math.floor((run.gold || 0) / 5);
+      if (earned > 0) {
+        Meta.addCoins(earned);
+        setTimeout(() => {
+          const tip = document.createElement('div');
+          tip.style.cssText = 'position:fixed;top:40%;left:50%;transform:translate(-50%,-50%);background:rgba(20,15,30,0.95);color:#d8c0ff;font-size:1.1rem;font-weight:800;padding:12px 28px;border-radius:14px;border:2px solid #a080e0;z-index:9999;pointer-events:none;box-shadow:0 0 20px rgba(160,128,224,0.4)';
+          tip.textContent = '💀 留下了 ' + earned + ' 骨灰币（拥有 ' + Meta.boneCoins + ' 枚）';
+          document.body.appendChild(tip);
+          setTimeout(() => tip.remove(), 2500);
+        }, 400);
+      }
+    }
     UI.app().innerHTML=`<div class="menu-screen slide-up"><div style="font-size:5rem">💀</div><div class="screen-title" style="color:#e74c3c;text-shadow:0 0 20px rgba(231,76,60,0.5)">你倒下了</div><div style="font-size:1.2rem;color:rgba(255,255,255,0.8);margin-top:-8px">到达第 ${run?.floor??0} 层 · ${run?.character?.name??''}</div><button class="btn danger" style="margin-top:24px" onclick="State.current.run=null;State.go('menu')">返回主菜单</button></div>`;
   },
 
@@ -8359,6 +8663,19 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
     };
   },
   victory(){
+    // ── 骨灰币结算：通关 = 金币 ÷ 4 + 30 ──
+    const run = State.current.run;
+    if (run) {
+      const earned = Math.floor((run.gold || 0) / 4) + 30;
+      Meta.addCoins(earned);
+      setTimeout(() => {
+        const tip = document.createElement('div');
+        tip.style.cssText = 'position:fixed;top:32%;left:50%;transform:translate(-50%,-50%);background:rgba(20,15,30,0.95);color:#ffd060;font-size:1.3rem;font-weight:900;padding:14px 30px;border-radius:16px;border:2px solid #f5c518;z-index:9999;pointer-events:none;box-shadow:0 0 28px rgba(245,197,24,0.5)';
+        tip.textContent = '🏆 通关！获得 ' + earned + ' 骨灰币（拥有 ' + Meta.boneCoins + ' 枚）';
+        document.body.appendChild(tip);
+        setTimeout(() => tip.remove(), 3000);
+      }, 300);
+    }
     UI.app().innerHTML=`<div class="menu-screen bounce-in"><div style="font-size:5rem">🏆</div><div class="screen-title" style="color:var(--gold);text-shadow:0 0 30px rgba(241,196,15,0.6)">通关!</div><div style="font-size:1.2rem;color:rgba(255,255,255,0.85)">你击败了守护者！</div><button class="btn primary" style="margin-top:24px" onclick="State.current.run=null;State.go('menu')">返回主菜单</button></div>`;
   },
 
@@ -11295,9 +11612,18 @@ window.addEventListener('DOMContentLoaded', () => {
     } else if (mapScreens.includes(screen) && Audio._bgmMode !== 'combat') {
       Audio.startBgmCombat();  // 探索音乐
     }
+    // 🌑 离开战斗时清理永夜 UI
+    if (!combatScreens.includes(screen)) {
+      Meta._nightActive = false;
+      const veil = document.getElementById('night-veil');
+      if (veil) veil.style.display = 'none';
+      const tempBar = document.getElementById('night-temp-bar');
+      if (tempBar) tempBar.remove();
+    }
   });
   // 启动时加载音频文件（异步，不阻塞 UI）
   Audio.loadAudioFiles();
+  Meta.load();
   Audio.startBgmMenu();
   UI.menu();
 });

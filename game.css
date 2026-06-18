@@ -148,6 +148,25 @@ body {
 .card.unplayable { opacity: 0.4; cursor: not-allowed; }
 .card.unplayable:hover { transform: none; }
 
+/* 🌑 永夜暴风雪：盲打卡牌 */
+.card.card-blind {
+  filter: brightness(0.2) blur(3px) saturate(0);
+  cursor: pointer;
+  position: relative;
+}
+.card.card-blind::after {
+  content: '🌨️';
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2rem;
+  z-index: 2;
+  pointer-events: none;
+}
+.card.card-blind:active { filter: brightness(0.35) blur(1px); }
+
 .card-cost {
   position: absolute;
   top: 6px; left: 6px;
