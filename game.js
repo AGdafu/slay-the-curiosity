@@ -2720,12 +2720,61 @@ const Meta = {
     return (this.consumables[key] || 0) > 0;
   },
 
-  // ── 永夜状态（运行时）──
+  // ── 🌑 永夜状态（运行时）──
   _nightActive: false,
+  _snowInterval: null,
   isNightMode() { return this._nightActive && this.isPurchased('nightMode'); },
+
+  // ── 雪花粒子（Canvas）──
+  startSnow() {
+    if (this._snowInterval) return;
+    let canvas = document.getElementById('night-snow');
+    if (!canvas) {
+      canvas = document.createElement('canvas');
+      canvas.id = 'night-snow';
+      canvas.style.cssText = 'position:fixed;inset:0;z-index:101;pointer-events:none';
+      document.body.appendChild(canvas);
+    }
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    const ctx = canvas.getContext('2d');
+    const flakes = [];
+    for (let i = 0; i < 60; i++) {
+      flakes.push({
+        x: Math.random() * canvas.width,
+        y: Math.random() * canvas.height,
+        r: Math.random() * 2.5 + 0.8,
+        speed: Math.random() * 1.2 + 0.4,
+        wind: Math.random() * 0.6 - 0.3,
+        opacity: Math.random() * 0.6 + 0.3,
+      });
+    }
+    const draw = () => {
+      if (!Meta._nightActive && !Meta._snowTest) { ctx.clearRect(0,0,canvas.width,canvas.height); return; }
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      flakes.forEach(f => {
+        ctx.beginPath();
+        ctx.arc(f.x, f.y, f.r, 0, Math.PI*2);
+        ctx.fillStyle = `rgba(220,235,255,${f.opacity})`;
+        ctx.fill();
+        f.y += f.speed;
+        f.x += f.wind + Math.sin(f.y * 0.02) * 0.3;
+        if (f.y > canvas.height + 10) { f.y = -10; f.x = Math.random() * canvas.width; }
+        if (f.x > canvas.width + 10) f.x = -10;
+        if (f.x < -10) f.x = canvas.width + 10;
+      });
+    };
+    this._snowInterval = setInterval(draw, 33);
+  },
+  stopSnow() {
+    if (this._snowInterval) { clearInterval(this._snowInterval); this._snowInterval = null; }
+    const canvas = document.getElementById('night-snow');
+    if (canvas) canvas.remove();
+  },
+
 };
 
-// ── map.js ────────────────────────────────────────────────────────────────────
+// ── map.js
 const MapGen = {
   FLOORS:7,
   // 固定伪随机数生成器（基于种子，保证每次生成相同地图）
@@ -6067,6 +6116,17 @@ el.innerHTML=`<div class="card-type-bar"></div>${rarityTag}<div class="card-cost
     document.getElementById('btn-tutorial').onclick=()=>UI.tutorial();
     document.getElementById('btn-database').onclick=()=>UI.showDatabase();
     document.getElementById('btn-altar').onclick=()=>UI.showAltar();
+    // 🌑 永夜粒子测试
+    setTimeout(() => {
+      const tb = document.createElement('button');
+      tb.textContent = '🌨️ 测试雪花粒子';
+      tb.style.cssText = 'margin-top:16px;padding:6px 14px;background:rgba(180,200,240,0.1);border:1px solid rgba(180,200,240,0.3);border-radius:8px;color:#a0c0e0;cursor:pointer;font-size:0.85rem';
+      tb.onclick = () => {
+        if (Meta._snowTest) { Meta._snowTest = false; Meta.stopSnow(); tb.textContent = '🌨️ 测试雪花粒子'; }
+        else { Meta._snowTest = true; Meta.startSnow(); tb.textContent = '⏹ 停止雪花'; }
+      };
+      document.querySelector('.menu-screen')?.appendChild(tb);
+    }, 50);
   },
 
   // ── 🌑 永夜：渲染温度条 ──
@@ -7031,6 +7091,7 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
     // ── 🌑 永夜模式：激活仅本次战斗 ──
     if (Meta.isPurchased('nightMode')) {
       Meta._nightActive = true;
+      Meta.startSnow();
       // 暗黑覆盖层
       let veil = document.getElementById('night-veil');
       if (!veil) {
@@ -11606,6 +11667,7 @@ window.addEventListener('DOMContentLoaded', () => {
     // 🌑 离开战斗时清理永夜 UI
     if (!combatScreens.includes(screen)) {
       Meta._nightActive = false;
+      Meta.stopSnow();
       const veil = document.getElementById('night-veil');
       if (veil) veil.style.display = 'none';
       const tempBar = document.getElementById('night-temp-bar');
