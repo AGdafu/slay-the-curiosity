@@ -8250,7 +8250,8 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
   // ── 🕯️ 祭坛 ──────────────────────────────────────────────────────────────────
   showAltar() {
     const app = UI.app();
-    app.innerHTML = `<div class="altar-screen slide-up" style="padding:30px;max-width:560px;margin:0 auto;color:#e0d8f0">
+    app.innerHTML = `<div class="altar-screen slide-up" style="padding:30px 20px;color:#e0d8f0">
+      <div style="max-width:520px;margin:0 auto;width:100%">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
         <h2 style="color:#d8c0ff;margin:0;font-size:1.8rem">🕯️ 祭坛</h2>
         <button class="btn" style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.2);color:#fff;padding:6px 16px;border-radius:8px;cursor:pointer" onclick="State.go('menu')">← 返回</button>
@@ -8281,6 +8282,7 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
       <div style="margin-top:18px;padding:10px 14px;background:rgba(255,255,255,0.02);border-radius:10px;border:1px solid rgba(255,255,255,0.05)">
         <div style="font-size:0.82rem;color:rgba(255,255,255,0.4)">💡 消耗型物品（起手选牌/升级券/传家宝）在选择角色后购买</div>
       </div>
+      </div>
     </div>`;
   },
 
@@ -8290,7 +8292,8 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
     if (!char) return;
     const items = Meta.PREGAME_ITEMS;
     const app = UI.app();
-    app.innerHTML = `<div class="menu-screen slide-up" style="padding:30px;max-width:500px;margin:0 auto;color:#e0d8f0">
+    app.innerHTML = `<div class="menu-screen slide-up" style="padding:30px 20px;color:#e0d8f0">
+      <div style="max-width:480px;margin:0 auto;width:100%">
       <h2 style="color:#d8c0ff;margin:0 0 6px;font-size:1.6rem">${char.emoji} ${char.name} · 出征准备</h2>
       <div style="font-size:0.85rem;color:rgba(255,255,255,0.5);margin-bottom:16px">消耗骨灰币获得本局增益（可选，跳过直接开始）</div>
       <div style="background:rgba(20,15,30,0.8);border:1.5px solid rgba(180,140,240,0.4);border-radius:14px;padding:12px 18px;margin-bottom:16px;display:flex;align-items:center;gap:10px">
@@ -8318,6 +8321,7 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
         State.saveRun(fs);
         if(Math.random()<0.5) UI.dayanSelect(); else UI.wangweiSelect();
       ">⚔️ 直接出征</button>
+      </div>
     </div>`;
   },
 
