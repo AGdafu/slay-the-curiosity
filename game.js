@@ -2585,6 +2585,19 @@ const State = {
       character:{id:char.id,name:char.name,emoji:char.emoji,color:char.color,hp:char.hp,maxHp:char.maxHp,block:0,buffs:{},debuffs:{}},
       floor:0,act:1,gold:({archer:75,racer:85,brute:99}[characterId]??99),deck:[...char.startingDeck],relics:[],pendingRelic:null,potions:[null,null,null],map:MapGen.generate(1),currentNodeId:null,combat:null
     };
+    // 🧪 传家宝：下局随机普通遗物
+    if (Meta.hasConsumable('heirloom')) {
+      Meta.consumeNextRun('heirloom');
+      const commonRelics = Data.battleRelics.filter(r => r.tier === 'common');
+      if (commonRelics.length > 0) {
+        const relic = commonRelics[Math.floor(Math.random() * commonRelics.length)];
+        this.current.run.relics.push(relic.id);
+      }
+    }
+    // 🎴 升级券：下局商店免费升级1张
+    if (Meta.hasConsumable('upgradeTicket')) {
+      this.current.run._freeUpgrade = true;
+    }
     const startNode=this.current.run.map.nodes.find(n=>n.floor===0);
     if(startNode)this.current.run.currentNodeId=startNode.id;
     this.emit('runStarted',this.current.run);
