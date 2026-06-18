@@ -2644,16 +2644,19 @@ const Meta = {
   consumables: {},   // { itemId: 1 } — 下局消耗型（key='starterPick_archer'/'upgradeTicket'/'heirloom'）
 
   // ── 商品目录 ──
-  ITEMS: {
-    starterPick:   { name:'🎴 起手选牌',  cost:25, desc:'下局开局自选 1 张起始牌', consumable:true, perChar:true },
-    upgradeTicket: { name:'🎴 卡牌升级券', cost:20, desc:'下局商店免费升级 1 张牌', consumable:true },
-    heirloom:      { name:'🧪 传家宝',    cost:35, desc:'下局开局自带 1 个随机普通遗物', consumable:true },
-    expandPool:    { name:'扩展卡池',     cost:30, desc:'解锁稀有卡牌掉落', permanent:true, perChar:true },
-    extraPotion:   { name:'🧪 第二药水位', cost:50, desc:'战斗可带 2 瓶药水', permanent:true },
-    ascension:     { name:'🌬️ 塔顶有风',  cost:200, desc:'Ascension 难度 +1', permanent:true },
-    nightMode:     { name:'🌑 永夜模式',   cost:300, desc:'暗黑视觉 + 暴风雪 + 失温值', permanent:true },
-    critFX:        { name:'✨ 暴击特效',   cost:80, desc:'暴击金色数字 + 特殊粒子', permanent:true },
-    musicBox:      { name:'🎵 音乐盒',    cost:30, desc:'BGM 自由切换', permanent:true },
+  // 祭坛永久商品
+  ALTAR_ITEMS: {
+    extraPotion:   { name:'🧪 第二药水位', cost:50, desc:'战斗可带 2 瓶药水' },
+    ascension:     { name:'🌬️ 塔顶有风',  cost:200, desc:'Ascension 难度 +1' },
+    nightMode:     { name:'🌑 永夜模式',   cost:300, desc:'暗黑视觉 + 暴风雪 + 失温值' },
+    critFX:        { name:'✨ 暴击特效',   cost:80, desc:'暴击金色数字 + 特殊粒子' },
+    musicBox:      { name:'🎵 音乐盒',    cost:30, desc:'BGM 自由切换' },
+  },
+  // 开局前消耗型（角色选择后弹出）
+  PREGAME_ITEMS: {
+    starterPick:   { name:'🎴 起手选牌',  cost:25, desc:'本局开局自选 1 张起始牌', perChar:true },
+    upgradeTicket: { name:'🎴 卡牌升级券', cost:20, desc:'本局商店免费升级 1 张牌' },
+    heirloom:      { name:'🧪 传家宝',    cost:35, desc:'本局开局自带 1 个随机普通遗物' },
   },
 
   // ── 存档 ──
@@ -2683,17 +2686,19 @@ const Meta = {
   spend(n) { if (this.boneCoins < n) return false; this.boneCoins -= n; this.save(); return true; },
 
   // ── 商品 ──
+  _allItems() { return { ...this.ALTAR_ITEMS, ...this.PREGAME_ITEMS }; },
+  _getItem(id) { return this._allItems()[id]; },
   isPurchased(itemId, charId) {
-    if (charId && this.ITEMS[itemId]?.perChar) return !!this.purchases[itemId + '_' + charId];
+    if (charId && this._getItem(itemId)?.perChar) return !!this.purchases[itemId + '_' + charId];
     return !!this.purchases[itemId];
   },
   buy(itemId, charId) {
-    const item = this.ITEMS[itemId]; if (!item) return false;
+    const item = this._getItem(itemId); if (!item) return false;
     const key = (item.perChar && charId) ? (itemId + '_' + charId) : itemId;
-    if (this.purchases[key]) return false; // 已买过
-    const cost = item.cost;
-    if (!this.spend(cost)) return false;
-    if (item.consumable) {
+    if (this.purchases[key]) return false;
+    if (!this.spend(item.cost)) return false;
+    // 消耗型物品存入 consumables，永久型存入 purchases
+    if (this.PREGAME_ITEMS[itemId]) {
       this.consumables[key] = (this.consumables[key] || 0) + 1;
     } else {
       this.purchases[key] = true;
@@ -2702,14 +2707,16 @@ const Meta = {
     return true;
   },
   consumeNextRun(itemId, charId) {
-    const key = (this.ITEMS[itemId]?.perChar && charId) ? (itemId + '_' + charId) : itemId;
+    const item = this._getItem(itemId);
+    const key = (item?.perChar && charId) ? (itemId + '_' + charId) : itemId;
     if ((this.consumables[key] || 0) <= 0) return false;
     this.consumables[key]--;
     this.save();
     return true;
   },
   hasConsumable(itemId, charId) {
-    const key = (this.ITEMS[itemId]?.perChar && charId) ? (itemId + '_' + charId) : itemId;
+    const item = this._getItem(itemId);
+    const key = (item?.perChar && charId) ? (itemId + '_' + charId) : itemId;
     return (this.consumables[key] || 0) > 0;
   },
 
@@ -6648,12 +6655,7 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
     document.getElementById('btn-back').onclick=()=>State.go('menu');
     document.getElementById('btn-start').onclick=()=>{
       if(!selected)return;
-      State.startRun(selected);
-      const freeSlot=Save.list().find(s=>!s.run)?.slot??0;
-      State.saveRun(freeSlot);
-      // 50%概率选大眼，50%概率选王微
-      if(Math.random() < 0.5) UI.dayanSelect();
-      else UI.wangweiSelect();
+      UI.showPreGameShop(selected);
     };
   },
 
@@ -8173,8 +8175,7 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
   // ── 🕯️ 祭坛 ──────────────────────────────────────────────────────────────────
   showAltar() {
     const app = UI.app();
-    const chars = Data.characters;
-    app.innerHTML = `<div class="altar-screen slide-up" style="padding:30px;max-width:700px;margin:0 auto;color:#e0d8f0">
+    app.innerHTML = `<div class="altar-screen slide-up" style="padding:30px;max-width:560px;margin:0 auto;color:#e0d8f0">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
         <h2 style="color:#d8c0ff;margin:0;font-size:1.8rem">🕯️ 祭坛</h2>
         <button class="btn" style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.2);color:#fff;padding:6px 16px;border-radius:8px;cursor:pointer" onclick="State.go('menu')">← 返回</button>
@@ -8186,73 +8187,63 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
           <div style="font-size:0.82rem;color:rgba(255,255,255,0.5)">死亡留下金币÷5 · 通关金币÷4+30 · 精英+5 · Boss+20</div>
         </div>
       </div>
-      <div id="altar-items" style="display:flex;flex-direction:column;gap:10px"></div>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        ${Object.entries(Meta.ALTAR_ITEMS).map(([id,item]) => {
+          const purchased = Meta.isPurchased(id);
+          const canBuy = !purchased && Meta.boneCoins >= item.cost;
+          return `<div style="display:flex;justify-content:space-between;align-items:center;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:14px 18px;opacity:${purchased?'0.5':'1'}">
+            <div>
+              <span style="font-size:1.05rem;font-weight:700;color:#e0d8f0">${item.name}</span>
+              <div style="font-size:0.82rem;color:rgba(255,255,255,0.5);margin-top:2px">${item.desc}</div>
+              ${purchased?'<span style="color:#7fe0a8;font-size:0.85rem">✅ 已解锁</span>':''}
+            </div>
+            <button style="padding:8px 18px;border-radius:8px;border:1px solid ${canBuy?'rgba(180,140,240,0.5)':'rgba(255,255,255,0.1)'};background:${canBuy?'rgba(180,140,240,0.15)':'rgba(255,255,255,0.05)'};color:${canBuy?'#d8c0ff':'rgba(255,255,255,0.3)'};cursor:${canBuy?'pointer':'default'};font-size:0.95rem;font-weight:700"
+              ${canBuy?`onclick="Meta.buy('${id}');UI.showAltar()"`:''}
+              ${purchased?'disabled':''}>${purchased?'已解锁':'💀'+item.cost}</button>
+          </div>`;
+        }).join('')}
+      </div>
+      <div style="margin-top:18px;padding:10px 14px;background:rgba(255,255,255,0.02);border-radius:10px;border:1px solid rgba(255,255,255,0.05)">
+        <div style="font-size:0.82rem;color:rgba(255,255,255,0.4)">💡 消耗型物品（起手选牌/升级券/传家宝）在选择角色后购买</div>
+      </div>
     </div>`;
+  },
 
-    const container = document.getElementById('altar-items');
-    if (!container) return;
-
-    const itemEntries = Object.entries(Meta.ITEMS);
-    itemEntries.forEach(([id, item]) => {
-      const isPerChar = item.perChar;
-      const isConsumable = item.consumable;
-
-      if (isPerChar) {
-        // 每个角色显示为子行
-        const group = document.createElement('div');
-        group.style.cssText = 'background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:12px 16px';
-        group.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-          <span style="font-size:1rem;font-weight:700;color:#e0d8f0">${item.name}</span>
-          <span style="font-size:0.85rem;color:rgba(255,255,255,0.5)">💀${item.cost}/角色 · ${item.desc}</span>
-        </div>`;
-        const subRow = document.createElement('div');
-        subRow.style.cssText = 'display:flex;gap:8px;flex-wrap:wrap';
-        chars.forEach(ch => {
-          const purchased = Meta.isPurchased(id, ch.id);
-          const hasStock = isConsumable && Meta.hasConsumable(id, ch.id);
-          const btn = document.createElement('button');
-          btn.style.cssText = `flex:1;min-width:100px;padding:6px 10px;border-radius:8px;border:1px solid ${purchased ? 'rgba(127,224,168,0.4)' : 'rgba(180,140,240,0.3)'};background:${purchased ? 'rgba(127,224,168,0.1)' : 'rgba(180,140,240,0.08)'};color:${purchased ? '#7fe0a8' : '#c8b0f0'};cursor:${purchased && !hasStock ? 'default' : 'pointer'};font-size:0.85rem;opacity:${purchased && !hasStock ? '0.6' : '1'}`;
-          btn.textContent = ch.emoji + ' ' + ch.name + (purchased ? (hasStock ? ' ✅×'+Meta.consumables[id+'_'+ch.id] : ' ✅') : '');
-          if (!purchased || hasStock) {
-            btn.onclick = () => {
-              if (Meta.buy(id, ch.id)) {
-                UI.showAltar(); // 刷新
-              } else if (Meta.boneCoins < item.cost) {
-                alert('骨灰币不足！');
-              }
-            };
-          }
-          btn.title = item.desc;
-          subRow.appendChild(btn);
-        });
-        group.appendChild(subRow);
-        container.appendChild(group);
-      } else {
-        // 普通商品
-        const purchased = Meta.isPurchased(id);
-        const hasStock = isConsumable && Meta.hasConsumable(id);
-        const canBuy = (!purchased || hasStock) && Meta.boneCoins >= item.cost;
-        const row = document.createElement('div');
-        row.style.cssText = `display:flex;justify-content:space-between;align-items:center;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:12px 16px;opacity:${purchased && !hasStock ? '0.55' : '1'}`;
-        row.innerHTML = `<div>
-          <span style="font-size:1rem;font-weight:700;color:#e0d8f0">${item.name}</span>
-          <span style="margin-left:8px;font-size:0.82rem;color:rgba(255,255,255,0.5)">${item.desc}</span>
-          ${purchased ? (hasStock ? '<span style="margin-left:8px;color:#7fe0a8;font-size:0.85rem">库存: ×'+Meta.consumables[id]+'</span>' : '<span style="margin-left:8px;color:#7fe0a8;font-size:0.85rem">✅ 已解锁</span>') : ''}
-        </div>`;
-        const btn = document.createElement('button');
-        btn.style.cssText = `padding:6px 16px;border-radius:8px;border:1px solid ${canBuy ? 'rgba(180,140,240,0.4)' : 'rgba(255,255,255,0.1)'};background:${canBuy ? 'rgba(180,140,240,0.15)' : 'rgba(255,255,255,0.05)'};color:${canBuy ? '#d8c0ff' : 'rgba(255,255,255,0.3)'};cursor:${canBuy ? 'pointer' : 'default'};font-size:0.9rem;font-weight:700`;
-        btn.textContent = purchased && !hasStock ? '已解锁' : ('💀' + item.cost);
-        if (canBuy) {
-          btn.onclick = () => {
-            if (Meta.buy(id)) {
-              UI.showAltar();
-            }
-          };
-        }
-        row.appendChild(btn);
-        container.appendChild(row);
-      }
-    });
+  // ── 🎴 开局前购买消耗型物品（角色选择后调用）──
+  showPreGameShop(charId) {
+    const char = Data.characters.find(c => c.id === charId);
+    if (!char) return;
+    const items = Meta.PREGAME_ITEMS;
+    const app = UI.app();
+    app.innerHTML = `<div class="menu-screen slide-up" style="padding:30px;max-width:500px;margin:0 auto;color:#e0d8f0">
+      <h2 style="color:#d8c0ff;margin:0 0 6px;font-size:1.6rem">${char.emoji} ${char.name} · 出征准备</h2>
+      <div style="font-size:0.85rem;color:rgba(255,255,255,0.5);margin-bottom:16px">消耗骨灰币获得本局增益（可选，跳过直接开始）</div>
+      <div style="background:rgba(20,15,30,0.8);border:1.5px solid rgba(180,140,240,0.4);border-radius:14px;padding:12px 18px;margin-bottom:16px;display:flex;align-items:center;gap:10px">
+        <span>💀</span><span style="font-size:1.1rem;font-weight:800;color:#d8c0ff">${Meta.boneCoins} 骨灰币</span>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:18px">
+        ${Object.entries(items).map(([id,item]) => {
+          const isPerChar = item.perChar;
+          const stock = isPerChar ? (Meta.consumables[id + '_' + charId] || 0) : (Meta.consumables[id] || 0);
+          const key = isPerChar ? (id + '_' + charId) : id;
+          const canBuy = Meta.boneCoins >= item.cost;
+          return `<div style="display:flex;justify-content:space-between;align-items:center;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:12px 16px">
+            <div>
+              <span style="font-size:1rem;font-weight:700;color:#e0d8f0">${item.name}</span>
+              <div style="font-size:0.8rem;color:rgba(255,255,255,0.45);margin-top:2px">${item.desc}${stock>0?' · <span style="color:#7fe0a8">库存 ×'+stock+'</span>':''}</div>
+            </div>
+            <button style="padding:6px 14px;border-radius:8px;border:1px solid ${canBuy?'rgba(180,140,240,0.5)':'rgba(255,255,255,0.1)'};background:${canBuy?'rgba(180,140,240,0.15)':'rgba(255,255,255,0.05)'};color:${canBuy?'#d8c0ff':'rgba(255,255,255,0.3)'};cursor:${canBuy?'pointer':'default'};font-size:0.9rem;font-weight:700"
+              ${canBuy?`onclick="Meta.buy('${id}','${charId}');UI.showPreGameShop('${charId}')"`:''}>💀${item.cost}</button>
+          </div>`;
+        }).join('')}
+      </div>
+      <button class="btn primary" style="width:100%;font-size:1.1rem;padding:12px" onclick="
+        State.startRun('${charId}');
+        const fs=Save.list().find(s=>!s.run)?.slot??0;
+        State.saveRun(fs);
+        if(Math.random()<0.5) UI.dayanSelect(); else UI.wangweiSelect();
+      ">⚔️ 直接出征</button>
+    </div>`;
   },
 
   gameOver(){ Audio.playGameOver(); Audio.stopAll();
