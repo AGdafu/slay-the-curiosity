@@ -599,16 +599,15 @@ body {
 }
 .combat-topbar {
   display: flex; align-items: center; justify-content: space-between;
-  padding: 10px 24px;
-  border-bottom: 1px solid rgba(255,255,255,0.06);
-  background: rgba(10,12,24,0.95);
-  backdrop-filter: blur(10px);
-  font-size: 1.1rem;
+  padding: 8px 24px;
+  background: rgba(10,12,22,0.9);
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+  font-size: 1rem;
   flex-shrink: 0;
-  color: #e8e8f0;
+  color: #d0c8e0;
   gap: 14px;
   z-index: 10;
-  min-height: 48px;
+  min-height: 44px;
 }
 .combat-topbar b { color: #fff; font-size: 1.2rem; }
 .combat-field {
@@ -621,34 +620,17 @@ body {
   position: relative;
   overflow: hidden;
   background: 
-    /* 顶部穹顶暗角 */
-    radial-gradient(ellipse at 50% 0%, rgba(80,50,160,0.1) 0%, transparent 45%),
-    /* 底部地面雾气 */
-    radial-gradient(ellipse at 50% 100%, rgba(20,10,40,0.7) 0%, transparent 40%),
-    /* 中心微光 */
-    radial-gradient(ellipse at 50% 45%, rgba(100,70,180,0.06) 0%, transparent 60%),
-    /* 扫描线纹理 */
-    repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(255,255,255,0.008) 2px, rgba(255,255,255,0.008) 4px),
-    /* 底色 */
-    linear-gradient(180deg, #090d18 0%, #0d1325 50%, #0a0e1a 100%);
+    radial-gradient(ellipse at 50% 0%, rgba(80,50,160,0.08) 0%, transparent 45%),
+    radial-gradient(ellipse at 50% 100%, rgba(20,10,40,0.5) 0%, transparent 35%),
+    linear-gradient(180deg, #0a0e1a 0%, #0e1426 50%, #0b0f1c 100%);
 }
-/* 🏟️ 竞技场地面线 + 中央 VS */
+/* 🏟️ 竞技场地面线 */
 .combat-field::before {
   content: '';
   position: absolute;
   bottom: 32px; left: 10%; right: 10%;
   height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(160,140,240,0.1) 15%, rgba(160,140,240,0.18) 50%, rgba(160,140,240,0.1) 85%, transparent);
-  z-index: 0;
-  pointer-events: none;
-}
-.combat-field::after {
-  content: '⚔️';
-  position: absolute;
-  top: 50%; left: 50%;
-  transform: translate(-50%, -50%);
-  font-size: 3rem;
-  opacity: 0.12;
+  background: linear-gradient(90deg, transparent, rgba(160,140,240,0.08) 20%, rgba(160,140,240,0.12) 50%, rgba(160,140,240,0.08) 80%, transparent);
   z-index: 0;
   pointer-events: none;
 }
