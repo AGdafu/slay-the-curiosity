@@ -620,9 +620,18 @@ body {
   position: relative;
   overflow: hidden;
   background: 
-    radial-gradient(ellipse at 50% 0%, rgba(80,50,160,0.08) 0%, transparent 45%),
-    radial-gradient(ellipse at 50% 100%, rgba(20,10,40,0.5) 0%, transparent 35%),
-    linear-gradient(180deg, #0a0e1a 0%, #0e1426 50%, #0b0f1c 100%);
+    /* 玩家侧紫光 */
+    radial-gradient(ellipse at 28% 50%, rgba(100,60,200,0.12) 0%, transparent 45%),
+    /* 敌人侧红光 */
+    radial-gradient(ellipse at 72% 50%, rgba(200,50,50,0.08) 0%, transparent 40%),
+    /* 顶部穹顶 */
+    radial-gradient(ellipse at 50% 0%, rgba(60,40,140,0.1) 0%, transparent 50%),
+    /* 底部地面暗角 */
+    radial-gradient(ellipse at 50% 100%, rgba(10,5,20,0.65) 0%, transparent 40%),
+    /* 中心微弱辉光 */
+    radial-gradient(circle at 50% 50%, rgba(80,50,140,0.04) 0%, transparent 70%),
+    /* 底色 */
+    linear-gradient(180deg, #080c16 0%, #0c1222 40%, #0a0e1a 100%);
 }
 /* 🏟️ 竞技场地面线 */
 .combat-field::before {
