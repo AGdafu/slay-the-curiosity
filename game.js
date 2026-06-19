@@ -2991,33 +2991,49 @@ const Achievements = {
   show() {
     const done = Object.keys(this.unlocked).length;
     const total = Object.keys(this.LIST).length;
-    let html = `<div class="menu-screen slide-up"><div class="menu-title">🏆 成就</div>
-      <div style="text-align:center;color:rgba(255,255,255,0.5);margin-bottom:16px">${done}/${total} 已解锁</div>`;
+    let html = `<div class="menu-screen slide-up" style="position:relative">
+      <button style="position:absolute;top:12px;right:16px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.2);border-radius:8px;color:#ccc;font-size:1.2rem;padding:6px 14px;cursor:pointer;z-index:10" id="btn-ach-back">✕ 退出</button>
+      <div class="menu-title" style="font-size:2rem;margin-bottom:4px">🏆 成就殿堂</div>
+      <div style="text-align:center;color:rgba(255,255,255,0.4);margin-bottom:20px;font-size:0.9rem">${done} / ${total} 已解锁</div>`;
     const tiers = {1:[], 2:[], 3:[]};
+    const hiddenUnlocked=[], hiddenLocked=[];
     for (const [id, a] of Object.entries(this.LIST)) {
-      (tiers[a.tier||1]||tiers[1]).push({id, ...a});
+      if (a.hidden) {
+        (this.unlocked[id] ? hiddenUnlocked : hiddenLocked).push({id, ...a});
+      } else {
+        (tiers[a.tier||1]||tiers[1]).push({id, ...a});
+      }
     }
-    const tierColors = {1:'#aaa', 2:'#f5c518', 3:'#e74c3c'};
+    const tierColors = {1:'#8e9eab', 2:'#f0c040', 3:'#e74c3c'};
     const tierLabels = {1:'🥉 初级', 2:'🥈 中级', 3:'🥇 高级'};
     for (const t of [1,2,3]) {
-      html += `<div style="margin-top:12px;font-size:0.85rem;color:${tierColors[t]};font-weight:700">${tierLabels[t]}</div>`;
+      if (tiers[t].length===0) continue;
+      html += `<div style="margin:10px 0 4px;font-size:0.9rem;color:${tierColors[t]};font-weight:800;border-bottom:1px solid rgba(255,255,255,0.06);padding-bottom:4px">${tierLabels[t]} <span style="font-size:0.7rem;opacity:0.5">${tiers[t].filter(a=>this.unlocked[a.id]).length}/${tiers[t].length}</span></div>`;
+      html += `<div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:6px">`;
       tiers[t].forEach(a => {
         const isUnlocked = !!this.unlocked[a.id];
-        const showHidden = !a.hidden || isUnlocked;
-        const displayName = (!isUnlocked && a.hidden) ? '???' : (isUnlocked ? (a.realName || a.name) : a.name);
-        const displayDesc = (!isUnlocked && a.hidden) ? '???' : (isUnlocked ? (a.realDesc || a.desc) : a.desc);
-        html += `<div style="margin:4px 0;padding:8px 14px;background:rgba(255,255,255,0.03);border-radius:8px;border:1px solid rgba(255,255,255,0.06);opacity:${isUnlocked?1:0.45}">
-          <span style="font-size:1.2rem">${showHidden ? a.icon : '🔒'}</span>
-          <b style="margin-left:6px;color:${isUnlocked?'#ffd060':'#777'}">${displayName}</b>
-          <span style="float:right;font-size:0.7rem;color:rgba(255,255,255,0.35)">${displayDesc}</span>
+        html += `<div style="flex:1 1 140px;max-width:180px;padding:8px 10px;background:rgba(255,255,255,${isUnlocked?'0.06':'0.02'});border-radius:8px;border:1px solid rgba(255,255,255,${isUnlocked?'0.1':'0.04'});opacity:${isUnlocked?1:0.4};text-align:center">
+          <div style="font-size:1.3rem">${a.icon}</div>
+          <div style="font-weight:700;font-size:0.8rem;color:${isUnlocked?tierColors[t]:'#555'};margin:3px 0">${a.name}</div>
+          <div style="font-size:0.65rem;color:rgba(255,255,255,0.3)">${a.desc}</div>
         </div>`;
       });
+      html += `</div>`;
     }
-    html += `<button class="menu-btn" id="btn-ach-back" style="margin-top:20px">← 返回主菜单</button></div>`;
+    // 🔒 隐藏成就区
+    html += `<div style="margin-top:16px;font-size:0.85rem;color:rgba(255,255,255,0.25);font-weight:700;border-bottom:1px solid rgba(255,255,255,0.04);padding-bottom:4px">🔒 隐藏成就 <span style="font-size:0.7rem">${hiddenUnlocked.length+hiddenLocked.length} 个</span></div>`;
+    html += `<div style="display:flex;flex-wrap:wrap;gap:5px">`;
+    [...hiddenLocked, ...hiddenUnlocked].forEach(a => {
+      const isUnlocked = !!this.unlocked[a.id];
+      html += `<div style="flex:1 1 140px;max-width:180px;padding:8px 10px;background:rgba(255,255,255,${isUnlocked?'0.08':'0.01'});border-radius:8px;border:1px solid rgba(255,255,255,${isUnlocked?'0.12':'0.03'});opacity:${isUnlocked?1:0.35};text-align:center">
+        <div style="font-size:1.3rem">${isUnlocked ? a.icon : '❓'}</div>
+        <div style="font-weight:700;font-size:0.8rem;color:${isUnlocked?'#ffd060':'#444'}">${isUnlocked ? (a.realName||a.name) : '???'}</div>
+        <div style="font-size:0.65rem;color:rgba(255,255,255,0.2)">${isUnlocked ? (a.realDesc||a.desc) : '???'}</div>
+      </div>`;
+    });
+    html += `</div></div>`;
     UI.app().innerHTML = html;
-    setTimeout(() => {
-      document.getElementById('btn-ach-back')?.addEventListener('click', () => UI.menu());
-    }, 50);
+    document.getElementById('btn-ach-back')?.addEventListener('click', () => UI.menu());
   }
 };
 
