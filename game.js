@@ -2847,6 +2847,18 @@ const Achievements = {
   }
 };
 
+// ── 📊 角色胜率统计 ──────────────────────────────────────────────────────────
+const CharStats = {
+  _KEY: 'stc_charstats',
+  data: { boxer:{wins:0,losses:0}, brute:{wins:0,losses:0}, racer:{wins:0,losses:0}, archer:{wins:0,losses:0} },
+  load() { try { const r = localStorage.getItem(this._KEY); if (r) Object.assign(this.data, JSON.parse(r)); } catch(e) {} },
+  save() { try { localStorage.setItem(this._KEY, JSON.stringify(this.data)); } catch(e) {} },
+  recordWin(id) { if (this.data[id]) { this.data[id].wins++; this.save(); } },
+  recordLoss(id) { if (this.data[id]) { this.data[id].losses++; this.save(); } },
+  winRate(id) { const d = this.data[id]; if (!d || d.wins+d.losses===0) return 0; return Math.round(d.wins/(d.wins+d.losses)*100); },
+  totalGames(id) { const d = this.data[id]; return d ? d.wins+d.losses : 0; }
+};
+
 // ── map.js
 const MapGen = {
   FLOORS:7,
@@ -3336,6 +3348,8 @@ const Combat = {
       // 延迟触发动画（等待手牌渲染完成）
       setTimeout(()=>UI._showMagnifierAnim(cs.magnifierHandIndex), 200);
     }
+    // 💬 入场台词（延迟以避免被战斗初始化提示覆盖）
+    setTimeout(() => UI.charLineFromId(run.character.id, 'enter'), 800);
   },
   drawCards(cs,n){
     setTimeout(()=>Audio.playCardDraw(),0);
@@ -3920,6 +3934,8 @@ const Combat = {
   },
   _tickDebuffs(entity){ const manual=new Set(['burn','freeze','wound']); Object.keys(entity.debuffs||{}).forEach(k=>{ if(!manual.has(k)) entity.debuffs[k]=Math.max(0,entity.debuffs[k]-1); }); },
   _onVictory(){ Audio.playVictory();
+    // 💬 胜利台词
+    UI.charLineFromId(State.run?.character?.id, 'victory');
     // ── 📊 战斗统计悬浮条（固定不消失）──
     const statsCs=State.run?.combat;
     if(statsCs){
@@ -6814,13 +6830,13 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
     let selected=null, cardStates={};
     const profiles = {
       boxer: { name:'铁拳', title:'愈伤愈狂', bio:'流浪格斗家，人称"铁拳"。被打得越惨，还手就越狠。',
-        lines: '🚪"来吧，拳头痒了三年了。" ✅"谁先动手不重要，谁站着。谁最重要。" 🏆"就这？" 💀"下一次…内脏都练硬给你看。"' },
+        lines: { enter:'来吧，拳头痒了三年了。', select:'谁先动手不重要，谁站着谁重要。', victory:'就这？', death:'下一次…内脏都练硬给你看。' } },
       brute: { name:'重剑', title:'力劈华山', bio:'山中樵夫出身，力大无穷。不善言辞，但手里的剑从不含糊。',
-        lines: '🚪"听说…上面有个打人的塔？" ✅"砍。" 🏆"小事。" 💀"我以为能再扛一下。"' },
+        lines: { enter:'听说…上面有个打人的塔？', select:'砍。', victory:'小事。', death:'我以为能再扛一下。' } },
       racer: { name:'狂飙', title:'死亡弯道', bio:'地下赛车手，弯道快才是真的快。把赛车换成了战斗，档位的肌肉记忆刻在骨子里。',
-        lines: '🚪"系好安全带——哦，你没有。" ✅"换挡。" 🏆"还没尽兴。" 💀"油…快没了。"' },
+        lines: { enter:'系好安全带——哦，你没有。', select:'换挡。', victory:'还没尽兴。', death:'油…快没了。' } },
       archer: { name:'银箭', title:'百步穿杨', bio:'林中猎手，箭无虚发。能听见百米外松鼠的心跳。',
-        lines: '🚪"风往南。" ✅"对准就够了。" 🏆"吐气…松弦。" 💀"…还差一点。"' }
+        lines: { enter:'风往南。', select:'对准就够了。', victory:'吐气…松弦。', death:'…还差一点。' } }
     };
     UI.app().innerHTML='<div class="char-select-screen slide-up"><h2 class="screen-title">选择角色</h2><div class="char-grid" id="char-grid"></div><div id="char-detail" style="font-size:0.9rem;color:var(--ink-light);min-height:20px"></div><div style="display:flex;gap:12px;margin-top:4px"><button class="btn" id="btn-back">← 返回</button><button class="btn primary" id="btn-start" disabled>开始冒险 →</button></div></div>';
     const grid=document.getElementById('char-grid');
@@ -6830,15 +6846,25 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
       cardStates[char.id] = 0;
       const counts={};char.startingDeck.forEach(id=>counts[id]=(counts[id]||0)+1);
       const deckNames=Object.entries(counts).map(([id,n])=>Data.cards[id]?.name+'×'+n||id).join(' · ');
+      const wr = CharStats.winRate(char.id);
+      const tg = CharStats.totalGames(char.id);
+      const wrText = tg > 0 ? ' | 胜率 '+wr+'% ('+tg+'局)' : '';
       // 初始渲染：保留原 UI 结构
-      card.innerHTML='<div class="char-figure" style="background:'+char.color+'22"><span style="font-size:4.5rem">'+char.emoji+'</span></div><div class="char-info"><div class="char-name" id="ci-name-'+char.id+'">'+char.name+'</div><div class="char-stat" id="ci-desc-'+char.id+'" style="font-size:1.0rem;margin-top:6px;color:rgba(255,255,255,0.75);line-height:1.5">❤️ '+char.maxHp+' HP<br><span style="font-size:0.9rem">'+char.description+'</span><br><span style="font-size:0.82rem;color:rgba(255,255,255,0.45)">🃏 '+deckNames+'</span></div></div>';
+      card.innerHTML='<div class="char-figure" style="background:'+char.color+'22"><span style="font-size:4.5rem">'+char.emoji+'</span></div><div class="char-info"><div class="char-name" id="ci-name-'+char.id+'">'+char.name+'</div><div class="char-stat" id="ci-desc-'+char.id+'" style="font-size:1.0rem;margin-top:6px;color:rgba(255,255,255,0.75);line-height:1.5">'+('❤️ '+char.maxHp+' HP<br><span style="font-size:0.9rem">'+char.description+'</span><br><span style="font-size:0.82rem;color:rgba(255,255,255,0.45)">🃏 '+deckNames+'</span>')+'</div></div>';
+      // 📖 角色详细指南按钮
+      const guideBtn = document.createElement('button');
+      guideBtn.className = 'btn';
+      guideBtn.style.cssText = 'position:absolute;top:6px;right:6px;padding:3px 9px;font-size:1rem;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.12);border-radius:6px;cursor:pointer;z-index:5';
+      guideBtn.textContent = '📖';
+      guideBtn.onclick = (e) => { e.stopPropagation(); UI.showCharacterGuide(char.id); };
+      card.appendChild(guideBtn);
       card.onclick=()=>{
         cardStates[char.id] = (cardStates[char.id] + 1) % 2;
         const s = cardStates[char.id];
         const nameEl = card.querySelector('#ci-name-'+char.id);
         const descEl = card.querySelector('#ci-desc-'+char.id);
         if (s === 0) {
-          nameEl.textContent = char.name;
+          nameEl.textContent = char.name + wrText;
           nameEl.style.color = '';
           descEl.innerHTML = '❤️ '+char.maxHp+' HP<br><span style="font-size:0.9rem">'+char.description+'</span><br><span style="font-size:0.82rem;color:rgba(255,255,255,0.45)">🃏 '+deckNames+'</span>';
           document.getElementById('char-detail').textContent = '点击查看角色档案';
@@ -6859,8 +6885,31 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
     document.getElementById('btn-back').onclick=()=>State.go('menu');
     document.getElementById('btn-start').onclick=()=>{
       if(!selected)return;
+      // 选中台词
+      const sp = profiles[selected];
+      if (sp && sp.lines && sp.lines.select) UI.charLineToast(sp.name, sp.lines.select);
       UI.showPreGameShop(selected);
     };
+  },
+
+  // 💬 角色台词气泡
+  charLineToast(name, line) {
+    const t = document.createElement('div');
+    t.style.cssText = 'position:fixed;bottom:120px;left:50%;transform:translateX(-50%);background:rgba(10,8,20,0.95);color:#e8d8f0;font-size:1.05rem;font-weight:600;padding:10px 22px;border-radius:14px;border:1px solid rgba(200,170,240,0.4);z-index:9999;pointer-events:none;animation:bubbleIn 0.3s ease;text-align:center';
+    t.innerHTML = '<span style="opacity:0.6">'+name+':</span> "'+line+'"';
+    document.body.appendChild(t);
+    setTimeout(() => { t.style.opacity='0'; t.style.transition='opacity 0.5s'; setTimeout(()=>t.remove(),500); }, 2500);
+  },
+  charLineFromId(charId, moment) {
+    const map = { boxer:'铁拳', brute:'重剑', racer:'狂飙', archer:'银箭' };
+    const lines = {
+      boxer: { enter:'来吧，拳头痒了三年了。', select:'谁先动手不重要，谁站着谁重要。', victory:'就这？', death:'下一次…内脏都练硬给你看。' },
+      brute: { enter:'听说…上面有个打人的塔？', select:'砍。', victory:'小事。', death:'我以为能再扛一下。' },
+      racer: { enter:'系好安全带——哦，你没有。', select:'换挡。', victory:'还没尽兴。', death:'油…快没了。' },
+      archer: { enter:'风往南。', select:'对准就够了。', victory:'吐气…松弦。', death:'…还差一点。' }
+    };
+    const l = lines[charId] && lines[charId][moment];
+    if (l) UI.charLineToast(map[charId] || charId, l);
   },
 
   dayanSelect(){
@@ -8561,6 +8610,10 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
   },
 
   gameOver(){ Audio.playGameOver(); Audio.stopAll();
+    // 💬 死亡台词
+    UI.charLineFromId(State.current.run?.character?.id, 'death');
+    // 📊 败率统计
+    CharStats.recordLoss(State.current.run?.character?.id);
     const run=State.current.run;
     UI.app().innerHTML=`<div class="menu-screen slide-up"><div style="font-size:5rem">💀</div><div class="screen-title" style="color:#e74c3c;text-shadow:0 0 20px rgba(231,76,60,0.5)">你倒下了</div><div style="font-size:1.2rem;color:rgba(255,255,255,0.8);margin-top:-8px">到达第 ${run?.floor??0} 层 · ${run?.character?.name??''}</div><button class="btn danger" style="margin-top:24px" onclick="State.current.run=null;State.go('menu')">返回主菜单</button></div>`;
   },
@@ -8963,6 +9016,8 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
       // 全员通关检测
       const allChars = ['win_boxer','win_brute','win_racer','win_archer'];
       if (allChars.every(a => Achievements.unlocked[a])) Achievements.unlock('all_chars');
+      // 📊 胜率统计
+      CharStats.recordWin(run.character?.id);
     }
     UI.app().innerHTML=`<div class="menu-screen bounce-in"><div style="font-size:5rem">🏆</div><div class="screen-title" style="color:var(--gold);text-shadow:0 0 30px rgba(241,196,15,0.6)">通关!</div><div style="font-size:1.2rem;color:rgba(255,255,255,0.85)">你击败了守护者！</div><button class="btn primary" style="margin-top:24px" onclick="State.current.run=null;State.go('menu')">返回主菜单</button></div>`;
   },
@@ -11982,6 +12037,7 @@ window.addEventListener('DOMContentLoaded', () => {
   Meta.load();
   Bestiary.load();
   Achievements.load();
+  CharStats.load();
   Audio.startBgmMenu();
   UI.menu();
 });
