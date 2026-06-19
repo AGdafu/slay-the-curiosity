@@ -2861,16 +2861,15 @@ const Meta = {
 
   // ── 雪花粒子（Canvas）──
   startSnow() {
-    if (this._snowInterval) return;
+    if (this._snowInterval) { clearInterval(this._snowInterval); this._snowInterval = null; }
     let canvas = document.getElementById('night-snow');
     if (!canvas) {
       canvas = document.createElement('canvas');
       canvas.id = 'night-snow';
-      canvas.style.cssText = 'position:fixed;inset:0;z-index:9999;pointer-events:none';
+      canvas.style.cssText = 'position:fixed;inset:0;z-index:99999;pointer-events:none';
       document.body.appendChild(canvas);
-    } else {
-      canvas.style.display = 'block';
     }
+    canvas.style.display = 'block';
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
     const ctx = canvas.getContext('2d');
