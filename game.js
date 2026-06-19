@@ -2585,6 +2585,11 @@ const State = {
       character:{id:char.id,name:char.name,emoji:char.emoji,color:char.color,hp:char.hp,maxHp:char.maxHp,block:0,buffs:{},debuffs:{}},
       floor:0,act:1,gold:({archer:75,racer:85,brute:99}[characterId]??99),deck:[...char.startingDeck],relics:[],pendingRelic:null,potions:[null,null,null],map:MapGen.generate(1),currentNodeId:null,combat:null
     };
+    // 🎴 起手选牌：将选中的牌加入起始牌组
+    if (this.current._starterPickCard) {
+      this.current.run.deck.push(this.current._starterPickCard);
+      this.current._starterPickCard = null;
+    }
     // 🧪 传家宝：下局随机普通遗物
     if (Meta.hasConsumable('heirloom')) {
       Meta.consumeNextRun('heirloom');
@@ -3386,6 +3391,9 @@ const Combat = {
       if (def.type === 'power') cs._temp = Math.max(0, cs._temp - 2);
       else if (def.type === 'attack') cs._temp = Math.max(0, cs._temp - 1);
     }
+    // ── 战斗统计 ──
+    if (def.type === 'attack') cs._totalDmgDealt = (cs._totalDmgDealt||0) + (dmgDealt||0);
+    cs._cardsPlayed = (cs._cardsPlayed||0) + 1;
     return true;
   },
   // 判断一个行动是否属于防御型（格挡/不包含攻击）
@@ -3771,6 +3779,7 @@ const Combat = {
     if (Meta.isNightMode() && absorbed > 0 && cs._temp !== undefined) {
       cs._temp = Math.max(0, cs._temp - 1);
     }
+    cs._totalBlocked = (cs._totalBlocked||0) + absorbed;
     if(actualPlayerDmg>0){
       // 超载：受到伤害时额外获得格挡（每层+1，最多3层）
       const overloadStacks=cs.player.buffs?.overload||0;
@@ -3855,8 +3864,23 @@ const Combat = {
   },
   _tickDebuffs(entity){ const manual=new Set(['burn','freeze','wound']); Object.keys(entity.debuffs||{}).forEach(k=>{ if(!manual.has(k)) entity.debuffs[k]=Math.max(0,entity.debuffs[k]-1); }); },
   _onVictory(){ Audio.playVictory();
+    // ── 战斗统计 ──
+    const run=State.run;const cs=run.combat;
+    const stats = {
+      dmgDealt: cs._totalDmgDealt || 0,
+      dmgBlocked: cs._totalBlocked || 0,
+      cardsPlayed: cs._cardsPlayed || 0,
+      turns: cs.turn || 0,
+    };
+    setTimeout(() => {
+      const tip = document.createElement('div');
+      tip.style.cssText = 'position:fixed;top:30%;left:50%;transform:translate(-50%,-50%);background:rgba(10,15,25,0.95);color:#c8d8f0;font-size:0.95rem;font-weight:600;padding:14px 24px;border-radius:14px;border:1px solid rgba(100,180,220,0.4);z-index:9999;pointer-events:none;box-shadow:0 4px 20px rgba(0,0,0,0.5);text-align:center;line-height:1.7';
+      tip.innerHTML = `📊 战斗统计<br>🗡️ 造成伤害: <b style="color:#ff7a6b">${stats.dmgDealt}</b> · 🛡 格挡吸收: <b style="color:#6bc5ff">${stats.dmgBlocked}</b><br>🃏 出牌: <b>${stats.cardsPlayed}</b> 张 · ⏱ 回合: <b>${stats.turns}</b>`;
+      document.body.appendChild(tip);
+      setTimeout(() => tip.remove(), 2800);
+    }, 150);
     // ── 骨灰币结算 ──
-    const run=State.run;run.character.hp=run.combat.player.hp;run.character.block=0;const node=run.map.nodes.find(n=>n.id===run.currentNodeId);if(node)node.done=true;
+    run.character.hp=run.combat.player.hp;run.character.block=0;const node=run.map.nodes.find(n=>n.id===run.currentNodeId);if(node)node.done=true;
     {
       let boneEarned = 0;
       if (node) {
@@ -8346,13 +8370,105 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
         }).join('')}
       </div>
       <button class="btn primary" style="width:100%;font-size:1.1rem;padding:12px" onclick="
-        State.startRun('${charId}');
-        const fs=Save.list().find(s=>!s.run)?.slot??0;
-        State.saveRun(fs);
-        if(Math.random()<0.5) UI.dayanSelect(); else UI.wangweiSelect();
+        if(Meta.hasConsumable('starterPick','${charId}')){ UI.showStarterPick('${charId}'); }
+        else {
+          State.startRun('${charId}');
+          const fs=Save.list().find(s=>!s.run)?.slot??0;
+          State.saveRun(fs);
+          if(Math.random()<0.5) UI.dayanSelect(); else UI.wangweiSelect();
+        }
       ">⚔️ 直接出征</button>
       </div>
     </div>`;
+  },
+
+  // ── 🎴 起手选牌界面 ──
+  showStarterPick(charId) {
+    const char = Data.characters.find(c => c.id === charId);
+    if (!char) return;
+    // 从角色奖励池中抽 5 张不同的卡
+    const pool = [...(Data.rewardPool[charId] || Data.rewardPool.default)];
+    // 洗牌后取前5张
+    for (let i = pool.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [pool[i], pool[j]] = [pool[j], pool[i]];
+    }
+    const picks = pool.slice(0, 5);
+    // 确保至少有5张（兜底）
+    while (picks.length < 5) {
+      const fallback = pool[Math.floor(Math.random() * pool.length)] || 'strike';
+      if (!picks.includes(fallback)) picks.push(fallback);
+    }
+    let selected = null;
+    const render = () => {
+      const app = UI.app();
+      app.innerHTML = `<div class="menu-screen slide-up" style="padding:24px 20px;color:#e0d8f0">
+        <div style="max-width:640px;margin:0 auto">
+          <div style="text-align:center;margin-bottom:20px">
+            <div style="font-size:2.2rem;margin-bottom:4px">🎴</div>
+            <div style="font-size:1.3rem;font-weight:800;color:#e0d8f0;margin-bottom:4px">起手选牌</div>
+            <div style="font-size:0.85rem;color:rgba(255,255,255,0.5)">选择 1 张牌加入起始牌组（库存消耗型）</div>
+          </div>
+          <div id="starter-pick-grid" style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap"></div>
+          <div style="display:flex;gap:12px;margin-top:20px;justify-content:center">
+            <button class="btn" id="btn-skip-pick" style="background:rgba(255,255,255,0.06);border-color:rgba(255,255,255,0.15);color:rgba(255,255,255,0.6)">跳过（放弃选牌）</button>
+            <button class="btn primary" id="btn-confirm-pick" style="opacity:0.35;pointer-events:none" disabled>确认选择</button>
+          </div>
+        </div>
+      </div>`;
+      const grid = document.getElementById('starter-pick-grid');
+      picks.forEach(cardId => {
+        const cardData = Data.cards[cardId];
+        if (!cardData) return;
+        const wrap = document.createElement('div');
+        wrap.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer';
+        const cardEl = UI.renderCard(cardId);
+        cardEl.style.cssText += ';transform:scale(0.78);transform-origin:top center;transition:transform 0.2s,filter 0.2s';
+        wrap.appendChild(cardEl);
+        wrap.addEventListener('click', () => {
+          // 取消选择
+          if (selected === cardId) {
+            selected = null;
+            render();
+            return;
+          }
+          selected = cardId;
+          render();
+        });
+        // 选中高亮
+        if (selected === cardId) {
+          wrap.style.cssText += ';outline:3px solid rgba(180,140,240,0.8);border-radius:14px;padding:4px';
+          cardEl.style.cssText += ';transform:scale(0.88);filter:brightness(1.2) drop-shadow(0 0 12px rgba(180,140,240,0.6))';
+        }
+        grid.appendChild(wrap);
+      });
+      // 确认按钮状态
+      const confirmBtn = document.getElementById('btn-confirm-pick');
+      const skipBtn = document.getElementById('btn-skip-pick');
+      if (selected) {
+        confirmBtn.style.opacity = '1';
+        confirmBtn.style.pointerEvents = 'auto';
+        confirmBtn.disabled = false;
+        confirmBtn.textContent = `确认：${Data.cards[selected]?.name || selected}`;
+      }
+      confirmBtn.onclick = () => {
+        if (!selected) return;
+        Meta.consumeNextRun('starterPick', charId);
+        State.current._starterPickCard = selected;
+        State.startRun(charId);
+        const fs = Save.list().find(s => !s.run)?.slot ?? 0;
+        State.saveRun(fs);
+        if (Math.random() < 0.5) UI.dayanSelect(); else UI.wangweiSelect();
+      };
+      skipBtn.onclick = () => {
+        // 放弃选牌，不消耗库存
+        State.startRun(charId);
+        const fs = Save.list().find(s => !s.run)?.slot ?? 0;
+        State.saveRun(fs);
+        if (Math.random() < 0.5) UI.dayanSelect(); else UI.wangweiSelect();
+      };
+    };
+    render();
   },
 
   gameOver(){ Audio.playGameOver(); Audio.stopAll();
