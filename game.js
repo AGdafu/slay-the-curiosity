@@ -327,15 +327,15 @@ const Data = {
 
     // ── 拳击手牌组 ───────────────────────────────────────────────────────────────────
     // 起始牌
-    box_jab:      { id:'box_jab',      rarity:'common',   name:'直拳',     cost:1, type:'attack', emoji:'🥊', needsTarget:true,
-      description:'造成 <b>6</b> 点伤害。',
-      effect(cs,ti,lv=0){ const base=[6,8,12][lv]||6; Combat.dealDamage(cs,ti,base+Combat._getBoxerBonus(cs)); } },
+    box_jab:      { id:'box_jab',      rarity:'common',   name:'左直拳',   cost:1, type:'attack', emoji:'🥊', needsTarget:true,
+      description:'造成 <b>5</b> 点伤害。',
+      effect(cs,ti,lv=0){ const base=[5,7,9][lv]||5; Combat.dealDamage(cs,ti,base+Combat._getBoxerBonus(cs)); } },
     box_guard:    { id:'box_guard',    rarity:'common',   name:'格挡步',   cost:1, type:'skill',  emoji:'🛡', needsTarget:false,
       description:'获得 <b>6</b> 点格挡。',
       effect(cs,ti,lv=0){ const blk=[6,8,11][lv]||6; Combat.gainBlock(cs,blk,true); } },
     box_cross:    { id:'box_cross',    rarity:'common',   name:'右直拳',   cost:1, type:'attack', emoji:'🤜', needsTarget:true,
-      description:'造成 <b>9</b> 点伤害。',
-      effect(cs,ti,lv=0){ const base=[9,12,15][lv]||9; Combat.dealDamage(cs,ti,base+Combat._getBoxerBonus(cs)); } },
+      description:'造成 <b>8</b> 点伤害。',
+      effect(cs,ti,lv=0){ const base=[8,11,14][lv]||8; Combat.dealDamage(cs,ti,base+Combat._getBoxerBonus(cs)); } },
     box_uppercut: { id:'box_uppercut', rarity:'uncommon', name:'上勾拳',   cost:2, type:'attack', emoji:'💥', needsTarget:true,
       description:'造成 <b>18</b> 点伤害。若上回合未受到伤害，仅造成 <b>8</b> 点。',
       effect(cs,ti,lv=0){ const tookDmg=(cs.damageTakenLastTurn||0)>0; const base=tookDmg?([18,22,26][lv]||18):([8,11,14][lv]||8); Combat.dealDamage(cs,ti,base+Combat._getBoxerBonus(cs)); } },
@@ -6083,8 +6083,8 @@ el.innerHTML=`<div class="card-type-bar"></div>${rarityTag}<div class="card-cost
         color:'#ff6b6b', accent:'rgba(255,107,107,0.15)',
         sections:[
           { title:'💢 愤怒（Fury）', color:'#ff6b6b', rows:[
-            { icon:'😤', label:'如何积累愤怒', desc:'敌人攻击阶段所有来袭伤害总量 ÷ 3（向下取整），无上限<br><span style="opacity:0.65;font-size:0.82em">被格挡吸收的部分也计入：来袭 10 伤即使全格挡也能 +3 愤怒</span>' },
-            { icon:'💢', label:'愤怒的效果', desc:'下回合所有攻击牌伤害 +愤怒点数<br><span style="opacity:0.65;font-size:0.82em">例：本回合敌人总来袭 24 点 → 下回合愤怒 = 8，每张攻击 +8</span>' },
+            { icon:'😤', label:'如何积累愤怒', desc:'敌人攻击阶段<b>实际扣血</b>总量 ÷ 3（向下取整），无上限<br><span style="opacity:0.65;font-size:0.82em">格挡抵消的部分<b>不计入</b>：必须穿透格挡才加愤怒</span>' },
+            { icon:'💢', label:'愤怒的效果', desc:'下回合所有攻击牌伤害 +愤怒点数<br><span style="opacity:0.65;font-size:0.82em">例：本回合实际掉血 12 点 → 下回合愤怒 = 4，每张攻击 +4</span>' },
             { icon:'🔄', label:'愤怒的消耗', desc:'回合结束时愤怒清零，由新一轮被攻击量重新计算' },
           ]},
           { title:'🩸 搏命（Berserk）', color:'#ff9f43', rows:[
@@ -9280,6 +9280,7 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
         tile.onmouseenter = () => { tile.style.background = `${char.color}30`; tile.style.borderColor = `${char.color}aa`; tile.style.transform = 'translateY(-4px)'; };
         tile.onmouseleave = () => { tile.style.background = `${char.color}18`; tile.style.borderColor = `${char.color}55`; tile.style.transform = ''; };
         tile.onclick = () => renderCharDetail(box, char);
+        tile.addEventListener('dblclick', (e) => { e.stopPropagation(); UI.showCharacterGuide(char.id); });
         grid.appendChild(tile);
       });
       box.appendChild(grid);
@@ -9587,7 +9588,6 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
       <div style="display:flex;align-items:center;gap:10px;padding:14px 22px;border-bottom:1px solid rgba(255,255,255,0.1);background:rgba(0,0,0,0.35);flex-shrink:0;">
         <div style="font-size:1.2rem;font-weight:800;color:#e8d8ff;margin-right:8px;">📚 游戏图鉴</div>
         <button id="dbt-cards">🃏 角色卡牌</button>
-        <button id="dbt-characters">🧑 角色档案</button>
         <button id="dbt-relics">💎 遗物</button>
         <button id="dbt-potions">🧪 药水</button>
         <button id="dbt-monsters">👾 怪物</button>
@@ -9598,12 +9598,11 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
     const box  = overlay.querySelector('#db-content');
     const btns = {
       cards:    overlay.querySelector('#dbt-cards'),
-      characters: overlay.querySelector('#dbt-characters'),
       relics:   overlay.querySelector('#dbt-relics'),
       potions:  overlay.querySelector('#dbt-potions'),
       monsters: overlay.querySelector('#dbt-monsters'),
     };
-    const renders = { cards: renderCards, characters: renderCharacters, relics: renderRelics, potions: renderPotions, monsters: renderMonsters };
+    const renders = { cards: renderCards, relics: renderRelics, potions: renderPotions, monsters: renderMonsters };
 
     function switchTab(tab) {
       box.scrollTop = 0;
