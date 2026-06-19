@@ -6827,7 +6827,7 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
         if (s === 0) {
           nameEl.textContent = char.name;
           nameEl.style.color = '';
-          descEl.innerHTML = char.description;
+          descEl.innerHTML = '❤️ '+char.maxHp+' HP<br><span style="font-size:0.9rem">'+char.description+'</span><br><span style="font-size:0.82rem;color:rgba(255,255,255,0.45)">🃏 '+deckNames+'</span>';
           document.getElementById('char-detail').textContent = '点击查看角色档案';
         } else {
           nameEl.textContent = (p.name||p.realName||char.name);
