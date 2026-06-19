@@ -6376,7 +6376,9 @@ el.innerHTML=`<div class="card-type-bar"></div>${rarityTag}<div class="card-cost
     },100);
   },
   menu(){
-    Meta.stopSnow(); Meta.startSnow();  // 主菜单确保有雪
+    Meta._nightActive = false;  // 退出暴风雪
+    ['night-veil','night-blood','night-ember','night-wind'].forEach(id => { const el = document.getElementById(id); if (el) el.style.display = 'none'; });
+    Meta.stopSnow(); Meta.startSnow();
     const saves=Save.list();const hasSave=saves.some(s=>s.run!==null);
     UI.app().innerHTML=`<div class="menu-screen slide-up">
       <div class="menu-title">好奇尖塔</div>
