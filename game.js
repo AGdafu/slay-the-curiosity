@@ -8382,93 +8382,51 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
     </div>`;
   },
 
-  // ── 🎴 起手选牌界面 ──
+  // ── 🎴 起手选牌（消耗 starterPick 后弹出 3 选 1）──
   showStarterPick(charId) {
     const char = Data.characters.find(c => c.id === charId);
     if (!char) return;
-    // 从角色奖励池中抽 5 张不同的卡
-    const pool = [...(Data.rewardPool[charId] || Data.rewardPool.default)];
-    // 洗牌后取前5张
-    for (let i = pool.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [pool[i], pool[j]] = [pool[j], pool[i]];
+    // 从角色卡池随机抽 3 张
+    const pool = (Data.cardsByCharacter && Data.cardsByCharacter[charId]) || [];
+    const shuffled = [...pool].sort(() => Math.random() - 0.5);
+    const picks = shuffled.slice(0, Math.min(3, shuffled.length));
+    if (picks.length === 0) {
+      // 无额外卡池，直接出征
+      State.startRun(charId);
+      const fs = Save.list().find(s => !s.run)?.slot ?? 0;
+      State.saveRun(fs);
+      if (Math.random() < 0.5) UI.dayanSelect(); else UI.wangweiSelect();
+      return;
     }
-    const picks = pool.slice(0, 5);
-    // 确保至少有5张（兜底）
-    while (picks.length < 5) {
-      const fallback = pool[Math.floor(Math.random() * pool.length)] || 'strike';
-      if (!picks.includes(fallback)) picks.push(fallback);
-    }
-    let selected = null;
-    const render = () => {
-      const app = UI.app();
-      app.innerHTML = `<div class="menu-screen slide-up" style="padding:24px 20px;color:#e0d8f0">
-        <div style="max-width:640px;margin:0 auto">
-          <div style="text-align:center;margin-bottom:20px">
-            <div style="font-size:2.2rem;margin-bottom:4px">🎴</div>
-            <div style="font-size:1.3rem;font-weight:800;color:#e0d8f0;margin-bottom:4px">起手选牌</div>
-            <div style="font-size:0.85rem;color:rgba(255,255,255,0.5)">选择 1 张牌加入起始牌组（库存消耗型）</div>
-          </div>
-          <div id="starter-pick-grid" style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap"></div>
-          <div style="display:flex;gap:12px;margin-top:20px;justify-content:center">
-            <button class="btn" id="btn-skip-pick" style="background:rgba(255,255,255,0.06);border-color:rgba(255,255,255,0.15);color:rgba(255,255,255,0.6)">跳过（放弃选牌）</button>
-            <button class="btn primary" id="btn-confirm-pick" style="opacity:0.35;pointer-events:none" disabled>确认选择</button>
-          </div>
+    // 消耗库存
+    Meta.consumeNextRun('starterPick', charId);
+    const app = UI.app();
+    app.innerHTML = `<div class="menu-screen slide-up" style="padding:30px 20px;color:#e0d8f0">
+      <div style="max-width:560px;margin:0 auto;width:100%">
+        <h2 style="color:#ffd060;margin:0 0 6px;font-size:1.5rem">🎴 起手选牌</h2>
+        <div style="font-size:0.85rem;color:rgba(255,255,255,0.5);margin-bottom:16px">选择 1 张牌加入起始牌组</div>
+        <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-bottom:20px" id="starter-picks">
         </div>
-      </div>`;
-      const grid = document.getElementById('starter-pick-grid');
-      picks.forEach(cardId => {
-        const cardData = Data.cards[cardId];
-        if (!cardData) return;
-        const wrap = document.createElement('div');
-        wrap.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer';
-        const cardEl = UI.renderCard(cardId);
-        cardEl.style.cssText += ';transform:scale(0.78);transform-origin:top center;transition:transform 0.2s,filter 0.2s';
-        wrap.appendChild(cardEl);
-        wrap.addEventListener('click', () => {
-          // 取消选择
-          if (selected === cardId) {
-            selected = null;
-            render();
-            return;
-          }
-          selected = cardId;
-          render();
-        });
-        // 选中高亮
-        if (selected === cardId) {
-          wrap.style.cssText += ';outline:3px solid rgba(180,140,240,0.8);border-radius:14px;padding:4px';
-          cardEl.style.cssText += ';transform:scale(0.88);filter:brightness(1.2) drop-shadow(0 0 12px rgba(180,140,240,0.6))';
-        }
-        grid.appendChild(wrap);
-      });
-      // 确认按钮状态
-      const confirmBtn = document.getElementById('btn-confirm-pick');
-      const skipBtn = document.getElementById('btn-skip-pick');
-      if (selected) {
-        confirmBtn.style.opacity = '1';
-        confirmBtn.style.pointerEvents = 'auto';
-        confirmBtn.disabled = false;
-        confirmBtn.textContent = `确认：${Data.cards[selected]?.name || selected}`;
-      }
-      confirmBtn.onclick = () => {
-        if (!selected) return;
-        Meta.consumeNextRun('starterPick', charId);
-        State.current._starterPickCard = selected;
+      </div>
+    </div>`;
+    const container = document.getElementById('starter-picks');
+    picks.forEach(cardId => {
+      const def = Data.cards[cardId];
+      if (!def) return;
+      const card = document.createElement('div');
+      card.style.cssText = 'width:140px;background:rgba(20,15,35,0.9);border:1px solid rgba(255,255,255,0.12);border-radius:12px;padding:14px 10px;text-align:center;cursor:pointer;transition:all 0.2s';
+      card.innerHTML = `<div style="font-size:2.5rem">${def.emoji||'🃏'}</div><div style="font-weight:700;color:#fff;margin:4px 0">${def.name}</div><div style="font-size:0.75rem;color:rgba(255,255,255,0.55)">${def.type||''} · 费用${def.cost}</div><div style="font-size:0.72rem;color:rgba(255,255,255,0.45);margin-top:4px">${def.description||''}</div>`;
+      card.onmouseenter = () => { card.style.borderColor = 'rgba(255,210,80,0.6)'; card.style.transform = 'translateY(-4px)'; };
+      card.onmouseleave = () => { card.style.borderColor = 'rgba(255,255,255,0.12)'; card.style.transform = ''; };
+      card.onclick = () => {
         State.startRun(charId);
+        State.run.deck.push(cardId);
         const fs = Save.list().find(s => !s.run)?.slot ?? 0;
         State.saveRun(fs);
         if (Math.random() < 0.5) UI.dayanSelect(); else UI.wangweiSelect();
       };
-      skipBtn.onclick = () => {
-        // 放弃选牌，不消耗库存
-        State.startRun(charId);
-        const fs = Save.list().find(s => !s.run)?.slot ?? 0;
-        State.saveRun(fs);
-        if (Math.random() < 0.5) UI.dayanSelect(); else UI.wangweiSelect();
-      };
-    };
-    render();
+      container.appendChild(card);
+    });
   },
 
   gameOver(){ Audio.playGameOver(); Audio.stopAll();
