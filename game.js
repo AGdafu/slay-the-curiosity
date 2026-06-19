@@ -2880,8 +2880,8 @@ const Meta = {
         x: Math.random() * canvas.width,
         y: Math.random() * canvas.height,
         r: (Meta._nightActive ? Math.random() * 4 + 1 : Math.random() * 2.5 + 0.8),
-        speed: (Meta._nightActive ? Math.random() * 2.5 + 0.8 : Math.random() * 1.2 + 0.4),
-        wind: (Meta._nightActive ? Math.random() * 1.5 - 0.5 : Math.random() * 0.6 - 0.3),
+        speed: (Meta._nightActive ? Math.random() * 3.5 + 1.2 : Math.random() * 1.2 + 0.4),
+        wind: (Meta._nightActive ? Math.random() * 2 - 0.7 : Math.random() * 0.6 - 0.3),
         opacity: Math.random() * 0.6 + 0.3,
       });
     }
@@ -6437,6 +6437,29 @@ el.innerHTML=`<div class="card-type-bar"></div>${rarityTag}<div class="card-cost
             flash.style.cssText = 'position:fixed;inset:0;z-index:92;pointer-events:none;background:rgba(200,180,220,0.08);animation:flashBoom 0.15s ease-out';
             document.body.appendChild(flash);
             setTimeout(() => flash.remove(), 200);
+            // ⚡ 闪电形状
+            const bolt = document.createElement('canvas');
+            bolt.style.cssText = 'position:fixed;inset:0;z-index:93;pointer-events:none';
+            bolt.width = window.innerWidth; bolt.height = window.innerHeight;
+            document.body.appendChild(bolt);
+            const bctx = bolt.getContext('2d');
+            const startX = Math.random() * bolt.width * 0.6 + bolt.width * 0.15;
+            const drawBolt = (x, y, len, angle) => {
+              if (len < 5 || y > bolt.height) return;
+              bctx.beginPath(); bctx.moveTo(x, y);
+              const endX = x + Math.cos(angle) * len;
+              const endY = y + Math.sin(angle) * len;
+              bctx.lineTo(endX, endY);
+              bctx.strokeStyle = 'rgba(200,220,255,0.9)';
+              bctx.lineWidth = len > 20 ? 3 : 1.5;
+              bctx.shadowColor = 'rgba(180,200,255,0.8)';
+              bctx.shadowBlur = 10;
+              bctx.stroke();
+              if (Math.random() < 0.4) drawBolt(endX, endY, len * 0.4, angle + (Math.random() - 0.5) * 1.2);
+              else if (Math.random() < 0.6) drawBolt(endX, endY, len * 0.7, angle + (Math.random() - 0.5) * 0.6);
+            };
+            drawBolt(startX, 0, 40 + Math.random() * 30, Math.PI * 0.45);
+            setTimeout(() => bolt.remove(), 250);
           }
         }, 3000);
         // 🔥 余烬粒子
@@ -7533,6 +7556,29 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
             flash.style.cssText = 'position:fixed;inset:0;z-index:92;pointer-events:none;background:rgba(200,180,220,0.08);animation:flashBoom 0.15s ease-out';
             document.body.appendChild(flash);
             setTimeout(() => flash.remove(), 200);
+            // ⚡ 闪电形状
+            const bolt = document.createElement('canvas');
+            bolt.style.cssText = 'position:fixed;inset:0;z-index:93;pointer-events:none';
+            bolt.width = window.innerWidth; bolt.height = window.innerHeight;
+            document.body.appendChild(bolt);
+            const bctx = bolt.getContext('2d');
+            const startX = Math.random() * bolt.width * 0.6 + bolt.width * 0.15;
+            const drawBolt = (x, y, len, angle) => {
+              if (len < 5 || y > bolt.height) return;
+              bctx.beginPath(); bctx.moveTo(x, y);
+              const endX = x + Math.cos(angle) * len;
+              const endY = y + Math.sin(angle) * len;
+              bctx.lineTo(endX, endY);
+              bctx.strokeStyle = 'rgba(200,220,255,0.9)';
+              bctx.lineWidth = len > 20 ? 3 : 1.5;
+              bctx.shadowColor = 'rgba(180,200,255,0.8)';
+              bctx.shadowBlur = 10;
+              bctx.stroke();
+              if (Math.random() < 0.4) drawBolt(endX, endY, len * 0.4, angle + (Math.random() - 0.5) * 1.2);
+              else if (Math.random() < 0.6) drawBolt(endX, endY, len * 0.7, angle + (Math.random() - 0.5) * 0.6);
+            };
+            drawBolt(startX, 0, 40 + Math.random() * 30, Math.PI * 0.45);
+            setTimeout(() => bolt.remove(), 250);
           }
         }, 3000);
       }
