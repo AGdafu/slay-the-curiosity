@@ -6850,7 +6850,7 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
         } else {
           nameEl.textContent = (p.realName||char.name);
           nameEl.style.color = char.color;
-          descEl.innerHTML = '<span style="font-size:0.85rem;color:rgba(255,255,255,0.65);line-height:1.5">'+p.bio+'</span><div style="margin-top:6px;font-size:0.78rem;color:rgba(255,255,255,0.4)">'+p.lines+'</div>';
+          descEl.innerHTML = '<span style="font-size:0.85rem;color:rgba(255,255,255,0.8);line-height:1.5">'+p.bio+'</span>';
           document.getElementById('char-detail').textContent = '再点返回角色界面';
         }
         // 选中
@@ -7766,7 +7766,7 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
         </div>
         <div style="flex-shrink:0;font-size:0.8rem;color:rgba(255,255,255,0.5);white-space:nowrap">点击拾取</div>
       </div>` : '';
-    UI.app().innerHTML=`<div style="position:relative;width:100%;height:100%"><div class="reward-screen">${relicSection}${(()=>{const cs=run.combat;return cs?`<div style="display:flex;gap:16px;justify-content:center;padding:6px 0;margin:4px 0;font-size:0.82rem;color:rgba(255,255,255,0.4);flex-wrap:wrap"><span>⚔️出牌 ${cs._cardsPlayed||0}</span><span>🔄回合 ${cs.turn||0}</span><span>💥造成 ${cs._totalDmgDealt||0}</span><span>🩸承受 ${cs._totalDmgTaken||0}</span></div>`:'';})()}<div class="reward-title bounce-in" style="font-size:1.3rem;margin-bottom:4px">⚔️ 战斗胜利!</div><div class="reward-subtitle">选择一张卡牌加入牌组</div><div class="reward-cards" id="reward-cards"></div><button class="btn" id="btn-skip" style="margin-top:4px;background:rgba(255,255,255,0.08);border-color:rgba(255,255,255,0.2);color:rgba(255,255,255,0.9)">跳过</button></div></div>`;
+    UI.app().innerHTML=`<div style="position:relative;width:100%;height:100%"><div class="reward-screen">${relicSection}${(()=>{const cs=run.combat;return cs?`<div style="display:flex;gap:14px;justify-content:center;padding:8px 0;margin:2px 0 8px;font-size:0.9rem;color:#c8d8f0;flex-wrap:wrap;background:rgba(10,15,25,0.8);border-radius:10px;border:1px solid rgba(100,180,220,0.3)"><span>🗡️造成 <b style="color:#ff7a6b">${cs._totalDmgDealt||0}</b></span><span>🛡格挡 <b style="color:#6bc5ff">${cs._totalBlocked||0}</b></span><span>🃏出牌 <b>${cs._cardsPlayed||0}</b></span><span>⏱回合 <b>${cs.turn||0}</b></span></div>`:'';})()}<div class="reward-title bounce-in" style="font-size:1.3rem;margin-bottom:4px">⚔️ 战斗胜利!</div><div class="reward-subtitle">选择一张卡牌加入牌组</div><div class="reward-cards" id="reward-cards"></div><button class="btn" id="btn-skip" style="margin-top:4px;background:rgba(255,255,255,0.08);border-color:rgba(255,255,255,0.2);color:rgba(255,255,255,0.9)">跳过</button></div></div>`;
     const container=document.getElementById('reward-cards');
     rewardCards.forEach((cardId,i)=>{
       const wrap=document.createElement('div');wrap.className='reward-card-wrap';const back=document.createElement('div');back.className='card-back';back.textContent='🎴';wrap.appendChild(back);container.appendChild(wrap);
