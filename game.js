@@ -6412,7 +6412,8 @@ el.innerHTML=`<div class="card-type-bar"></div>${rarityTag}<div class="card-cost
       bt.style.cssText = 'margin-top:8px;padding:6px 14px;background:rgba(200,180,240,0.1);border:1px solid rgba(200,180,240,0.3);border-radius:8px;color:#c0a0e0;cursor:pointer;font-size:0.85rem';
       bt.onclick = () => {
         Meta._nightActive = true;
-        Meta.startSnow();
+        Meta.stopSnow();  // 重置雪花
+        Meta.startSnow(); // 以暴风雪速度重新创建
         // 🌑 暗黑猩红覆盖
         let veil = document.getElementById('night-veil');
         if (!veil) {
@@ -7571,6 +7572,7 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
     // ── 🌑 永夜模式：激活仅本次战斗 ──
     if (Meta.isPurchased('nightMode')) {
       Meta._nightActive = true;
+      Meta.stopSnow();
       Meta.startSnow();
       // 🌑 暗黑猩红覆盖
       let veil = document.getElementById('night-veil');
