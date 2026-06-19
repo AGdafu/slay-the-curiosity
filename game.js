@@ -6433,7 +6433,7 @@ el.innerHTML=`<div class="card-type-bar"></div>${rarityTag}<div class="card-cost
         blood.style.display = 'block';
         // ⚡ 闪电效果
         Meta._nightLightning = setInterval(() => {
-          if (Math.random() < 0.3) {
+          if (Math.random() < 0.45) {
             const flash = document.createElement('div');
             flash.style.cssText = 'position:fixed;inset:0;z-index:92;pointer-events:none;background:rgba(200,180,220,0.08);animation:flashBoom 0.15s ease-out';
             document.body.appendChild(flash);
@@ -6470,26 +6470,28 @@ el.innerHTML=`<div class="card-type-bar"></div>${rarityTag}<div class="card-cost
           document.body.appendChild(windC);
           windC.width = window.innerWidth; windC.height = window.innerHeight;
           const wctx = windC.getContext('2d');
-          const windLines = Array.from({length:15}, () => ({
-            x: windC.width + Math.random()*200, y: Math.random()*windC.height*0.5,
-            len: 60+Math.random()*120, life: Math.random(), speed: -(8+Math.random()*12),
-            curve: (Math.random()-0.5)*60
+          const windLines = Array.from({length:8}, () => ({
+            x: Math.random()*windC.width*0.6, y: -10,
+            len: 60+Math.random()*120, life: Math.random(),
+            speedX: 6+Math.random()*10, speedY: 3+Math.random()*5,
+            curve: (Math.random()-0.5)*40
           }));
           Meta._windInterval = setInterval(() => {
             wctx.clearRect(0,0,windC.width,windC.height);
             windLines.forEach(w => {
               wctx.beginPath();
-              const midX = w.x + w.len*0.5;
-              const midY = w.y + Math.sin(w.life*8) * w.curve;
+              const midX = w.x + w.len*0.7;
+              const midY = w.y + w.len*0.3 + Math.sin(w.life*8) * w.curve;
               wctx.moveTo(w.x, w.y);
-              wctx.quadraticCurveTo(midX, midY, w.x + w.len, midY + Math.cos(w.life*5)*15);
+              wctx.quadraticCurveTo(midX, midY, w.x + w.len, w.y + w.len*0.5 + Math.cos(w.life*5)*10);
               wctx.strokeStyle = `rgba(200,220,245,${w.life*0.35})`;
               wctx.lineWidth = 1.8; wctx.stroke();
-              w.x += w.speed; w.life -= 0.008;
-              if (w.life <= 0 || w.x < -150) {
-                w.x = windC.width + Math.random()*200; w.y = Math.random()*windC.height*0.5;
-                w.life = 1; w.len = 60+Math.random()*120; w.speed = -(8+Math.random()*12);
-                w.curve = (Math.random()-0.5)*60;
+              w.x += w.speedX; w.y += w.speedY; w.life -= 0.01;
+              if (w.life <= 0 || w.y > windC.height + 50 || w.x > windC.width + 50) {
+                w.x = Math.random()*windC.width*0.6; w.y = -10;
+                w.life = 1; w.len = 60+Math.random()*120;
+                w.speedX = 6+Math.random()*10; w.speedY = 3+Math.random()*5;
+                w.curve = (Math.random()-0.5)*40;
               }
             });
           }, 33);
@@ -7594,7 +7596,7 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
       // ⚡ 闪电
       if (!Meta._nightLightning) {
         Meta._nightLightning = setInterval(() => {
-          if (Math.random() < 0.3) {
+          if (Math.random() < 0.45) {
             const flash = document.createElement('div');
             flash.style.cssText = 'position:fixed;inset:0;z-index:92;pointer-events:none;background:rgba(200,180,220,0.08);animation:flashBoom 0.15s ease-out';
             document.body.appendChild(flash);
@@ -7631,26 +7633,28 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
           document.body.appendChild(windC);
           windC.width = window.innerWidth; windC.height = window.innerHeight;
           const wctx = windC.getContext('2d');
-          const windLines = Array.from({length:15}, () => ({
-            x: windC.width + Math.random()*200, y: Math.random()*windC.height*0.5,
-            len: 60+Math.random()*120, life: Math.random(), speed: -(8+Math.random()*12),
-            curve: (Math.random()-0.5)*60
+          const windLines = Array.from({length:8}, () => ({
+            x: Math.random()*windC.width*0.6, y: -10,
+            len: 60+Math.random()*120, life: Math.random(),
+            speedX: 6+Math.random()*10, speedY: 3+Math.random()*5,
+            curve: (Math.random()-0.5)*40
           }));
           Meta._windInterval = setInterval(() => {
             wctx.clearRect(0,0,windC.width,windC.height);
             windLines.forEach(w => {
               wctx.beginPath();
-              const midX = w.x + w.len*0.5;
-              const midY = w.y + Math.sin(w.life*8) * w.curve;
+              const midX = w.x + w.len*0.7;
+              const midY = w.y + w.len*0.3 + Math.sin(w.life*8) * w.curve;
               wctx.moveTo(w.x, w.y);
-              wctx.quadraticCurveTo(midX, midY, w.x + w.len, midY + Math.cos(w.life*5)*15);
+              wctx.quadraticCurveTo(midX, midY, w.x + w.len, w.y + w.len*0.5 + Math.cos(w.life*5)*10);
               wctx.strokeStyle = `rgba(200,220,245,${w.life*0.35})`;
               wctx.lineWidth = 1.8; wctx.stroke();
-              w.x += w.speed; w.life -= 0.008;
-              if (w.life <= 0 || w.x < -150) {
-                w.x = windC.width + Math.random()*200; w.y = Math.random()*windC.height*0.5;
-                w.life = 1; w.len = 60+Math.random()*120; w.speed = -(8+Math.random()*12);
-                w.curve = (Math.random()-0.5)*60;
+              w.x += w.speedX; w.y += w.speedY; w.life -= 0.01;
+              if (w.life <= 0 || w.y > windC.height + 50 || w.x > windC.width + 50) {
+                w.x = Math.random()*windC.width*0.6; w.y = -10;
+                w.life = 1; w.len = 60+Math.random()*120;
+                w.speedX = 6+Math.random()*10; w.speedY = 3+Math.random()*5;
+                w.curve = (Math.random()-0.5)*40;
               }
             });
           }, 33);
