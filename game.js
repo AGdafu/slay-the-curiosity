@@ -7193,9 +7193,11 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
   },
 
   // 💬 角色台词气泡
-  charLineToast(name, line) {
+  charLineToast(name, line, center) {
     const t = document.createElement('div');
-    t.style.cssText = 'position:fixed;bottom:120px;left:50%;transform:translateX(-50%);background:rgba(10,8,20,0.95);color:#e8d8f0;font-size:1.05rem;font-weight:600;padding:10px 22px;border-radius:14px;border:1px solid rgba(200,170,240,0.4);z-index:9999;pointer-events:none;animation:bubbleIn 0.3s ease;text-align:center';
+    t.style.cssText = center
+      ? 'position:fixed;top:45%;left:50%;transform:translate(-50%,-50%);background:rgba(10,8,20,0.95);color:#e8d8f0;font-size:1.15rem;font-weight:600;padding:12px 26px;border-radius:14px;border:1px solid rgba(200,170,240,0.5);z-index:9999;pointer-events:none;animation:bubbleIn 0.3s ease;text-align:center;box-shadow:0 4px 20px rgba(100,50,150,0.3)'
+      : 'position:fixed;bottom:120px;left:50%;transform:translateX(-50%);background:rgba(10,8,20,0.95);color:#e8d8f0;font-size:1.05rem;font-weight:600;padding:10px 22px;border-radius:14px;border:1px solid rgba(200,170,240,0.4);z-index:9999;pointer-events:none;animation:bubbleIn 0.3s ease;text-align:center';
     t.innerHTML = '<span style="opacity:0.6">'+name+':</span> "'+line+'"';
     document.body.appendChild(t);
     setTimeout(() => { t.style.opacity='0'; t.style.transition='opacity 0.5s'; setTimeout(()=>t.remove(),500); }, 2500);
@@ -7203,13 +7205,35 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
   charLineFromId(charId, moment) {
     const map = { boxer:'铁拳', brute:'重剑', racer:'狂飙', archer:'银箭' };
     const lines = {
-      boxer: { enter:'来吧，拳头痒了三年了。', select:'谁先动手不重要，谁站着谁重要。', victory:'就这？', death:'下一次…内脏都练硬给你看。' },
-      brute: { enter:'听说…上面有个打人的塔？', select:'砍。', victory:'小事。', death:'我以为能再扛一下。' },
-      racer: { enter:'系好安全带——哦，你没有。', select:'换挡。', victory:'还没尽兴。', death:'油…快没了。' },
-      archer: { enter:'风往南。', select:'对准就够了。', victory:'吐气…松弦。', death:'…还差一点。' }
+      boxer: {
+        enter: ['来吧，拳头痒了三年了。','这塔里……有拳击台吗？','深呼吸……闻到血腥味了。','今天手感不错。'],
+        select: ['谁先动手不重要，谁站着谁重要。','选我？眼光不错。','准备好了吗？我没打算等你。'],
+        victory: ['就这？','下一场。','热身而已。','还没出汗呢。'],
+        death: ['下一次…内脏都练硬给你看。','挨打也是训练的一部分……','咳……我还能再挨一拳……']
+      },
+      brute: {
+        enter: ['听说…上面有个打人的塔？','剑够重就行，脑子不重要。','砍。','今天砍柴……哦不，砍怪。'],
+        select: ['砍。','走吧。','不用说了，动手。'],
+        victory: ['小事。','下一个。','还没用全力。'],
+        death: ['我以为能再扛一下。','剑……太重了……','砍不动了……']
+      },
+      racer: {
+        enter: ['系好安全带——哦，你没有。','油加满了，走。','弯道快才是真的快。','今天的赛道是这座塔。'],
+        select: ['换挡。','飙起来。','来赛一场。'],
+        victory: ['还没尽兴。','太快了，看不清。','再快一点。'],
+        death: ['油…快没了。','引擎……熄火了……','翻车了……']
+      },
+      archer: {
+        enter: ['风往南。','我听见了……它的心跳。','三百米外，正中靶心。','今天的风很适合狩猎。'],
+        select: ['对准就够了。','交给我。','箭已在弦。'],
+        victory: ['吐气…松弦。','一击必中。','猎物已死。'],
+        death: ['…还差一点。','箭……射偏了……','风……停了。']
+      }
     };
-    const l = lines[charId] && lines[charId][moment];
-    if (l) UI.charLineToast(map[charId] || charId, l);
+    const arr = lines[charId] && lines[charId][moment];
+    if (!arr) return;
+    const l = arr[Math.floor(Math.random() * arr.length)];
+    UI.charLineToast(map[charId] || charId, l, moment === 'enter');
   },
 
   dayanSelect(){
