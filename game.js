@@ -2,8 +2,8 @@
 const Data = {
   characters: [
     {
-      id: 'boxer', name: '拳击手', emoji: '🥊', color: '#c0392b',
-      hp: 90, maxHp: 90, description: '越战越勇的拳击手。受击积累愤怒，血量越低出拳越狠。',
+      id: 'boxer', name: '铁拳', emoji: '🥊', color: '#c0392b',
+      hp: 90, maxHp: 90, description: '愈伤愈狂。受击积累愤怒，血量越低出拳越狠。',
       startingDeck: ['box_jab','box_jab','box_jab','box_jab','box_guard','box_guard','box_guard','box_cross','box_cross','box_uppercut'],
       detail: {
         gold: 80,
@@ -16,8 +16,8 @@ const Data = {
       }
     },
     {
-      id: 'brute', name: '战士', emoji: '⚔️', color: '#2e86c1',
-      hp: 85, maxHp: 85, description: '就是力气大。攻击敌人会留下永久「重伤」标记，每层让你对该敌人 +1 伤害。',
+      id: 'brute', name: '重剑', emoji: '⚔️', color: '#2e86c1',
+      hp: 85, maxHp: 85, description: '力劈华山。攻击留下永久「重伤」标记，越打越疼。',
       startingDeck: ['strike','strike','strike','strike','strike','strike','defend','defend','defend','clash'],
       detail: {
         gold: 85,
@@ -32,8 +32,8 @@ const Data = {
       }
     },
     {
-      id: 'racer', name: '赛车手', emoji: '🏎️', color: '#e67e22',
-      hp: 80, maxHp: 80, description: '档位系统角色。通过换挡在攻守之间切换，高档爆发伤害，低档厚实防御。',
+      id: 'racer', name: '狂飙', emoji: '🏎️', color: '#e67e22',
+      hp: 80, maxHp: 80, description: '死亡弯道。档位系统，高档爆发伤害，低档厚实防御。',
       startingDeck: ['gear_strike','gear_strike','gear_strike','gear_strike','gear_defend','gear_defend','gear_defend','gear_shift','gear_shift','gear_brake'],
       detail: {
         gold: 90,
@@ -46,8 +46,8 @@ const Data = {
       }
     },
     {
-      id: 'archer', name: '射手', emoji: '🏹', color: '#27ae60',
-      hp: 72, maxHp: 72, description: '蓄力型角色。每回合多抽 1 张牌（手牌 6 张），打出技能牌积累蓄力，在关键时刻一击爆发。',
+      id: 'archer', name: '银箭', emoji: '🏹', color: '#27ae60',
+      hp: 72, maxHp: 72, description: '百步穿杨。蓄力型角色，积累蓄力在关键时刻一击爆发。',
       startingDeck: ['ar_shoot','ar_shoot','ar_shoot','ar_shoot','ar_dodge','ar_dodge','ar_dodge','ar_aim','ar_aim','ar_sprint'],
       detail: {
         gold: 85,
@@ -2818,10 +2818,10 @@ const Achievements = {
 
   LIST: {
     first_win:       { name:'初次通关', desc:'第一次击败最终Boss', icon:'🏆' },
-    win_boxer:        { name:'拳拳到肉', desc:'用拳击手通关', icon:'🥊' },
-    win_brute:        { name:'力大无穷', desc:'用战士通关', icon:'⚔️' },
-    win_racer:        { name:'极速传说', desc:'用赛车手通关', icon:'🏎️' },
-    win_archer:       { name:'百步穿杨', desc:'用弓箭手通关', icon:'🏹' },
+    win_boxer:        { name:'拳拳到肉', desc:'用铁拳通关', icon:'🥊' },
+    win_brute:        { name:'力大无穷', desc:'用重剑通关', icon:'⚔️' },
+    win_racer:        { name:'极速传说', desc:'用狂飙通关', icon:'🏎️' },
+    win_archer:       { name:'百步穿杨', desc:'用银箭通关', icon:'🏹' },
     kill_50:          { name:'清道夫', desc:'累计击败50个敌人', icon:'💀' },
     kill_100:         { name:'屠戮者', desc:'累计击败100个敌人', icon:'☠️' },
     cards_100:        { name:'牌佬', desc:'累计打出100张牌', icon:'🃏' },
@@ -3920,22 +3920,8 @@ const Combat = {
   },
   _tickDebuffs(entity){ const manual=new Set(['burn','freeze','wound']); Object.keys(entity.debuffs||{}).forEach(k=>{ if(!manual.has(k)) entity.debuffs[k]=Math.max(0,entity.debuffs[k]-1); }); },
   _onVictory(){ Audio.playVictory();
-    // ── 战斗统计 ──
-    const run=State.run;const cs=run.combat;
-    const stats = {
-      dmgDealt: cs._totalDmgDealt || 0,
-      dmgBlocked: cs._totalBlocked || 0,
-      cardsPlayed: cs._cardsPlayed || 0,
-      turns: cs.turn || 0,
-    };
-    setTimeout(() => {
-      const tip = document.createElement('div');
-      tip.style.cssText = 'position:fixed;top:12%;left:50%;transform:translate(-50%,-50%);background:rgba(10,15,25,0.95);color:#c8d8f0;font-size:0.95rem;font-weight:600;padding:14px 24px;border-radius:14px;border:1px solid rgba(100,180,220,0.4);z-index:9999;pointer-events:none;box-shadow:0 4px 20px rgba(0,0,0,0.5);text-align:center;line-height:1.7';
-      tip.innerHTML = `📊 战斗统计<br>🗡️ 造成伤害: <b style="color:#ff7a6b">${stats.dmgDealt}</b> · 🛡 格挡吸收: <b style="color:#6bc5ff">${stats.dmgBlocked}</b><br>🃏 出牌: <b>${stats.cardsPlayed}</b> 张 · ⏱ 回合: <b>${stats.turns}</b>`;
-      document.body.appendChild(tip);
-      setTimeout(() => tip.remove(), 2800);
-    }, 150);
     // ── 骨灰币结算 ──
+    const run=State.run;
     run.character.hp=run.combat.player.hp;run.character.block=0;const node=run.map.nodes.find(n=>n.id===run.currentNodeId);if(node)node.done=true;
     {
       let boneEarned = 0;
@@ -6067,7 +6053,7 @@ el.innerHTML=`<div class="card-type-bar"></div>${rarityTag}<div class="card-cost
 
     const guides={
       racer:{
-        emoji:'🏎️', name:'赛车手',
+        emoji:'🏎️', name:'狂飙',
         color:'#ff7d7d', accent:'rgba(255,125,125,0.15)',
         sections:[
           { title:'⚙️ 档位系统', color:'#ff7d7d', rows:[
@@ -6084,7 +6070,7 @@ el.innerHTML=`<div class="card-type-bar"></div>${rarityTag}<div class="card-cost
         ]
       },
       boxer:{
-        emoji:'🥊', name:'拳击手',
+        emoji:'🥊', name:'铁拳',
         color:'#ff6b6b', accent:'rgba(255,107,107,0.15)',
         sections:[
           { title:'💢 愤怒（Fury）', color:'#ff6b6b', rows:[
@@ -6101,7 +6087,7 @@ el.innerHTML=`<div class="card-type-bar"></div>${rarityTag}<div class="card-cost
         ]
       },
       archer:{
-        emoji:'🏹', name:'弓箭手',
+        emoji:'🏹', name:'银箭',
         color:'#74d7ff', accent:'rgba(116,215,255,0.15)',
         sections:[
           { title:'⚡ 蓄力系统', color:'#74d7ff', rows:[
@@ -6117,7 +6103,7 @@ el.innerHTML=`<div class="card-type-bar"></div>${rarityTag}<div class="card-cost
         ]
       },
       brute:{
-        emoji:'⚔️', name:'战士',
+        emoji:'⚔️', name:'重剑',
         color:'#a8d8ff', accent:'rgba(168,216,255,0.15)',
         sections:[
           { title:'🩸 重伤 wound', color:'#e74c3c', rows:[
