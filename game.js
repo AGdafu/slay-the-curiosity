@@ -47,7 +47,7 @@ const Data = {
     },
     {
       id: 'archer', name: '射手', emoji: '🏹', color: '#27ae60',
-      hp: 72, maxHp: 72, description: '百步穿杨。蓄力型角色，积累蓄力在关键时刻一击爆发。',
+      hp: 75, maxHp: 75, description: '百步穿杨。蓄力型角色，积累蓄力在关键时刻一击爆发。',
       startingDeck: ['ar_shoot','ar_shoot','ar_shoot','ar_shoot','ar_dodge','ar_dodge','ar_dodge','ar_aim','ar_aim','ar_sprint'],
       detail: {
         gold: 85,
@@ -3803,7 +3803,7 @@ const Combat = {
     // 一回合内同一敌人只叠加 1 层，全程被格挡抵消则不加
     if(State.run?.character?.id==='brute' && actualDmg>0 && !enemy._dead && !enemy._bruteWoundedThisTurn){
       if(!enemy.debuffs) enemy.debuffs={};
-      enemy.debuffs.wound = (enemy.debuffs.wound||0) + 1;
+      enemy.debuffs.wound = Math.min(10, (enemy.debuffs.wound||0) + 1);
       enemy._bruteWoundedThisTurn = true;
     }
     // 死亡判定：HP≤0 立即标记死亡并归零（修复柠檬水等绕过 playCard 的伤害源）
@@ -3827,9 +3827,9 @@ const Combat = {
         setTimeout(()=>tip.remove(),1800);
       },50);
     }
-    // 拳击手愤怒累计：基于原始来袭伤害（含被格挡部分），不受血量是否被扣影响
-    if(dmg>0 && State.run?.character?.id==='boxer') cs.damageTakenThisEnemyPhase=(cs.damageTakenThisEnemyPhase||0)+dmg;
     const absorbed=Math.min(cs.player.block,dmg);cs.player.block=Math.max(0,cs.player.block-absorbed);const actualPlayerDmg=dmg-absorbed;cs.player.hp-=actualPlayerDmg;
+    // 拳击手愤怒累计：只计算未被格挡的实际伤害 ÷ 3
+    if(State.run?.character?.id==='boxer') cs.damageTakenThisEnemyPhase=(cs.damageTakenThisEnemyPhase||0)+actualPlayerDmg;
     cs._totalDmgTaken = (cs._totalDmgTaken||0) + actualPlayerDmg;
     // 🌑 永夜：格挡成功取暖 -1
     if (Meta.isNightMode() && absorbed > 0 && cs._temp !== undefined) {
