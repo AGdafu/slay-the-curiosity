@@ -2868,6 +2868,8 @@ const Meta = {
       canvas.id = 'night-snow';
       canvas.style.cssText = 'position:fixed;inset:0;z-index:101;pointer-events:none';
       document.body.appendChild(canvas);
+    } else {
+      canvas.style.display = 'block';
     }
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
@@ -2904,8 +2906,9 @@ const Meta = {
   },
   stopSnow() {
     if (this._snowInterval) { clearInterval(this._snowInterval); this._snowInterval = null; }
+    // 不删 canvas，只隐藏——保留跨界面
     const canvas = document.getElementById('night-snow');
-    if (canvas) canvas.remove();
+    if (canvas) { canvas.style.display = 'none'; canvas.width = 0; canvas.height = 0; }
   },
 
 };
@@ -6403,6 +6406,8 @@ el.innerHTML=`<div class="card-type-bar"></div>${rarityTag}<div class="card-cost
       tb.style.cssText = 'margin-top:16px;padding:6px 14px;background:rgba(180,200,240,0.1);border:1px solid rgba(180,200,240,0.3);border-radius:8px;color:#a0c0e0;cursor:pointer;font-size:0.85rem';
       tb.onclick = () => {
         Meta._snowActive = !Meta._snowActive;
+        if (Meta._snowActive) { Meta.stopSnow(); Meta.startSnow(); }
+        else Meta.stopSnow();
         tb.textContent = Meta._snowActive ? '⏹ 停止下雪' : '🌨️ 开始下雪';
       };
       document.querySelector('.menu-screen')?.appendChild(tb);
