@@ -9336,6 +9336,13 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
         tile.onmouseleave = () => { tile.style.background = `${char.color}18`; tile.style.borderColor = `${char.color}55`; tile.style.transform = ''; };
         tile.onclick = () => renderCharDetail(box, char);
         tile.addEventListener('dblclick', (e) => { e.stopPropagation(); UI.showCharacterGuide(char.id); });
+        // 📖 指南按钮
+        const gBtn = document.createElement('button');
+        gBtn.style.cssText = 'position:absolute;top:10px;right:10px;padding:3px 8px;font-size:1rem;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.15);border-radius:6px;color:rgba(255,255,255,0.6);cursor:pointer;z-index:5';
+        gBtn.textContent = '📖';
+        gBtn.onclick = (e) => { e.stopPropagation(); UI.showCharacterGuide(char.id); };
+        tile.style.position = 'relative';
+        tile.appendChild(gBtn);
         grid.appendChild(tile);
       });
       box.appendChild(grid);
