@@ -2937,18 +2937,38 @@ const Achievements = {
   unlocked: {},
 
   LIST: {
-    first_win:       { name:'初次通关', desc:'第一次击败最终Boss', icon:'🏆' },
-    win_boxer:        { name:'拳拳到肉', desc:'用铁拳通关', icon:'🥊' },
-    win_brute:        { name:'力大无穷', desc:'用重剑通关', icon:'⚔️' },
-    win_racer:        { name:'极速传说', desc:'用狂飙通关', icon:'🏎️' },
-    win_archer:       { name:'百步穿杨', desc:'用银箭通关', icon:'🏹' },
-    kill_50:          { name:'清道夫', desc:'累计击败50个敌人', icon:'💀' },
-    kill_100:         { name:'屠戮者', desc:'累计击败100个敌人', icon:'☠️' },
-    cards_100:        { name:'牌佬', desc:'累计打出100张牌', icon:'🃏' },
-    relics_10:        { name:'收藏家', desc:'累计获得10个遗物', icon:'💎' },
-    gold_500:         { name:'暴发户', desc:'单局持有500金币', icon:'💰' },
-    no_damage_boss:   { name:'完美无伤', desc:'Boss战全程不受伤害', icon:'🛡️' },
-    all_chars:        { name:'全员集结', desc:'所有角色全部通关', icon:'🌟' },
+    // 🥇 阶梯成就
+    kill_50:       { name:'清道夫',    desc:'累计击败50个敌人',     icon:'💀', tier:1, next:'kill_100' },
+    kill_100:      { name:'屠戮者',    desc:'累计击败100个敌人',    icon:'☠️', tier:2, next:'kill_200' },
+    kill_200:      { name:'死神之影',  desc:'累计击败200个敌人',    icon:'👻', tier:3 },
+    cards_50:      { name:'入门牌手',  desc:'累计打出50张牌',       icon:'🃏', tier:1, next:'cards_100' },
+    cards_100:     { name:'牌佬',      desc:'累计打出100张牌',      icon:'🎴', tier:2, next:'cards_300' },
+    cards_300:     { name:'牌王',      desc:'累计打出300张牌',      icon:'👑', tier:3 },
+    relics_5:      { name:'小收藏家',  desc:'累计获得5个遗物',      icon:'💍', tier:1, next:'relics_10' },
+    relics_10:     { name:'收藏家',    desc:'累计获得10个遗物',     icon:'💎', tier:2, next:'relics_20' },
+    relics_20:     { name:'遗物狂',    desc:'累计获得20个遗物',     icon:'👁️', tier:3 },
+    gold_300:      { name:'小有积蓄',  desc:'单局持有300金币',      icon:'🪙', tier:1, next:'gold_500' },
+    gold_500:      { name:'暴发户',    desc:'单局持有500金币',      icon:'💰', tier:2, next:'gold_999' },
+    gold_999:      { name:'富可敌塔',  desc:'单局持有999金币',      icon:'💎', tier:3 },
+    runs_5:        { name:'常客',      desc:'累计进行5次远征',      icon:'🚶', tier:1, next:'runs_20' },
+    runs_20:       { name:'塔中老手',  desc:'累计进行20次远征',     icon:'🏃', tier:2, next:'runs_50' },
+    runs_50:       { name:'以塔为家',  desc:'累计进行50次远征',     icon:'🏠', tier:3 },
+    hp_never_below_50: { name:'坚不可摧', desc:'单局从未低于50%HP并通关', icon:'🛡️', tier:2, next:'hp_never_below_80' },
+    hp_never_below_80: { name:'铜墙铁壁', desc:'单局从未低于80%HP并通关', icon:'🏰', tier:3 },
+    // 通关成就
+    first_win:     { name:'初次通关',  desc:'第一次击败最终Boss',    icon:'🏆', tier:1 },
+    win_boxer:     { name:'拳拳到肉',  desc:'用铁拳通关',            icon:'🥊', tier:1 },
+    win_brute:     { name:'力大无穷',  desc:'用重剑通关',            icon:'⚔️', tier:1 },
+    win_racer:     { name:'极速传说',  desc:'用狂飙通关',            icon:'🏎️', tier:1 },
+    win_archer:    { name:'百步穿杨',  desc:'用银箭通关',            icon:'🏹', tier:1 },
+    all_chars:     { name:'全员集结',  desc:'四个角色全部通关',      icon:'🌟', tier:2 },
+    no_damage_boss:{ name:'完美无伤',  desc:'Boss战全程不受伤害',    icon:'🛡️', tier:3 },
+    // 🔒 隐藏成就（解锁后才显示名字和描述）
+    secret_potion: { name:'???', desc:'???', icon:'🔒', tier:1, hidden:true, realName:'药剂师', realDesc:'单局使用5瓶以上药水' },
+    secret_curse:  { name:'???', desc:'???', icon:'🔒', tier:2, hidden:true, realName:'受诅者', realDesc:'单局获得3张以上诅咒牌' },
+    secret_ember:  { name:'???', desc:'???', icon:'🔒', tier:2, hidden:true, realName:'薪王', realDesc:'永夜模式累计度过10个篝火' },
+    secret_oneshot:{ name:'???', desc:'???', icon:'🔒', tier:3, hidden:true, realName:'一击必杀', realDesc:'单次攻击造成100点以上伤害' },
+    secret_speedrun:{ name:'???', desc:'???', icon:'🔒', tier:3, hidden:true, realName:'闪电侠', realDesc:'10回合内击败Boss' },
   },
 
   load() { try { const r = localStorage.getItem(this._KEY); if (r) this.unlocked = JSON.parse(r); } catch(e) {} },
@@ -2959,9 +2979,11 @@ const Achievements = {
     this.save();
     const a = this.LIST[id];
     if (!a) return;
+    const displayName = a.realName || a.name;
+    const displayDesc = a.realDesc || a.desc;
     const t = document.createElement('div');
     t.style.cssText = 'position:fixed;top:20%;left:50%;transform:translate(-50%,-50%);background:rgba(20,10,40,0.95);color:#ffd060;font-size:1.2rem;font-weight:900;padding:14px 28px;border-radius:16px;border:2px solid rgba(255,210,96,0.6);z-index:9999;pointer-events:none;box-shadow:0 0 30px rgba(255,210,96,0.3);animation:bubbleIn 0.4s ease';
-    t.innerHTML = `${a.icon} <b>成就解锁！</b><br><span style="font-size:0.95rem;color:#fff">${a.name}</span><br><span style="font-size:0.75rem;color:rgba(255,255,255,0.5)">${a.desc}</span>`;
+    t.innerHTML = `${a.icon} <b>成就解锁！</b><br><span style="font-size:0.95rem;color:#fff">${displayName}</span><br><span style="font-size:0.75rem;color:rgba(255,255,255,0.5)">${displayDesc}</span>`;
     document.body.appendChild(t);
     setTimeout(() => t.remove(), 3000);
   },
@@ -2971,16 +2993,31 @@ const Achievements = {
     const total = Object.keys(this.LIST).length;
     let html = `<div class="menu-screen slide-up"><div class="menu-title">🏆 成就</div>
       <div style="text-align:center;color:rgba(255,255,255,0.5);margin-bottom:16px">${done}/${total} 已解锁</div>`;
+    const tiers = {1:[], 2:[], 3:[]};
     for (const [id, a] of Object.entries(this.LIST)) {
-      const isUnlocked = !!this.unlocked[id];
-      html += `<div style="margin:6px 0;padding:10px 16px;background:rgba(255,255,255,0.04);border-radius:10px;border:1px solid rgba(255,255,255,0.08);opacity:${isUnlocked?1:0.35}">
-        <span style="font-size:1.4rem">${isUnlocked ? a.icon : '🔒'}</span>
-        <b style="margin-left:8px;color:${isUnlocked?'#ffd060':'#888'}">${a.name}</b>
-        <span style="float:right;font-size:0.75rem;color:rgba(255,255,255,0.4)">${a.desc}</span>
-      </div>`;
+      (tiers[a.tier||1]||tiers[1]).push({id, ...a});
     }
-    html += `<button class="menu-btn" onclick="UI.menu()" style="margin-top:20px">← 返回</button></div>`;
+    const tierColors = {1:'#aaa', 2:'#f5c518', 3:'#e74c3c'};
+    const tierLabels = {1:'🥉 初级', 2:'🥈 中级', 3:'🥇 高级'};
+    for (const t of [1,2,3]) {
+      html += `<div style="margin-top:12px;font-size:0.85rem;color:${tierColors[t]};font-weight:700">${tierLabels[t]}</div>`;
+      tiers[t].forEach(a => {
+        const isUnlocked = !!this.unlocked[a.id];
+        const showHidden = !a.hidden || isUnlocked;
+        const displayName = (!isUnlocked && a.hidden) ? '???' : (isUnlocked ? (a.realName || a.name) : a.name);
+        const displayDesc = (!isUnlocked && a.hidden) ? '???' : (isUnlocked ? (a.realDesc || a.desc) : a.desc);
+        html += `<div style="margin:4px 0;padding:8px 14px;background:rgba(255,255,255,0.03);border-radius:8px;border:1px solid rgba(255,255,255,0.06);opacity:${isUnlocked?1:0.45}">
+          <span style="font-size:1.2rem">${showHidden ? a.icon : '🔒'}</span>
+          <b style="margin-left:6px;color:${isUnlocked?'#ffd060':'#777'}">${displayName}</b>
+          <span style="float:right;font-size:0.7rem;color:rgba(255,255,255,0.35)">${displayDesc}</span>
+        </div>`;
+      });
+    }
+    html += `<button class="menu-btn" id="btn-ach-back" style="margin-top:20px">← 返回主菜单</button></div>`;
     UI.app().innerHTML = html;
+    setTimeout(() => {
+      document.getElementById('btn-ach-back')?.addEventListener('click', () => UI.menu());
+    }, 50);
   }
 };
 
