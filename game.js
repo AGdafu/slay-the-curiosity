@@ -3930,7 +3930,7 @@ const Combat = {
     };
     setTimeout(() => {
       const tip = document.createElement('div');
-      tip.style.cssText = 'position:fixed;top:30%;left:50%;transform:translate(-50%,-50%);background:rgba(10,15,25,0.95);color:#c8d8f0;font-size:0.95rem;font-weight:600;padding:14px 24px;border-radius:14px;border:1px solid rgba(100,180,220,0.4);z-index:9999;pointer-events:none;box-shadow:0 4px 20px rgba(0,0,0,0.5);text-align:center;line-height:1.7';
+      tip.style.cssText = 'position:fixed;top:12%;left:50%;transform:translate(-50%,-50%);background:rgba(10,15,25,0.95);color:#c8d8f0;font-size:0.95rem;font-weight:600;padding:14px 24px;border-radius:14px;border:1px solid rgba(100,180,220,0.4);z-index:9999;pointer-events:none;box-shadow:0 4px 20px rgba(0,0,0,0.5);text-align:center;line-height:1.7';
       tip.innerHTML = `📊 战斗统计<br>🗡️ 造成伤害: <b style="color:#ff7a6b">${stats.dmgDealt}</b> · 🛡 格挡吸收: <b style="color:#6bc5ff">${stats.dmgBlocked}</b><br>🃏 出牌: <b>${stats.cardsPlayed}</b> 张 · ⏱ 回合: <b>${stats.turns}</b>`;
       document.body.appendChild(tip);
       setTimeout(() => tip.remove(), 2800);
