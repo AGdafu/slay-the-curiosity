@@ -6376,6 +6376,7 @@ el.innerHTML=`<div class="card-type-bar"></div>${rarityTag}<div class="card-cost
     },100);
   },
   menu(){
+    Meta.stopSnow(); Meta.startSnow();  // 主菜单确保有雪
     const saves=Save.list();const hasSave=saves.some(s=>s.run!==null);
     UI.app().innerHTML=`<div class="menu-screen slide-up">
       <div class="menu-title">好奇尖塔</div>
@@ -7123,6 +7124,7 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
   },
 
   characterSelect(){
+    Meta.stopSnow(); Meta.startSnow();  // 确保选角页有雪
     let selected=null, cardStates={};
     const profiles = {
       boxer: { name:'铁拳', title:'愈伤愈狂', bio:'流浪格斗家，人称"铁拳"。被打得越惨，还手就越狠。',
