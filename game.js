@@ -6809,6 +6809,7 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
       racer: { name:'狂飙', title:'死亡弯道', bio:'地下赛车手，弯道快才是真的快。因欠下巨额赌债被追杀，逃进这座塔里。把赛车换成了战斗，但档位系统的肌肉记忆刻在骨子里——升挡、降挡、加速、漂移，一样不少。' },
       archer: { name:'银箭', title:'百步穿杨', bio:'林中猎手，箭无虚发。从小被父亲训练成猎人，能听见百米外松鼠的心跳。她说"风往南"的时候，箭已经在你胸口了。沉默寡言，但每一箭都带故事。' }
     };
+    UI.app().innerHTML='<div class="char-select-screen slide-up"><h2 class="screen-title">选择角色</h2><div class="char-grid" id="char-grid"></div><div id="char-detail" style="font-size:0.9rem;color:var(--ink-light);min-height:20px"></div><div style="display:flex;gap:12px;margin-top:4px"><button class="btn" id="btn-back">← 返回</button><button class="btn primary" id="btn-start" disabled>开始冒险 →</button></div></div>';
     const grid=document.getElementById('char-grid');
     Data.characters.forEach(char=>{
       const p = profiles[char.id] || {};
