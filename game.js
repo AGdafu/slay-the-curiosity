@@ -983,6 +983,27 @@ const Data = {
       desc: '每场战斗胜利后，永久增加 1 点最大HP（无上限）。',
       apply(run){ run.relics.push('xiaocao_sprout'); }
     },
+    // ── 🆕 新遗物 ──
+    { id: 'blood_oath', name: '血誓之书', icon: '🩸', tier: 'uncommon', source: 'battle',
+      desc: '每次选「跳过」卡牌奖励时,永久+2最大HP。', apply(run){ run.relics.push('blood_oath'); } },
+    { id: 'thunder_wood', name: '雷击木', icon: '⚡', tier: 'common', source: 'battle',
+      desc: '每当你使用0费牌，对随机敌人造成3点伤害。', apply(run){ run.relics.push('thunder_wood'); } },
+    { id: 'causal_chain', name: '因果锁链', icon: '🔗', tier: 'epic', source: 'battle',
+      desc: '你对敌人造成的过量伤害会转移给另一个随机敌人。', apply(run){ run.relics.push('causal_chain'); } },
+    { id: 'beast_tooth', name: '巨兽牙', icon: '🦷', tier: 'common', source: 'battle',
+      desc: '对满血敌人的第一击伤害翻倍。', apply(run){ run.relics.push('beast_tooth'); } },
+    { id: 'mist_cloak', name: '雾隐斗篷', icon: '🌫️', tier: 'uncommon', source: 'battle',
+      desc: '每场战斗第1回合敌人无法攻击（必定防御/buff）。', apply(run){ run.relics.push('mist_cloak'); } },
+    { id: 'ember_heart', name: '余烬之心', icon: '🔥', tier: 'rare', source: 'battle',
+      desc: '每当你扣血时，下回合抽牌+1。', apply(run){ run.relics.push('ember_heart'); } },
+    { id: 'blade_fang', name: '刃牙', icon: '🔪', tier: 'common', source: 'battle',
+      desc: '攻击牌对满血敌人+3伤害。', apply(run){ run.relics.push('blade_fang'); } },
+    { id: 'ghost_lantern', name: '幽魂灯', icon: '🕯️', tier: 'common', source: 'battle',
+      desc: '每击败2个敌人，永久+1最大HP。', apply(run){ run.relics.push('ghost_lantern'); run._ghostLanternKills = 0; } },
+    { id: 'blood_moon', name: '血月徽章', icon: '🩸', tier: 'rare', source: 'battle',
+      desc: '回合开始时若HP≤50%，获得1点能量。', apply(run){ run.relics.push('blood_moon'); } },
+    { id: 'storm_eye', name: '风暴眼', icon: '🌪️', tier: 'rare', source: 'battle',
+      desc: '第5回合自动对所有敌人造成15点伤害。', apply(run){ run.relics.push('storm_eye'); } },
   ],
   // source 字段说明：'battle'=战斗掉落，'event'=事件专属，'shop'=商店专属，'boss'=Boss专属
   // 未来新增特殊来源遗物时，设置对应 source 值即可自动从战斗掉落池中排除
@@ -1551,6 +1572,100 @@ const Data = {
         run.character.hp = cs.player.hp;
         if (dmg === 0) return '满血状态威力为零……但至少恢复了 5 HP！';
         return `酸力爆发！对 ${hits} 个敌人各造成 ${dmg} 点伤害，并恢复了 5 HP！`;
+      }
+    },
+
+    // ── 🆕 新道具 ──
+    dice: {
+      id: 'dice', name: '命运骰子', emoji: '🎲', tier: 'uncommon', sellPrice: 60,
+      desc: '投掷骰子：1-3→全敌8伤 / 4-5→12格挡 / 6→+2能量',
+      use(run, cs) {
+        if (!cs) return '只能在战斗中使用！';
+        const roll = 1 + Math.floor(Math.random() * 6);
+        if (roll <= 3) { cs.enemies.forEach((e, i) => { if (!e._dead) Combat.dealDamage(cs, i, 8); }); return '🎲 掷出'+roll+'！对所有敌人造成 8 点伤害！'; }
+        else if (roll <= 5) { Combat.gainBlock(cs, 12, true); return '🎲 掷出'+roll+'！获得 12 点格挡！'; }
+        else { cs.energy += 2; return '🎲 掷出 6！获得 2 点能量！'; }
+      }
+    },
+    scroll: {
+      id: 'scroll', name: '破旧卷轴', emoji: '📜', tier: 'uncommon', sellPrice: 55,
+      desc: '手牌随机2张免费升级，30%概率烧掉1张',
+      use(run, cs) {
+        if (!cs) return '只能在战斗中使用！';
+        const candidates = cs.hand.filter((id, i) => !cs.handUpgrades || (cs.handUpgrades[i]||0) < 2);
+        if (candidates.length === 0) return '没有可升级的牌！';
+        const pick = candidates.slice(0, Math.min(2, candidates.length));
+        if (!cs.handUpgrades) cs.handUpgrades = {};
+        pick.forEach(id => { const idx = cs.hand.indexOf(id); if (idx !== -1) cs.handUpgrades[idx] = (cs.handUpgrades[idx]||0) + 1; });
+        const burned = Math.random() < 0.3 && pick.length > 0;
+        if (burned) { const bi = cs.hand.indexOf(pick[0]); if (bi !== -1) { cs.exhaustPile.push(cs.hand.splice(bi, 1)[0]); } return '📜 升级了 '+pick.length+' 张牌，但一张牌化为了灰烬…'; }
+        return '📜 成功升级了 '+pick.length+' 张牌！';
+      }
+    },
+    mushroom: {
+      id: 'mushroom', name: '毒蘑菇', emoji: '🍄', tier: 'common', sellPrice: 45,
+      desc: '本回合+2力量，下回合跳过抽牌阶段',
+      use(run, cs) {
+        if (!cs) return '只能在战斗中使用！';
+        Combat.applyBuff(cs.player, 'strength', 2);
+        cs._skipDrawNextTurn = true;
+        return '🍄 吃下毒蘑菇！本回合+2力量，但下回合无法抽牌…';
+      }
+    },
+    bell: {
+      id: 'bell', name: '丧钟', emoji: '🔔', tier: 'rare', sellPrice: 90,
+      desc: '标记一个敌人：3回合后直接死亡（Boss→受40伤）',
+      use(run, cs) {
+        if (!cs) return '只能在战斗中使用！';
+        const alive = cs.enemies.map((e,i)=>({e,i})).filter(x=>!x.e._dead);
+        if (alive.length === 0) return '没有存活的敌人！';
+        const target = alive[0];
+        target.e._bellTurns = 3; target.e._bellDmg = 40;
+        return '🔔 丧钟敲响！' + target.e.name + ' 将在 3 回合后死亡！';
+      }
+    },
+    rope: {
+      id: 'rope', name: '绞索', emoji: '🪢', tier: 'uncommon', sellPrice: 50,
+      desc: '敌人下回合无法行动，但受到伤害减半',
+      use(run, cs) {
+        if (!cs) return '只能在战斗中使用！';
+        cs.enemies.forEach(e => { if (!e._dead) { e._roped = true; e._ropeDmgHalve = true; } });
+        return '🪢 敌人被绞索束缚！下回合无法行动，但受伤减半。';
+      }
+    },
+    pigeon: {
+      id: 'pigeon', name: '信鸽', emoji: '🕊️', tier: 'rare', sellPrice: 75,
+      desc: '立刻跳过当前战斗，不拿奖励直接去下一层',
+      use(run, cs) {
+        if (!cs) return '只能在战斗中使用！';
+        cs.phase = 'victory'; Combat._onVictory();
+        return '🕊️ 信鸽飞走！你趁机溜了，但对局不算获胜…';
+      }
+    },
+    lighter: {
+      id: 'lighter', name: '火折子', emoji: '🔥', tier: 'common', sellPrice: 40,
+      desc: '烧掉手牌全部诅咒牌，每烧1张对随机敌人5伤',
+      use(run, cs) {
+        if (!cs) return '只能在战斗中使用！';
+        let burned = 0;
+        for (let i = cs.hand.length-1; i >= 0; i--) {
+          if (Data.cards[cs.hand[i]]?.type === 'curse') { cs.exhaustPile.push(cs.hand.splice(i, 1)[0]); burned++; }
+        }
+        if (burned === 0) return '手牌中没有诅咒牌！';
+        for (let b = 0; b < burned; b++) {
+          const alive = cs.enemies.map((e,i)=>({e,i})).filter(x=>!x.e._dead);
+          if (alive.length > 0) { const t = alive[Math.floor(Math.random()*alive.length)]; Combat.dealDamage(cs, t.i, 5); }
+        }
+        return '🔥 烧掉了 '+burned+' 张诅咒牌，对敌人造成 '+burned*5+' 点伤害！';
+      }
+    },
+    web: {
+      id: 'web', name: '蛛网袋', emoji: '🕸️', tier: 'uncommon', sellPrice: 55,
+      desc: '所有敌人获得2层减速+1层虚弱',
+      use(run, cs) {
+        if (!cs) return '只能在战斗中使用！';
+        cs.enemies.forEach(e => { if (!e._dead) { Combat.applyDebuff(e, 'slow', 2); Combat.applyDebuff(e, 'weak', 1); } });
+        return '🕸️ 蛛网撒下！所有敌人减速+虚弱！';
       }
     }
   },
@@ -3462,6 +3577,11 @@ const Combat = {
     }
     // ── 战斗统计 ──
     cs._cardsPlayed = (cs._cardsPlayed||0) + 1;
+    // ⚡ 雷击木：0费牌随机敌人3伤
+    if (effectiveCost === 0 && State.run?.relics?.includes('thunder_wood')) {
+      const al = cs.enemies.filter(e => !e._dead && e.hp > 0);
+      if (al.length > 0) Combat.dealDamage(cs, cs.enemies.indexOf(al[Math.floor(Math.random()*al.length)]), 3);
+    }
     return true;
   },
   // 判断一个行动是否属于防御型（格挡/不包含攻击）
@@ -3607,6 +3727,14 @@ const Combat = {
       }
     }
     cs.turn++;cs.phase='player';cs.energy=cs.maxEnergy;
+    // 🔥 余烬之心：上回合扣血累积的额外抽牌
+    if (cs._emberDrawNext > 0) { Combat.drawCards(cs, cs._emberDrawNext); cs._emberDrawNext = 0; }
+    // 🩸 血月徽章：HP≤50%时+1能量
+    if (State.run?.relics?.includes('blood_moon') && cs.player.hp <= cs.player.maxHp * 0.5) cs.energy += 1;
+    // 🌪️ 风暴眼：第5回合对所有敌人15伤
+    if (State.run?.relics?.includes('storm_eye') && cs.turn === 5) {
+      cs.enemies.forEach((e, i) => { if (!e._dead && e.hp > 0) Combat.dealDamage(cs, i, 15); });
+    }
     // ── 🌑 永夜模式：失温值 + 暴风雪 ──
     if (Meta.isNightMode()) {
       // 失温值初始化
@@ -3808,7 +3936,11 @@ const Combat = {
     // 战士被动「重伤」：每层 wound +1 伤害
     const _bruteBonus = (State.run?.character?.id==='brute') ? (enemy.debuffs?.wound||0) : 0;
     let dmg=amount+(cs.player.buffs.strength||0)+_bruteBonus;
-    // 速度感攻击加成：30-59=+2，>=60=+5
+    // 🦷 巨兽牙：对满血敌人的第一击伤害翻倍
+    if (State.run?.relics?.includes('beast_tooth') && enemy.hp === enemy.maxHp) dmg *= 2;
+    // 🔪 刃牙：攻击牌对满血敌人+3伤害
+    if (State.run?.relics?.includes('blade_fang') && enemy.hp === enemy.maxHp) dmg += 3;
+    // 速度感攻击加成
     if(State.run?.character?.id==='racer'){ const _spd=cs.speed||0; if(_spd>=60) dmg+=5; else if(_spd>=30) dmg+=2; } if((enemy.debuffs.vulnerable||0)>0)dmg=Math.floor(dmg*1.5); if((cs.player.debuffs.weak||0)>0)dmg=Math.floor(dmg*0.75); if((cs.player.debuffs.slow||0)>0)dmg=Math.floor(dmg*0.70); const absorbed=Math.min(enemy.block,dmg);enemy.block=Math.max(0,enemy.block-absorbed);const actualDmg=dmg-absorbed;enemy.hp-=actualDmg;
     // 大头的西班牙语书：记录本回合是否对敌人造成过实际伤害
     if(actualDmg > 0) cs.dealtDamageThisTurn = true;
@@ -3822,6 +3954,21 @@ const Combat = {
     }
     // 死亡判定：HP≤0 立即标记死亡并归零（修复柠檬水等绕过 playCard 的伤害源）
     if(enemy.hp<=0 && !enemy._dead){ enemy._dead=true; enemy.hp=0; }
+    // 🔗 因果锁链：过量伤害转移
+    if (enemy.hp < 0 && State.run?.relics?.includes('causal_chain')) {
+      const overflow = -enemy.hp; enemy.hp = 0;
+      const others = cs.enemies.filter((e, i) => i !== targetIndex && !e._dead && e.hp > 0);
+      if (others.length > 0) Combat.dealDamage(cs, cs.enemies.indexOf(others[0]), overflow);
+    }
+    // 🕯️ 幽魂灯：每击杀2个敌人永久+1HP
+    if (enemy._dead && State.run?.relics?.includes('ghost_lantern')) {
+      State.run._ghostLanternKills = (State.run._ghostLanternKills || 0) + 1;
+      if (State.run._ghostLanternKills >= 2) {
+        State.run._ghostLanternKills = 0;
+        State.run.character.maxHp += 1;
+        State.run.character.hp = Math.min(State.run.character.hp + 1, State.run.character.maxHp);
+      }
+    }
     return actualDmg; },
   enemyAttack(cs,enemyIndex,amount){ const enemy=cs.enemies[enemyIndex];if(!enemy||enemy._dead)return 0; let dmg=amount+(enemy.buffs.strength||0); if((enemy.debuffs.weak||0)>0)dmg=Math.floor(dmg*0.75); if((enemy.debuffs.slow||0)>0)dmg=Math.floor(dmg*0.70); if((cs.player.debuffs.vulnerable||0)>0)dmg=Math.floor(dmg*1.5);
     // 拳击手「铁下巴」：所有受到的伤害 -1（最低 0）
@@ -7844,6 +7991,11 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
     document.getElementById('btn-skip').onclick=()=>{
       const bar=document.getElementById('victory-stats-bar'); if(bar)bar.remove();
       run.pendingRelic=null;
+      // 🩸 血誓之书：跳过奖励+2最大HP
+      if (run.relics?.includes('blood_oath')) {
+        run.character.maxHp += 2;
+        run.character.hp = Math.min(run.character.hp + 2, run.character.maxHp);
+      }
       const next = run.pendingNextState || 'map';
       run.pendingNextState = null;
       State.saveRun(0);
