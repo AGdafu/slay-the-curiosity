@@ -2,7 +2,7 @@
 const Data = {
   characters: [
     {
-      id: 'boxer', name: '铁拳', emoji: '🥊', color: '#c0392b',
+      id: 'boxer', name: '拳击手', emoji: '🥊', color: '#c0392b',
       hp: 90, maxHp: 90, description: '愈伤愈狂。受击积累愤怒，血量越低出拳越狠。',
       startingDeck: ['box_jab','box_jab','box_jab','box_jab','box_guard','box_guard','box_guard','box_cross','box_cross','box_uppercut'],
       detail: {
@@ -16,7 +16,7 @@ const Data = {
       }
     },
     {
-      id: 'brute', name: '重剑', emoji: '⚔️', color: '#2e86c1',
+      id: 'brute', name: '战士', emoji: '⚔️', color: '#2e86c1',
       hp: 85, maxHp: 85, description: '力劈华山。攻击留下永久「重伤」标记，越打越疼。',
       startingDeck: ['strike','strike','strike','strike','strike','strike','defend','defend','defend','clash'],
       detail: {
@@ -32,7 +32,7 @@ const Data = {
       }
     },
     {
-      id: 'racer', name: '狂飙', emoji: '🏎️', color: '#e67e22',
+      id: 'racer', name: '赛车手', emoji: '🏎️', color: '#e67e22',
       hp: 80, maxHp: 80, description: '死亡弯道。档位系统，高档爆发伤害，低档厚实防御。',
       startingDeck: ['gear_strike','gear_strike','gear_strike','gear_strike','gear_defend','gear_defend','gear_defend','gear_shift','gear_shift','gear_brake'],
       detail: {
@@ -46,7 +46,7 @@ const Data = {
       }
     },
     {
-      id: 'archer', name: '银箭', emoji: '🏹', color: '#27ae60',
+      id: 'archer', name: '射手', emoji: '🏹', color: '#27ae60',
       hp: 72, maxHp: 72, description: '百步穿杨。蓄力型角色，积累蓄力在关键时刻一击爆发。',
       startingDeck: ['ar_shoot','ar_shoot','ar_shoot','ar_shoot','ar_dodge','ar_dodge','ar_dodge','ar_aim','ar_aim','ar_sprint'],
       detail: {
@@ -424,7 +424,7 @@ const Data = {
     br_double_strike: { id:'br_double_strike', rarity:'common',   name:'二连击',   cost:1, type:'attack', emoji:'⚔️', needsTarget:true,
       description:'造成 <b>2</b> 段 <b>4</b> 点伤害。',
       effect(cs,ti,lv=0){ const base=[4,5,7][lv]||4; const str=cs.player.buffs?.strength||0; Combat.dealDamage(cs,ti,base+str); Combat.dealDamage(cs,ti,base+str); } },
-    br_heavy_blade:   { id:'br_heavy_blade',   rarity:'common',   name:'重剑',     cost:2, type:'attack', emoji:'🗡️', needsTarget:true,
+    br_heavy_blade:   { id:'br_heavy_blade',   rarity:'common',   name:'战士',     cost:2, type:'attack', emoji:'🗡️', needsTarget:true,
       description:'造成 <b>12</b> 点伤害。',
       effect(cs,ti,lv=0){ const base=[12,16,20][lv]||12; const str=cs.player.buffs?.strength||0; Combat.dealDamage(cs,ti,base+str); } },
     br_cleave:        { id:'br_cleave',        rarity:'common',   name:'横扫',     cost:1, type:'attack', emoji:'🌊', needsTarget:false,
@@ -6053,7 +6053,7 @@ el.innerHTML=`<div class="card-type-bar"></div>${rarityTag}<div class="card-cost
 
     const guides={
       racer:{
-        emoji:'🏎️', name:'狂飙',
+        emoji:'🏎️', name:'赛车手',
         color:'#ff7d7d', accent:'rgba(255,125,125,0.15)',
         sections:[
           { title:'⚙️ 档位系统', color:'#ff7d7d', rows:[
@@ -6070,7 +6070,7 @@ el.innerHTML=`<div class="card-type-bar"></div>${rarityTag}<div class="card-cost
         ]
       },
       boxer:{
-        emoji:'🥊', name:'铁拳',
+        emoji:'🥊', name:'拳击手',
         color:'#ff6b6b', accent:'rgba(255,107,107,0.15)',
         sections:[
           { title:'💢 愤怒（Fury）', color:'#ff6b6b', rows:[
@@ -6087,7 +6087,7 @@ el.innerHTML=`<div class="card-type-bar"></div>${rarityTag}<div class="card-cost
         ]
       },
       archer:{
-        emoji:'🏹', name:'银箭',
+        emoji:'🏹', name:'射手',
         color:'#74d7ff', accent:'rgba(116,215,255,0.15)',
         sections:[
           { title:'⚡ 蓄力系统', color:'#74d7ff', rows:[
@@ -6103,7 +6103,7 @@ el.innerHTML=`<div class="card-type-bar"></div>${rarityTag}<div class="card-cost
         ]
       },
       brute:{
-        emoji:'⚔️', name:'重剑',
+        emoji:'⚔️', name:'战士',
         color:'#a8d8ff', accent:'rgba(168,216,255,0.15)',
         sections:[
           { title:'🩸 重伤 wound', color:'#e74c3c', rows:[
@@ -6804,16 +6804,11 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
   characterSelect(){
     let selected=null, cardStates={};
     const profiles = {
-      boxer: { realName:'方铁拳', title:'浪人重拳', bio:'流浪格斗家，三年前在拳馆惹了不该惹的人，从此流浪街头。每到一个镇上就去酒馆打架攒钱，人称"铁拳"。他的哲学很简单：被打得越惨，还手就越狠。',
-        lines: '🚪"来吧，我这拳头痒了三年了。" ✅"谁先动手不重要，重要的是谁站着。" 🏆"就这？" 💀"下一次…我连内脏都练硬给你看。"' },
-      brute: { realName:'齐重山', title:'力气大', bio:'山中樵夫出身，力大无穷。听说塔顶有个会打人的怪物，本着"砍柴不如砍怪"的心态扛着大剑就来了。不善言辞，性格憨直，但手里的剑从不含糊。',
-        lines: '🚪"听说…上面有个会打人的塔？" ✅"砍。" 🏆"小事。" 💀"我以为我能再扛一下。"' },
-      racer: { realName:'林一档', title:'节奏野兽', bio:'地下赛车手，弯道快才是真的快。因欠下巨额赌债被追杀，逃进这座塔里。把赛车换成了战斗，但档位系统的肌肉记忆刻在骨子里。',
-        lines: '🚪"系好安全带——哦，没有。" ✅"换挡。" 🏆"还没尽兴。" 💀"油…快没了。"' },
-      archer: { realName:'苏问月', title:'千眼', bio:'林中猎手，箭无虚发。从小被父亲训练成猎人，能听见百米外松鼠的心跳。她说"风往南"的时候，箭已经在你胸口了。',
-        lines: '🚪"风往南。" ✅"对准就够了。" 🏆"吐气…松弦。" 💀"…还差一点。"' }
+      boxer: { name:'铁拳', title:'愈伤愈狂', bio:'流浪格斗家，人称"铁拳"。他的哲学很简单：被打得越惨，还手就越狠。三年前在拳馆惹了不该惹的人，从此流浪街头，每到一个镇上就去酒馆打架攒钱。' },
+      brute: { name:'重剑', title:'力劈华山', bio:'山中樵夫出身，力大无穷。听说塔顶有个会打人的怪物，本着"砍柴不如砍怪"的心态扛着大剑就来了。不善言辞，性格憨直，但手里的剑从不含糊。' },
+      racer: { name:'狂飙', title:'死亡弯道', bio:'地下赛车手，弯道快才是真的快。因欠下巨额赌债被追杀，逃进这座塔里。把赛车换成了战斗，但档位系统的肌肉记忆刻在骨子里——升挡、降挡、加速、漂移，一样不少。' },
+      archer: { name:'银箭', title:'百步穿杨', bio:'林中猎手，箭无虚发。从小被父亲训练成猎人，能听见百米外松鼠的心跳。她说"风往南"的时候，箭已经在你胸口了。沉默寡言，但每一箭都带故事。' }
     };
-    UI.app().innerHTML='<div class="char-select-screen slide-up"><h2 class="screen-title">选择角色</h2><p style="text-align:center;color:rgba(255,255,255,0.45);font-size:0.85rem;margin:-8px 0 10px">点击查看角色信息</p><div class="char-grid" id="char-grid"></div><div id="char-detail" style="font-size:0.9rem;color:var(--ink-light);min-height:20px"></div><div style="display:flex;gap:12px;margin-top:4px"><button class="btn" id="btn-back">← 返回</button><button class="btn primary" id="btn-start" disabled>开始冒险 →</button></div></div>';
     const grid=document.getElementById('char-grid');
     Data.characters.forEach(char=>{
       const p = profiles[char.id] || {};
@@ -6834,7 +6829,7 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
           descEl.innerHTML = char.description;
           document.getElementById('char-detail').textContent = '点击查看角色档案';
         } else {
-          nameEl.textContent = (p.realName||char.name);
+          nameEl.textContent = (p.name||p.realName||char.name);
           nameEl.style.color = char.color;
           descEl.innerHTML = '<span style="font-size:0.85rem;color:rgba(255,255,255,0.8);line-height:1.5">'+p.bio+'</span>';
           document.getElementById('char-detail').textContent = '再点返回角色界面';
