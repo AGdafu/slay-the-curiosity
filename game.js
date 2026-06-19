@@ -6836,28 +6836,26 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
       // 初始渲染：保留原 UI 结构
       card.innerHTML='<div class="char-figure" style="background:'+char.color+'22"><span style="font-size:4.5rem">'+char.emoji+'</span></div><div class="char-info"><div class="char-name" id="ci-name-'+char.id+'">'+char.name+'</div><div class="char-stat" id="ci-desc-'+char.id+'" style="font-size:1.0rem;margin-top:6px;color:rgba(255,255,255,0.75);line-height:1.5">'+char.description+'</div></div>';
       card.onclick=()=>{
-        cardStates[char.id] = (cardStates[char.id] + 1) % 3;
+        cardStates[char.id] = (cardStates[char.id] + 1) % 2;
         const s = cardStates[char.id];
         const nameEl = card.querySelector('#ci-name-'+char.id);
         const descEl = card.querySelector('#ci-desc-'+char.id);
         if (s === 0) {
           nameEl.textContent = char.name;
+          nameEl.style.color = '';
           descEl.innerHTML = char.description;
-        } else if (s === 1) {
-          nameEl.textContent = p.title||char.name;
-          nameEl.style.color = char.color;
-          descEl.innerHTML = '<span style="color:rgba(255,255,255,0.55);font-size:0.9rem">'+char.description+'</span><div style="margin-top:4px;font-size:0.85rem;color:rgba(255,255,255,0.5)">🃏 '+deckNames+'</div>';
+          document.getElementById('char-detail').textContent = '点击查看角色档案';
         } else {
           nameEl.textContent = (p.realName||char.name) + ' · ' + (p.title||'');
           nameEl.style.color = char.color;
           descEl.innerHTML = '<span style="font-size:0.85rem;color:rgba(255,255,255,0.65);line-height:1.5">'+p.bio+'</span><div style="margin-top:6px;font-size:0.78rem;color:rgba(255,255,255,0.4)">'+p.lines+'</div>';
+          document.getElementById('char-detail').textContent = '再点返回角色界面';
         }
         // 选中
         grid.querySelectorAll('.char-card').forEach(c=>c.classList.remove('selected'));
         card.classList.add('selected');
         selected=char.id;
         document.getElementById('btn-start').disabled=false;
-        document.getElementById('char-detail').textContent = '第'+(s+1)+'次点击 · 再点'+(2-s)+'次回到原始界面';
       };
       grid.appendChild(card);
     });
