@@ -3798,7 +3798,8 @@ const Combat = {
     if(State.run?.character?.id==='racer'){ const _spd=cs.speed||0; if(_spd>=60) dmg+=5; else if(_spd>=30) dmg+=2; } if((enemy.debuffs.vulnerable||0)>0)dmg=Math.floor(dmg*1.5); if((cs.player.debuffs.weak||0)>0)dmg=Math.floor(dmg*0.75); if((cs.player.debuffs.slow||0)>0)dmg=Math.floor(dmg*0.70); const absorbed=Math.min(enemy.block,dmg);enemy.block=Math.max(0,enemy.block-absorbed);const actualDmg=dmg-absorbed;enemy.hp-=actualDmg;
     // 大头的西班牙语书：记录本回合是否对敌人造成过实际伤害
     if(actualDmg > 0) cs.dealtDamageThisTurn = true;
-    // 战士被动「重伤」：本回合首次对该敌人造成 HP 实伤时（穿透格挡）才施加 1 层 wound
+    cs._totalDmgDealt = (cs._totalDmgDealt||0) + actualDmg;
+    // 战士被动「重伤」
     // 一回合内同一敌人只叠加 1 层，全程被格挡抵消则不加
     if(State.run?.character?.id==='brute' && actualDmg>0 && !enemy._dead && !enemy._bruteWoundedThisTurn){
       if(!enemy.debuffs) enemy.debuffs={};
@@ -3829,6 +3830,7 @@ const Combat = {
     // 拳击手愤怒累计：基于原始来袭伤害（含被格挡部分），不受血量是否被扣影响
     if(dmg>0 && State.run?.character?.id==='boxer') cs.damageTakenThisEnemyPhase=(cs.damageTakenThisEnemyPhase||0)+dmg;
     const absorbed=Math.min(cs.player.block,dmg);cs.player.block=Math.max(0,cs.player.block-absorbed);const actualPlayerDmg=dmg-absorbed;cs.player.hp-=actualPlayerDmg;
+    cs._totalDmgTaken = (cs._totalDmgTaken||0) + actualPlayerDmg;
     // 🌑 永夜：格挡成功取暖 -1
     if (Meta.isNightMode() && absorbed > 0 && cs._temp !== undefined) {
       cs._temp = Math.max(0, cs._temp - 1);
@@ -6846,7 +6848,7 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
           descEl.innerHTML = char.description;
           document.getElementById('char-detail').textContent = '点击查看角色档案';
         } else {
-          nameEl.textContent = (p.realName||char.name) + ' · ' + (p.title||'');
+          nameEl.textContent = (p.realName||char.name);
           nameEl.style.color = char.color;
           descEl.innerHTML = '<span style="font-size:0.85rem;color:rgba(255,255,255,0.65);line-height:1.5">'+p.bio+'</span><div style="margin-top:6px;font-size:0.78rem;color:rgba(255,255,255,0.4)">'+p.lines+'</div>';
           document.getElementById('char-detail').textContent = '再点返回角色界面';
@@ -7764,7 +7766,7 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
         </div>
         <div style="flex-shrink:0;font-size:0.8rem;color:rgba(255,255,255,0.5);white-space:nowrap">点击拾取</div>
       </div>` : '';
-    UI.app().innerHTML=`<div style="position:relative;width:100%;height:100%"><div class="reward-screen">${relicSection}${(()=>{const cs=run.combat;return cs?`<div style="display:flex;gap:20px;justify-content:center;padding:6px 0;margin-bottom:8px;font-size:0.85rem;color:rgba(255,255,255,0.45)"><span>⚔️出牌 ${cs._cardsPlayed||0}</span><span>🔄回合 ${cs.turn||0}</span></div>`:'';})()}<div class="reward-title bounce-in" style="font-size:1.3rem;margin-bottom:4px">⚔️ 战斗胜利!</div><div class="reward-subtitle">选择一张卡牌加入牌组</div><div class="reward-cards" id="reward-cards"></div><button class="btn" id="btn-skip" style="margin-top:4px;background:rgba(255,255,255,0.08);border-color:rgba(255,255,255,0.2);color:rgba(255,255,255,0.9)">跳过</button></div></div>`;
+    UI.app().innerHTML=`<div style="position:relative;width:100%;height:100%"><div class="reward-screen">${relicSection}${(()=>{const cs=run.combat;return cs?`<div style="display:flex;gap:16px;justify-content:center;padding:6px 0;margin:4px 0;font-size:0.82rem;color:rgba(255,255,255,0.4);flex-wrap:wrap"><span>⚔️出牌 ${cs._cardsPlayed||0}</span><span>🔄回合 ${cs.turn||0}</span><span>💥造成 ${cs._totalDmgDealt||0}</span><span>🩸承受 ${cs._totalDmgTaken||0}</span></div>`:'';})()}<div class="reward-title bounce-in" style="font-size:1.3rem;margin-bottom:4px">⚔️ 战斗胜利!</div><div class="reward-subtitle">选择一张卡牌加入牌组</div><div class="reward-cards" id="reward-cards"></div><button class="btn" id="btn-skip" style="margin-top:4px;background:rgba(255,255,255,0.08);border-color:rgba(255,255,255,0.2);color:rgba(255,255,255,0.9)">跳过</button></div></div>`;
     const container=document.getElementById('reward-cards');
     rewardCards.forEach((cardId,i)=>{
       const wrap=document.createElement('div');wrap.className='reward-card-wrap';const back=document.createElement('div');back.className='card-back';back.textContent='🎴';wrap.appendChild(back);container.appendChild(wrap);
