@@ -2811,6 +2811,42 @@ const Bestiary = {
   _toast(icon, name) { const t = document.createElement('div'); t.style.cssText = 'position:fixed;bottom:100px;left:50%;transform:translateX(-50%);background:rgba(20,15,35,0.95);color:#ffd060;font-size:0.95rem;font-weight:700;padding:8px 18px;border-radius:12px;border:1px solid rgba(255,210,96,0.4);z-index:9999;pointer-events:none;animation:bubbleIn 0.3s ease'; t.textContent = '📖 新发现！'+icon+' '+name; document.body.appendChild(t); setTimeout(()=>t.remove(),2000); }
 };
 
+// ── 🏆 成就系统 ───────────────────────────────────────────────────────────────
+const Achievements = {
+  _KEY: 'stc_achievements',
+  unlocked: {},
+
+  LIST: {
+    first_win:       { name:'初次通关', desc:'第一次击败最终Boss', icon:'🏆' },
+    win_boxer:        { name:'拳拳到肉', desc:'用拳击手通关', icon:'🥊' },
+    win_brute:        { name:'力大无穷', desc:'用战士通关', icon:'⚔️' },
+    win_racer:        { name:'极速传说', desc:'用赛车手通关', icon:'🏎️' },
+    win_archer:       { name:'百步穿杨', desc:'用弓箭手通关', icon:'🏹' },
+    kill_50:          { name:'清道夫', desc:'累计击败50个敌人', icon:'💀' },
+    kill_100:         { name:'屠戮者', desc:'累计击败100个敌人', icon:'☠️' },
+    cards_100:        { name:'牌佬', desc:'累计打出100张牌', icon:'🃏' },
+    relics_10:        { name:'收藏家', desc:'累计获得10个遗物', icon:'💎' },
+    gold_500:         { name:'暴发户', desc:'单局持有500金币', icon:'💰' },
+    no_damage_boss:   { name:'完美无伤', desc:'Boss战全程不受伤害', icon:'🛡️' },
+    all_chars:        { name:'全员集结', desc:'所有角色全部通关', icon:'🌟' },
+  },
+
+  load() { try { const r = localStorage.getItem(this._KEY); if (r) this.unlocked = JSON.parse(r); } catch(e) {} },
+  save() { try { localStorage.setItem(this._KEY, JSON.stringify(this.unlocked)); } catch(e) {} },
+  unlock(id) {
+    if (this.unlocked[id]) return;
+    this.unlocked[id] = Date.now();
+    this.save();
+    const a = this.LIST[id];
+    if (!a) return;
+    const t = document.createElement('div');
+    t.style.cssText = 'position:fixed;top:20%;left:50%;transform:translate(-50%,-50%);background:rgba(20,10,40,0.95);color:#ffd060;font-size:1.2rem;font-weight:900;padding:14px 28px;border-radius:16px;border:2px solid rgba(255,210,96,0.6);z-index:9999;pointer-events:none;box-shadow:0 0 30px rgba(255,210,96,0.3);animation:bubbleIn 0.4s ease';
+    t.innerHTML = `${a.icon} <b>成就解锁！</b><br><span style="font-size:0.95rem;color:#fff">${a.name}</span><br><span style="font-size:0.75rem;color:rgba(255,255,255,0.5)">${a.desc}</span>`;
+    document.body.appendChild(t);
+    setTimeout(() => t.remove(), 3000);
+  }
+};
+
 // ── map.js
 const MapGen = {
   FLOORS:7,
@@ -8058,6 +8094,10 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
       <div class="shop-section-title">购买药水</div>
       <div id="shop-potion-buy-section"></div>
       <div class="shop-section-title">服务</div>
+      ${run._freeUpgrade ? `<div style="background:rgba(255,210,60,0.08);border:1px solid rgba(255,210,60,0.25);border-radius:10px;padding:10px 16px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center">
+        <div><span style="color:#ffd060;font-weight:700">🎫 免费升级券</span><span style="font-size:0.8rem;color:rgba(255,255,255,0.5);margin-left:8px">升级一张牌不花金币</span></div>
+        <button class="btn primary" style="font-size:0.9rem;padding:6px 14px" id="btn-free-upgrade">使用</button>
+      </div>` : ''}
       <div class="shop-remove-section" id="shop-remove-section"></div>
       <div class="shop-section-title">出售药水</div>
       <div id="shop-potion-sell-section"></div>
@@ -8259,13 +8299,57 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
     }
 
     document.getElementById('btn-shop-leave').addEventListener('click', () => {
-      run.shopInventory = null; // 离开后清空，下次进入重新生成
-      // 离开商店时重置app的overflow
+      run.shopInventory = null;
       const appEl = UI.app();
       appEl.style.overflowY = '';
       appEl.style.overflowX = '';
       State.go('map');
     });
+    // 🎫 免费升级券
+    const freeUpgBtn = document.getElementById('btn-free-upgrade');
+    if (freeUpgBtn) {
+      freeUpgBtn.addEventListener('click', () => {
+        if (!run._freeUpgrade) return;
+        run._freeUpgrade = false;
+        Meta.consumeNextRun('upgradeTicket');
+        UI._shopFreeUpgrade();
+      });
+    }
+  },
+
+  // 🎫 免费升级券——选一张牌升级
+  _shopFreeUpgrade() {
+    const run = State.run;
+    const ov = document.createElement('div');
+    ov.style.cssText = 'position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,0.8);display:flex;align-items:center;justify-content:center';
+    ov.innerHTML = `<div style="background:rgba(15,12,30,0.98);border:1.5px solid rgba(255,210,80,0.4);border-radius:16px;padding:24px;max-width:600px;width:90vw;max-height:80vh;overflow-y:auto">
+      <h3 style="color:#ffd060;margin:0 0 16px">🎫 免费升级一张牌</h3>
+      <div id="free-upg-list" style="display:flex;flex-direction:column;gap:6px"></div>
+      <button class="btn" style="margin-top:16px" id="btn-cancel-free-upg">取消</button>
+    </div>`;
+    document.body.appendChild(ov);
+    const list = document.getElementById('free-upg-list');
+    const deckCounts = {};
+    run.deck.forEach(id => { deckCounts[id] = (deckCounts[id] || 0) + 1; });
+    Object.entries(deckCounts).forEach(([cardId, n]) => {
+      const def = Data.cards[cardId];
+      if (!def) return;
+      const row = document.createElement('div');
+      row.style.cssText = 'display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:rgba(255,255,255,0.03);border-radius:8px;cursor:pointer';
+      row.innerHTML = `<span><b>${def.name}</b><span style="color:rgba(255,255,255,0.4);margin-left:8px">×${n}</span></span>`;
+      row.onclick = () => {
+        ov.remove();
+        if (!run.cardUpgrades) run.cardUpgrades = {};
+        const idx = run.deck.indexOf(cardId);
+        if (idx !== -1) {
+          run.cardUpgrades[idx] = (run.cardUpgrades[idx] || 0) + 1;
+          State.saveRun(0);
+        }
+        UI._renderShop();
+      };
+      list.appendChild(row);
+    });
+    document.getElementById('btn-cancel-free-upg').onclick = () => { ov.remove(); UI._renderShop(); };
   },
 
   _shopBuyCard(idx, item){
@@ -8846,6 +8930,16 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
     };
   },
   victory(){
+    // 🏆 成就检测
+    const run = State.current.run;
+    if (run) {
+      Achievements.unlock('first_win');
+      const charAch = { boxer:'win_boxer', brute:'win_brute', racer:'win_racer', archer:'win_archer' };
+      if (charAch[run.character?.id]) Achievements.unlock(charAch[run.character.id]);
+      // 全员通关检测
+      const allChars = ['win_boxer','win_brute','win_racer','win_archer'];
+      if (allChars.every(a => Achievements.unlocked[a])) Achievements.unlock('all_chars');
+    }
     UI.app().innerHTML=`<div class="menu-screen bounce-in"><div style="font-size:5rem">🏆</div><div class="screen-title" style="color:var(--gold);text-shadow:0 0 30px rgba(241,196,15,0.6)">通关!</div><div style="font-size:1.2rem;color:rgba(255,255,255,0.85)">你击败了守护者！</div><button class="btn primary" style="margin-top:24px" onclick="State.current.run=null;State.go('menu')">返回主菜单</button></div>`;
   },
 
@@ -11796,6 +11890,7 @@ window.addEventListener('DOMContentLoaded', () => {
   Audio.loadAudioFiles();
   Meta.load();
   Bestiary.load();
+  Achievements.load();
   Audio.startBgmMenu();
   UI.menu();
 });
