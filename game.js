@@ -2855,6 +2855,7 @@ const Meta = {
 
   // ── 🌑 永夜状态（运行时）──
   _nightActive: false,
+  _snowActive: true,   // 🆕 全局雪花常驻
   _snowInterval: null,
   isNightMode() { return this._nightActive && this.isPurchased('nightMode'); },
 
@@ -2872,18 +2873,20 @@ const Meta = {
     canvas.height = window.innerHeight;
     const ctx = canvas.getContext('2d');
     const flakes = [];
-    for (let i = 0; i < 60; i++) {
+    // 🌑 暴风雪模式：雪花加倍
+    const flakeCount = Meta._nightActive ? 150 : 60;
+    for (let i = 0; i < flakeCount; i++) {
       flakes.push({
         x: Math.random() * canvas.width,
         y: Math.random() * canvas.height,
-        r: Math.random() * 2.5 + 0.8,
-        speed: Math.random() * 1.2 + 0.4,
-        wind: Math.random() * 0.6 - 0.3,
+        r: (Meta._nightActive ? Math.random() * 4 + 1 : Math.random() * 2.5 + 0.8),
+        speed: (Meta._nightActive ? Math.random() * 2.5 + 0.8 : Math.random() * 1.2 + 0.4),
+        wind: (Meta._nightActive ? Math.random() * 1.5 - 0.5 : Math.random() * 0.6 - 0.3),
         opacity: Math.random() * 0.6 + 0.3,
       });
     }
     const draw = () => {
-      if (!Meta._nightActive && !Meta._snowTest) { ctx.clearRect(0,0,canvas.width,canvas.height); return; }
+      if (!Meta._snowActive) { ctx.clearRect(0,0,canvas.width,canvas.height); return; }
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       flakes.forEach(f => {
         ctx.beginPath();
@@ -6393,16 +6396,43 @@ el.innerHTML=`<div class="card-type-bar"></div>${rarityTag}<div class="card-cost
     document.getElementById('btn-tutorial').onclick=()=>UI.tutorial();
     document.getElementById('btn-database').onclick=()=>UI.showDatabase();
     document.getElementById('btn-altar').onclick=()=>UI.showAltar();
-    // 🌑 永夜粒子测试
+    // 🌑 雪花开关 + 暴风雪测试
     setTimeout(() => {
       const tb = document.createElement('button');
-      tb.textContent = '🌨️ 测试雪花粒子';
+      tb.textContent = Meta._snowActive ? '⏹ 停止下雪' : '🌨️ 开始下雪';
       tb.style.cssText = 'margin-top:16px;padding:6px 14px;background:rgba(180,200,240,0.1);border:1px solid rgba(180,200,240,0.3);border-radius:8px;color:#a0c0e0;cursor:pointer;font-size:0.85rem';
       tb.onclick = () => {
-        if (Meta._snowTest) { Meta._snowTest = false; Meta.stopSnow(); tb.textContent = '🌨️ 测试雪花粒子'; }
-        else { Meta._snowTest = true; Meta.startSnow(); tb.textContent = '⏹ 停止雪花'; }
+        Meta._snowActive = !Meta._snowActive;
+        tb.textContent = Meta._snowActive ? '⏹ 停止下雪' : '🌨️ 开始下雪';
       };
       document.querySelector('.menu-screen')?.appendChild(tb);
+      // 🌑 暴风雪入场测试（不扣骨灰币）
+      const bt = document.createElement('button');
+      bt.textContent = '🌑 暴风雪测试';
+      bt.style.cssText = 'margin-top:8px;padding:6px 14px;background:rgba(200,180,240,0.1);border:1px solid rgba(200,180,240,0.3);border-radius:8px;color:#c0a0e0;cursor:pointer;font-size:0.85rem';
+      bt.onclick = () => {
+        Meta._nightActive = true;
+        Meta.startSnow();
+        let veil = document.getElementById('night-veil');
+        if (!veil) {
+          veil = document.createElement('div'); veil.id = 'night-veil';
+          veil.style.cssText = 'position:fixed;inset:0;background:rgba(5,0,15,0.55);z-index:90;pointer-events:none';
+          document.body.appendChild(veil);
+        }
+        veil.style.display = 'block';
+        bt.textContent = '☀️ 关闭暴风雪';
+        bt._nightTest = true;
+      };
+      // 双击关闭
+      bt.addEventListener('dblclick', () => {
+        if (bt._nightTest) {
+          Meta._nightActive = false;
+          const v = document.getElementById('night-veil'); if (v) v.style.display = 'none';
+          bt.textContent = '🌑 暴风雪测试';
+          bt._nightTest = false;
+        }
+      });
+      document.querySelector('.menu-screen')?.appendChild(bt);
     }, 50);
   },
 
@@ -12197,6 +12227,7 @@ window.addEventListener('DOMContentLoaded', () => {
   Bestiary.load();
   Achievements.load();
   CharStats.load();
+  Meta.startSnow();  // 雪花常驻
   Audio.startBgmMenu();
   UI.menu();
 });
