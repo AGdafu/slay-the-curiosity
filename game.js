@@ -2964,6 +2964,23 @@ const Achievements = {
     t.innerHTML = `${a.icon} <b>成就解锁！</b><br><span style="font-size:0.95rem;color:#fff">${a.name}</span><br><span style="font-size:0.75rem;color:rgba(255,255,255,0.5)">${a.desc}</span>`;
     document.body.appendChild(t);
     setTimeout(() => t.remove(), 3000);
+  },
+
+  show() {
+    const done = Object.keys(this.unlocked).length;
+    const total = Object.keys(this.LIST).length;
+    let html = `<div class="menu-screen slide-up"><div class="menu-title">🏆 成就</div>
+      <div style="text-align:center;color:rgba(255,255,255,0.5);margin-bottom:16px">${done}/${total} 已解锁</div>`;
+    for (const [id, a] of Object.entries(this.LIST)) {
+      const isUnlocked = !!this.unlocked[id];
+      html += `<div style="margin:6px 0;padding:10px 16px;background:rgba(255,255,255,0.04);border-radius:10px;border:1px solid rgba(255,255,255,0.08);opacity:${isUnlocked?1:0.35}">
+        <span style="font-size:1.4rem">${isUnlocked ? a.icon : '🔒'}</span>
+        <b style="margin-left:8px;color:${isUnlocked?'#ffd060':'#888'}">${a.name}</b>
+        <span style="float:right;font-size:0.75rem;color:rgba(255,255,255,0.4)">${a.desc}</span>
+      </div>`;
+    }
+    html += `<button class="menu-btn" onclick="UI.menu()" style="margin-top:20px">← 返回</button></div>`;
+    UI.app().innerHTML = html;
   }
 };
 
@@ -3957,14 +3974,14 @@ const Combat = {
       enemy.debuffs.wound = Math.min(10, (enemy.debuffs.wound||0) + 1);
       enemy._bruteWoundedThisTurn = true;
     }
-    // 死亡判定：HP≤0 立即标记死亡并归零（修复柠檬水等绕过 playCard 的伤害源）
-    if(enemy.hp<=0 && !enemy._dead){ enemy._dead=true; enemy.hp=0; }
-    // 🔗 因果锁链：过量伤害转移
+    // 🔗 因果锁链：过量伤害转移（在归零之前检测）
     if (enemy.hp < 0 && State.run?.relics?.includes('causal_chain')) {
-      const overflow = -enemy.hp; enemy.hp = 0;
+      const overflow = -enemy.hp;
       const others = cs.enemies.filter((e, i) => i !== targetIndex && !e._dead && e.hp > 0);
-      if (others.length > 0) Combat.dealDamage(cs, cs.enemies.indexOf(others[0]), overflow);
+      if (others.length > 0) { enemy.hp = 0; Combat.dealDamage(cs, cs.enemies.indexOf(others[0]), overflow); return actualDmg; }
     }
+    // 死亡判定：HP≤0 立即标记死亡并归零
+    if(enemy.hp<=0 && !enemy._dead){ enemy._dead=true; enemy.hp=0; }
     // 🕯️ 幽魂灯：每击杀2个敌人永久+1HP
     if (enemy._dead && State.run?.relics?.includes('ghost_lantern')) {
       State.run._ghostLanternKills = (State.run._ghostLanternKills || 0) + 1;
@@ -6393,6 +6410,7 @@ el.innerHTML=`<div class="card-type-bar"></div>${rarityTag}<div class="card-cost
         <button class="menu-btn" id="btn-altar">🕯️ 祭坛 <span style="font-size:0.8rem;opacity:0.6">💀${Meta.boneCoins}</span></button>
         <button class="menu-btn" id="btn-saves">💾 存档</button>
         <button class="menu-btn" id="btn-tutorial">📖 教程</button>
+        <button class="menu-btn" id="btn-achievements">🏆 成就</button>
       </div>
       <div class="menu-footer" style="margin-top:20px">v0.2 · 好奇心驱动</div>
     </div>`;
@@ -6401,6 +6419,7 @@ el.innerHTML=`<div class="card-type-bar"></div>${rarityTag}<div class="card-cost
     document.getElementById('btn-coop').onclick=()=>State.go('coop-lobby');
     document.getElementById('btn-saves').onclick=()=>UI.showSaveSlots('manage');
     document.getElementById('btn-tutorial').onclick=()=>UI.tutorial();
+    document.getElementById('btn-achievements').onclick=()=>Achievements.show();
     document.getElementById('btn-database').onclick=()=>UI.showDatabase();
     document.getElementById('btn-altar').onclick=()=>UI.showAltar();
     // 🌑 雪花开关 + 暴风雪测试
