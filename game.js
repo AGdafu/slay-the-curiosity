@@ -104,9 +104,9 @@ const Data = {
     strike:   { id:'strike',   rarity:'common',   name:'打击',   cost:1, type:'attack', emoji:'👊', description:'造成 6 点伤害。',                          needsTarget:true,  effect(cs,ti,lv=0){ const dmg=[6,9,12][lv]||6; Combat.dealDamage(cs,ti,dmg); } },
     defend:   { id:'defend',   rarity:'common',   name:'防御',   cost:1, type:'skill',  emoji:'🛡', description:'获得 5 点格挡。',                          needsTarget:false, effect(cs,ti,lv=0){ const blk=[5,8,11][lv]||5; Combat.gainBlock(cs,blk,true); } },
     bash:     { id:'bash',     rarity:'uncommon', name:'猛击',   cost:2, type:'attack', emoji:'🔨', description:'造成 10 点伤害并施加 2 层易伤。',            needsTarget:true,  effect(cs,ti,lv=0){ const dmg=lv>=1?12:10; const vuln=lv>=1?3:2; Combat.dealDamage(cs,ti,dmg); Combat.applyDebuff(cs.enemies[ti],'vulnerable',vuln); } },
-    zap:      { id:'zap',      rarity:'common',   name:'电击',   cost:1, type:'attack', emoji:'⚡', description:'造成 5 点伤害。若目标有易伤则额外 3 点。',  needsTarget:true,  effect(cs,ti){ const b=(cs.enemies[ti].debuffs.vulnerable||0)>0?3:0; Combat.dealDamage(cs,ti,5+b); } },
-    clash:    { id:'clash',    rarity:'common',   name:'冲撞',   cost:0, type:'attack', emoji:'💢', description:'若手牌全为攻击牌，造成 12 点伤害，否则 5 点。', needsTarget:true, effect(cs,ti,lv=0){ const a=cs.hand.every(id=>Data.cards[id]&&Data.cards[id].type==='attack'); const dmgFull=[12,16,20][lv]||12; const dmgElse=[5,7,9][lv]||5; Combat.dealDamage(cs,ti,a?dmgFull:dmgElse); } },
-    pommel:   { id:'pommel',   rarity:'uncommon', name:'剑柄击', cost:1, type:'attack', emoji:'🗡', description:'造成 9 点伤害，摸 1 张牌。',                needsTarget:true,  effect(cs,ti,lv=0){ Combat.dealDamage(cs,ti,9); Combat.drawCards(cs,lv>=1?2:1); } },
+    zap:      { id:'zap',      rarity:'common',   name:'电击',   cost:1, type:'attack', emoji:'⚡', description:'造成 6 点伤害。若目标有易伤则额外 4 点。',  needsTarget:true,  effect(cs,ti){ const b=(cs.enemies[ti].debuffs.vulnerable||0)>0?4:0; Combat.dealDamage(cs,ti,6+b); } },
+    clash:    { id:'clash',    rarity:'common',   name:'冲撞',   cost:0, type:'attack', emoji:'💢', description:'若手牌全为攻击牌，造成 10 点伤害，否则 4 点。', needsTarget:true, effect(cs,ti,lv=0){ const a=cs.hand.every(id=>Data.cards[id]&&Data.cards[id].type==='attack'); const dmgFull=[10,14,18][lv]||10; const dmgElse=[4,6,8][lv]||4; Combat.dealDamage(cs,ti,a?dmgFull:dmgElse); } },
+    pommel:   { id:'pommel',   rarity:'uncommon', name:'剑柄击', cost:1, type:'attack', emoji:'🗡', description:'造成 7 点伤害，摸 1 张牌。',                needsTarget:true,  effect(cs,ti,lv=0){ Combat.dealDamage(cs,ti,7); Combat.drawCards(cs,lv>=1?2:1); } },
     shrug:    { id:'shrug',    rarity:'uncommon', name:'耸肩',   cost:1, type:'skill',  emoji:'🤷', description:'获得 8 点格挡，摸 1 张牌。',                needsTarget:false, effect(cs,ti,lv=0){ const blk=lv>=1?11:8; const draw=lv>=2?2:1; Combat.gainBlock(cs,blk,true); Combat.drawCards(cs,draw); } },
     armaments:{ id:'armaments',rarity:'uncommon', name:'武装',   cost:1, type:'skill',  emoji:'⚒', description:'获得 5 点格挡。下回合开始时额外获得 1 点能量。',                          needsTarget:false, effect(cs,ti,lv=0){
       Combat.gainBlock(cs,5,true);
@@ -215,8 +215,8 @@ const Data = {
     gear_lock: { id:'gear_lock', rarity:'common', name:'档位锁定', cost:1, type:'skill', emoji:'🔒', description:'本回合档位锁定。获得 <b>档位×4</b> 点格挡（最多 12）。', needsTarget:false,
       effect(cs,ti,lv=0){ cs._gearLocked=true; const mult=lv>=1?5:4; Combat.gainBlock(cs,(cs.gear||2)*mult,true); } },
     // 20. 超速警告：0费消耗 攻击+换挡 3挡时造成16伤+降至2挡，否则无效
-    overspeed: { id:'overspeed', rarity:'uncommon', name:'超速警告', cost:0, type:'attack', emoji:'🚨', description:'若处于 3 挡，造成 <b>16</b> 点伤害并强制降至 2 挡。否则无效果。消耗。', needsTarget:true,
-      effect(cs,ti,lv=0){ const g=cs.gear||2; if(g>=3){ const ftBonus=Combat._getFtBonus(cs); Combat.dealDamage(cs,ti,16+ftBonus); Combat._changeGear(cs,-1); }
+    overspeed: { id:'overspeed', rarity:'uncommon', name:'超速警告', cost:0, type:'attack', emoji:'🚨', description:'若处于 3 挡，造成 <b>12</b> 点伤害并强制降至 2 挡。否则无效果。消耗。', needsTarget:true,
+      effect(cs,ti,lv=0){ const g=cs.gear||2; if(g>=3){ const ftBonus=Combat._getFtBonus(cs); Combat.dealDamage(cs,ti,12+ftBonus); Combat._changeGear(cs,-1); }
       if(lv<2){ const oi=cs.discardPile.lastIndexOf('overspeed'); if(oi!==-1) cs.discardPile.splice(oi,1); cs.exhaustPile.push('overspeed'); } } },
 
     // ── 赛车手扩池 A：速度感深化（5张）────────────────────────────────────────────────────────
@@ -248,8 +248,8 @@ const Data = {
 
     // ── 射手专属卡牌 ──────────────────────────────────────────────────────────────
     // 普通牌
-    ar_shoot:   { id:'ar_shoot',   rarity:'common',   name:'精准射击', cost:1, type:'attack', emoji:'🏹', description:'造成 <b>3</b> 点伤害，消耗全部蓄力，每消耗 1 点额外造成 <b>3</b> 点伤害。', needsTarget:true,
-      effect(cs,ti,lv){ const c=cs.charge||0; cs.charge=0; const base=lv>=1?5:3; Combat.dealDamage(cs,ti,base+c*3); } },
+    ar_shoot:   { id:'ar_shoot',   rarity:'common',   name:'精准射击', cost:1, type:'attack', emoji:'🏹', description:'造成 <b>4</b> 点伤害，消耗全部蓄力，每消耗 1 点额外造成 <b>3</b> 点伤害。', needsTarget:true,
+      effect(cs,ti,lv){ const c=cs.charge||0; cs.charge=0; const base=lv>=1?6:4; Combat.dealDamage(cs,ti,base+c*3); } },
     ar_dodge:   { id:'ar_dodge',   rarity:'common',   name:'闪身',     cost:1, type:'skill',  emoji:'🛡️', description:'获得 <b>4</b> 点格挡，获得 <b>1</b> 点蓄力。', needsTarget:false,
       effect(cs,ti,lv){ const blk=lv>=1?6:4; const chg=lv>=2?2:1; Combat.gainBlock(cs,blk,true); Combat.archerGainCharge(cs,chg); } },
     ar_aim:     { id:'ar_aim',     rarity:'common',   name:'瞄准',     cost:0, type:'skill',  emoji:'🎯', description:'获得 <b>2</b> 点蓄力。', needsTarget:false,
@@ -270,8 +270,8 @@ const Data = {
       effect(cs,ti,lv=0){ const blk=lv>=1?7:5; const chg=lv>=2?2:1; Combat.gainBlock(cs,blk,true); Combat.archerGainCharge(cs,chg); } },
     ar_roll:    { id:'ar_roll',    rarity:'uncommon', name:'翻滚闪避', cost:2, type:'skill',  emoji:'💨', description:'获得 <b>10</b> 点格挡，获得 <b>2</b> 点蓄力。', needsTarget:false,
       effect(cs,ti,lv=0){ const blk=lv===1?13:10; Combat.gainBlock(cs,blk,true); Combat.archerGainCharge(cs,2); } },
-    ar_pierce:  { id:'ar_pierce',  rarity:'uncommon', name:'穿甲箭',   cost:2, type:'attack', emoji:'🏹', description:'造成 <b>8</b> 点伤害，无视目标格挡，消耗全部蓄力，每消耗 1 点额外造成 <b>3</b> 点伤害。', needsTarget:true,
-      effect(cs,ti,lv){ const c=cs.charge||0; cs.charge=0; const e=cs.enemies[ti]; const oldBlock=e.block; e.block=0; const base=lv>=1?10:8; const mult=lv>=2?4:3; Combat.dealDamage(cs,ti,base+c*mult); e.block=oldBlock; } },
+    ar_pierce:  { id:'ar_pierce',  rarity:'uncommon', name:'穿甲箭',   cost:2, type:'attack', emoji:'🏹', description:'造成 <b>10</b> 点伤害，无视目标格挡，消耗全部蓄力，每消耗 1 点额外造成 <b>3</b> 点伤害。', needsTarget:true,
+      effect(cs,ti,lv){ const c=cs.charge||0; cs.charge=0; const e=cs.enemies[ti]; const oldBlock=e.block; e.block=0; const base=lv>=1?12:10; const mult=lv>=2?4:3; Combat.dealDamage(cs,ti,base+c*mult); e.block=oldBlock; } },
     ar_swap:    { id:'ar_swap',    rarity:'uncommon', name:'换箭',     cost:0, type:'skill',  emoji:'🔄', description:'丢弃手牌中任意 1 张牌，抽 <b>2</b> 张牌，获得 <b>1</b> 点蓄力。', needsTarget:false,
       effect(cs,ti,lv=0){ Combat._arSwapInteractive(cs,lv); } },
     ar_rapid_fire: { id:'ar_rapid_fire', rarity:'uncommon', name:'连续射击', cost:2, type:'attack', emoji:'🎯', description:'造成 <b>4</b> 点伤害 2 次，消耗全部蓄力，每消耗 1 点额外造成 <b>2</b> 点伤害（作用于全部 2 次）。', needsTarget:true,
@@ -328,8 +328,8 @@ const Data = {
     // ── 拳击手牌组 ───────────────────────────────────────────────────────────────────
     // 起始牌
     box_jab:      { id:'box_jab',      rarity:'common',   name:'直拳',     cost:1, type:'attack', emoji:'🥊', needsTarget:true,
-      description:'造成 <b>5</b> 点伤害。',
-      effect(cs,ti,lv=0){ const base=[5,7,10][lv]||5; Combat.dealDamage(cs,ti,base+Combat._getBoxerBonus(cs)); } },
+      description:'造成 <b>6</b> 点伤害。',
+      effect(cs,ti,lv=0){ const base=[6,8,12][lv]||6; Combat.dealDamage(cs,ti,base+Combat._getBoxerBonus(cs)); } },
     box_guard:    { id:'box_guard',    rarity:'common',   name:'格挡步',   cost:1, type:'skill',  emoji:'🛡', needsTarget:false,
       description:'获得 <b>6</b> 点格挡。',
       effect(cs,ti,lv=0){ const blk=[6,8,11][lv]||6; Combat.gainBlock(cs,blk,true); } },
