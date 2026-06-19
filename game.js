@@ -2792,6 +2792,25 @@ const Meta = {
 
 };
 
+// ── 📚 图鉴解锁追踪 ───────────────────────────────────────────────────────────
+const Bestiary = {
+  _KEY: 'stc_bestiary',
+  cards: {},
+  relics: {},
+  enemies: {},
+  potions: {},
+
+  load() {
+    try { const raw = localStorage.getItem(this._KEY); if (raw) { const d = JSON.parse(raw); this.cards = d.cards || {}; this.relics = d.relics || {}; this.enemies = d.enemies || {}; this.potions = d.potions || {}; } } catch(e) {}
+  },
+  save() { try { localStorage.setItem(this._KEY, JSON.stringify({ cards: this.cards, relics: this.relics, enemies: this.enemies, potions: this.potions })); } catch(e) {} },
+  unlockCard(id) { if (!this.cards[id]) { this.cards[id] = true; this.save(); Bestiary._toast('🃏', Data.cards[id]?.name||id); } },
+  unlockRelic(id) { if (!this.relics[id]) { this.relics[id] = true; this.save(); const relic = (Data.battleRelics && Data.battleRelics.find) ? Data.battleRelics.find(r => r.id === id) : null; Bestiary._toast('💎', relic?.name || id); } },
+  unlockEnemy(id) { if (!this.enemies[id]) { this.enemies[id] = true; this.save(); Bestiary._toast('👾', Data.enemies[id]?.name||id); } },
+  unlockPotion(id) { if (!this.potions[id]) { this.potions[id] = true; this.save(); Bestiary._toast('🧪', Data.potions[id]?.name||id); } },
+  _toast(icon, name) { const t = document.createElement('div'); t.style.cssText = 'position:fixed;bottom:100px;left:50%;transform:translateX(-50%);background:rgba(20,15,35,0.95);color:#ffd060;font-size:0.95rem;font-weight:700;padding:8px 18px;border-radius:12px;border:1px solid rgba(255,210,96,0.4);z-index:9999;pointer-events:none;animation:bubbleIn 0.3s ease'; t.textContent = '📖 新发现！'+icon+' '+name; document.body.appendChild(t); setTimeout(()=>t.remove(),2000); }
+};
+
 // ── map.js
 const MapGen = {
   FLOORS:7,
@@ -3381,7 +3400,9 @@ const Combat = {
       def.effect(cs, targetEnemyIndex); // 额外再执行一次效果
       cs._whistleProc = false;
       // 鼓棒额外攻击后立即检查胜利，避免死亡敌人继续参与后续逻辑
-      cs.enemies.forEach(e=>{if(e.hp<=0&&!e._dead){e._dead=true;e.hp=0;}});
+      cs.enemies.forEach(e=>{if(e.hp<=0&&!e._dead){e._dead=true;e.hp=0;
+        Bestiary.unlockEnemy(e.id);
+      }});
       if(cs.enemies.every(e=>e._dead)){cs.phase='victory';Combat._onVictory();return true;}
     }
     cs.enemies.forEach(e=>{if(e.hp<=0&&!e._dead){e._dead=true;e.hp=0;}});
@@ -3394,6 +3415,8 @@ const Combat = {
     // ── 战斗统计 ──
     if (def.type === 'attack') cs._totalDmgDealt = (cs._totalDmgDealt||0) + (dmgDealt||0);
     cs._cardsPlayed = (cs._cardsPlayed||0) + 1;
+    // 📚 图鉴解锁：打出过的卡牌
+    Bestiary.unlockCard(cardId);
     return true;
   },
   // 判断一个行动是否属于防御型（格挡/不包含攻击）
@@ -11772,6 +11795,7 @@ window.addEventListener('DOMContentLoaded', () => {
   // 启动时加载音频文件（异步，不阻塞 UI）
   Audio.loadAudioFiles();
   Meta.load();
+  Bestiary.load();
   Audio.startBgmMenu();
   UI.menu();
 });

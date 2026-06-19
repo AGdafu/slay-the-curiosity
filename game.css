@@ -1667,3 +1667,28 @@ body {
   .hand-cards .card { margin: 0 -12px; }
   .combat-topbar { font-size: 0.75rem; gap: 6px; }
 }
+
+/* ── 💬 NPC对话气泡 ─────────────────────────────────────────────────────────── */
+@keyframes bubbleIn { from{opacity:0;transform:translateY(8px) scale(0.95)} to{opacity:1;transform:translateY(0) scale(1)} }
+.npc-bubble {
+  animation: bubbleIn 0.3s ease both;
+  font-family: 'ZCOOL KuaiLe', cursive;
+  background: rgba(20,15,35,0.95);
+  border: 1px solid rgba(200,170,240,0.3);
+  border-radius: 14px;
+  padding: 10px 16px;
+  color: #d8c8f0;
+  font-size: 0.9rem;
+  max-width: 360px;
+  position: relative;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+}
+.npc-bubble::after {
+  content: '';
+  position: absolute;
+  bottom: -8px; left: 30px;
+  width: 0; height: 0;
+  border-left: 8px solid transparent;
+  border-right: 8px solid transparent;
+  border-top: 8px solid rgba(20,15,35,0.95);
+}
