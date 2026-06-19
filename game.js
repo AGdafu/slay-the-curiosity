@@ -6814,19 +6814,45 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
   },
 
   characterSelect(){
-    let selected=null;
-    UI.app().innerHTML=`<div class="char-select-screen slide-up"><h2 class="screen-title">选择角色</h2><p style="text-align:center;color:rgba(255,255,255,0.45);font-size:0.85rem;margin:-8px 0 10px">双击角色卡片查看详细介绍</p><div class="char-grid" id="char-grid"></div><div id="char-detail" style="font-size:0.9rem;color:var(--ink-light);min-height:20px"></div><div style="display:flex;gap:12px;margin-top:4px"><button class="btn" id="btn-back">← 返回</button><button class="btn primary" id="btn-start" disabled>开始冒险 →</button></div></div>`;
+    let selected=null, cardStates={};
+    const profiles = {
+      boxer: { realName:'方铁拳', title:'浪人重拳', bio:'流浪格斗家，三年前在拳馆惹了不该惹的人，从此流浪街头。每到一个镇上就去酒馆打架攒钱，人称"铁拳"。他的哲学很简单：被打得越惨，还手就越狠。',
+        lines: '🚪"来吧，我这拳头痒了三年了。" ✅"谁先动手不重要，重要的是谁站着。" 🏆"就这？" 💀"下一次…我连内脏都练硬给你看。"' },
+      brute: { realName:'齐重山', title:'力气大', bio:'山中樵夫出身，力大无穷。听说塔顶有个会打人的怪物，本着"砍柴不如砍怪"的心态扛着大剑就来了。不善言辞，性格憨直，但手里的剑从不含糊。',
+        lines: '🚪"听说…上面有个会打人的塔？" ✅"砍。" 🏆"小事。" 💀"我以为我能再扛一下。"' },
+      racer: { realName:'林一档', title:'节奏野兽', bio:'地下赛车手，弯道快才是真的快。因欠下巨额赌债被追杀，逃进这座塔里。把赛车换成了战斗，但档位系统的肌肉记忆刻在骨子里。',
+        lines: '🚪"系好安全带——哦，没有。" ✅"换挡。" 🏆"还没尽兴。" 💀"油…快没了。"' },
+      archer: { realName:'苏问月', title:'千眼', bio:'林中猎手，箭无虚发。从小被父亲训练成猎人，能听见百米外松鼠的心跳。她说"风往南"的时候，箭已经在你胸口了。',
+        lines: '🚪"风往南。" ✅"对准就够了。" 🏆"吐气…松弦。" 💀"…还差一点。"' }
+    };
+    UI.app().innerHTML=`<div class="char-select-screen slide-up"><h2 class="screen-title">选择角色</h2><div class="char-grid" id="char-grid"></div><div style="display:flex;gap:12px;margin-top:12px"><button class="btn" id="btn-back">← 返回</button><button class="btn primary" id="btn-start" disabled>开始冒险 →</button></div></div>`;
     const grid=document.getElementById('char-grid');
     Data.characters.forEach(char=>{
+      const p = profiles[char.id] || {};
       const card=document.createElement('div');card.className='char-card panel';card.dataset.id=char.id;
-      card.innerHTML=`<div class="char-figure" style="background:${char.color}22"><span style="font-size:4.5rem">${char.emoji}</span></div><div class="char-info"><div class="char-name">${char.name}</div><div class="char-stat">❤️ ${char.maxHp} HP</div><div class="char-stat" style="font-size:1.0rem;margin-top:6px;color:rgba(255,255,255,0.75);line-height:1.5">${char.description}</div></div>`;
-      card.onclick=()=>{
-        grid.querySelectorAll('.char-card').forEach(c=>c.classList.remove('selected'));card.classList.add('selected');selected=char.id;document.getElementById('btn-start').disabled=false;
-        const counts={};char.startingDeck.forEach(id=>counts[id]=(counts[id]||0)+1);
-        const names=Object.entries(counts).map(([id,n])=>`${Data.cards[id]?.name||id}×${n}`).join(' · ');
-        document.getElementById('char-detail').innerHTML=`<span style="font-size:1.05rem;color:rgba(255,255,255,0.85)">起始牌组：<b style="color:#e8e8f0">${names}</b></span>`;
+      cardStates[char.id] = 0;
+      const counts={};char.startingDeck.forEach(id=>counts[id]=(counts[id]||0)+1);
+      const deckNames=Object.entries(counts).map(([id,n])=>`${Data.cards[id]?.name||id}×${n}`).join(' · ');
+      const renderCard = () => {
+        const s = cardStates[char.id];
+        if (s === 0) {
+          card.innerHTML=`<div class="char-figure" style="background:${char.color}22"><span style="font-size:4.5rem">${char.emoji}</span></div><div class="char-info"><div class="char-name">${char.name}</div><div class="char-stat">❤️ ${char.maxHp} HP</div></div>`;
+        } else if (s === 1) {
+          card.innerHTML=`<div class="char-info" style="padding:16px;background:${char.color}12"><div class="char-name" style="font-size:1.2rem">${char.emoji} ${char.name}</div><div style="color:${char.color};font-size:0.9rem;margin:4px 0">「${p.title||''}」</div><div style="font-size:0.85rem;color:rgba(255,255,255,0.7);line-height:1.5">${char.description}</div><div style="font-size:0.82rem;color:rgba(255,255,255,0.5);margin-top:8px">🃏 ${deckNames}</div></div>`;
+        } else {
+          card.innerHTML=`<div class="char-info" style="padding:14px;background:rgba(15,12,28,0.9)"><div style="font-weight:700;color:#fff;font-size:1.05rem">${p.realName||char.name} · ${p.title||''}</div><div style="font-size:0.82rem;color:rgba(255,255,255,0.65);line-height:1.5;margin:6px 0">${p.bio||''}</div><div style="font-size:0.78rem;color:rgba(255,255,255,0.45)">${p.lines||''}</div></div>`;
+        }
       };
-      card.ondblclick=e=>{ e.preventDefault(); UI._showCharDetail(char); };
+      renderCard();
+      card.onclick=()=>{
+        cardStates[char.id] = (cardStates[char.id] + 1) % 3;
+        renderCard();
+        // 选中逻辑
+        grid.querySelectorAll('.char-card').forEach(c=>c.classList.remove('selected'));
+        card.classList.add('selected');
+        selected=char.id;
+        document.getElementById('btn-start').disabled=false;
+      };
       grid.appendChild(card);
     });
     document.getElementById('btn-back').onclick=()=>State.go('menu');
