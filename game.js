@@ -2866,7 +2866,7 @@ const Meta = {
     if (!canvas) {
       canvas = document.createElement('canvas');
       canvas.id = 'night-snow';
-      canvas.style.cssText = 'position:fixed;inset:0;z-index:101;pointer-events:none';
+      canvas.style.cssText = 'position:fixed;inset:0;z-index:9999;pointer-events:none';
       document.body.appendChild(canvas);
     } else {
       canvas.style.display = 'block';
@@ -2908,7 +2908,7 @@ const Meta = {
     if (this._snowInterval) { clearInterval(this._snowInterval); this._snowInterval = null; }
     // 不删 canvas，只隐藏——保留跨界面
     const canvas = document.getElementById('night-snow');
-    if (canvas) { canvas.style.display = 'none'; canvas.width = 0; canvas.height = 0; }
+    if (canvas) canvas.style.display = 'none';
   },
 
 };
@@ -7126,7 +7126,8 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
   },
 
   characterSelect(){
-    Meta.stopSnow(); Meta.startSnow();  // 确保选角页有雪
+    Meta._snowActive = true;
+    Meta.stopSnow(); Meta.startSnow();
     let selected=null, cardStates={};
     const profiles = {
       boxer: { name:'铁拳', title:'愈伤愈狂', bio:'流浪格斗家，人称"铁拳"。被打得越惨，还手就越狠。',
