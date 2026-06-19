@@ -6471,26 +6471,26 @@ el.innerHTML=`<div class="card-type-bar"></div>${rarityTag}<div class="card-cost
           windC.width = window.innerWidth; windC.height = window.innerHeight;
           const wctx = windC.getContext('2d');
           const windLines = Array.from({length:8}, () => ({
-            x: Math.random()*windC.width*0.6, y: -10,
+            x: windC.width - Math.random()*windC.width*0.4, y: -10,
             len: 60+Math.random()*120, life: Math.random(),
-            speedX: 6+Math.random()*10, speedY: 3+Math.random()*5,
+            speedX: -(6+Math.random()*10), speedY: 3+Math.random()*5,
             curve: (Math.random()-0.5)*40
           }));
           Meta._windInterval = setInterval(() => {
             wctx.clearRect(0,0,windC.width,windC.height);
             windLines.forEach(w => {
               wctx.beginPath();
-              const midX = w.x + w.len*0.7;
+              const midX = w.x + w.len*-0.7;
               const midY = w.y + w.len*0.3 + Math.sin(w.life*8) * w.curve;
               wctx.moveTo(w.x, w.y);
-              wctx.quadraticCurveTo(midX, midY, w.x + w.len, w.y + w.len*0.5 + Math.cos(w.life*5)*10);
+              wctx.quadraticCurveTo(midX, midY, w.x - w.len, w.y + w.len*0.5 + Math.cos(w.life*5)*10);
               wctx.strokeStyle = `rgba(200,220,245,${w.life*0.35})`;
               wctx.lineWidth = 1.8; wctx.stroke();
               w.x += w.speedX; w.y += w.speedY; w.life -= 0.01;
-              if (w.life <= 0 || w.y > windC.height + 50 || w.x > windC.width + 50) {
-                w.x = Math.random()*windC.width*0.6; w.y = -10;
+              if (w.life <= 0 || w.y > windC.height + 50 || w.x < -50) {
+                w.x = windC.width - Math.random()*windC.width*0.4; w.y = -10;
                 w.life = 1; w.len = 60+Math.random()*120;
-                w.speedX = 6+Math.random()*10; w.speedY = 3+Math.random()*5;
+                w.speedX = -(6+Math.random()*10); w.speedY = 3+Math.random()*5;
                 w.curve = (Math.random()-0.5)*40;
               }
             });
@@ -6524,6 +6524,8 @@ el.innerHTML=`<div class="card-type-bar"></div>${rarityTag}<div class="card-cost
       };
       function closeNight() {
         Meta._nightActive = false;
+        Meta.stopSnow();
+        Meta.startSnow();  // 恢复常驻小雪
         const v = document.getElementById('night-veil'); if (v) v.style.display = 'none';
         const b = document.getElementById('night-blood'); if (b) b.style.display = 'none';
         const e = document.getElementById('night-ember'); if (e) e.style.display = 'none';
@@ -7634,26 +7636,26 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
           windC.width = window.innerWidth; windC.height = window.innerHeight;
           const wctx = windC.getContext('2d');
           const windLines = Array.from({length:8}, () => ({
-            x: Math.random()*windC.width*0.6, y: -10,
+            x: windC.width - Math.random()*windC.width*0.4, y: -10,
             len: 60+Math.random()*120, life: Math.random(),
-            speedX: 6+Math.random()*10, speedY: 3+Math.random()*5,
+            speedX: -(6+Math.random()*10), speedY: 3+Math.random()*5,
             curve: (Math.random()-0.5)*40
           }));
           Meta._windInterval = setInterval(() => {
             wctx.clearRect(0,0,windC.width,windC.height);
             windLines.forEach(w => {
               wctx.beginPath();
-              const midX = w.x + w.len*0.7;
+              const midX = w.x + w.len*-0.7;
               const midY = w.y + w.len*0.3 + Math.sin(w.life*8) * w.curve;
               wctx.moveTo(w.x, w.y);
-              wctx.quadraticCurveTo(midX, midY, w.x + w.len, w.y + w.len*0.5 + Math.cos(w.life*5)*10);
+              wctx.quadraticCurveTo(midX, midY, w.x - w.len, w.y + w.len*0.5 + Math.cos(w.life*5)*10);
               wctx.strokeStyle = `rgba(200,220,245,${w.life*0.35})`;
               wctx.lineWidth = 1.8; wctx.stroke();
               w.x += w.speedX; w.y += w.speedY; w.life -= 0.01;
-              if (w.life <= 0 || w.y > windC.height + 50 || w.x > windC.width + 50) {
-                w.x = Math.random()*windC.width*0.6; w.y = -10;
+              if (w.life <= 0 || w.y > windC.height + 50 || w.x < -50) {
+                w.x = windC.width - Math.random()*windC.width*0.4; w.y = -10;
                 w.life = 1; w.len = 60+Math.random()*120;
-                w.speedX = 6+Math.random()*10; w.speedY = 3+Math.random()*5;
+                w.speedX = -(6+Math.random()*10); w.speedY = 3+Math.random()*5;
                 w.curve = (Math.random()-0.5)*40;
               }
             });
