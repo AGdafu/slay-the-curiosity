@@ -144,8 +144,8 @@ body {
   outline: 2px solid rgba(74,144,217,0.8);
   z-index: 25;
 }
-.card.unplayable { opacity: 0.4; cursor: not-allowed; }
-.card.unplayable:hover { transform: none; }
+.card.unplayable { opacity: 0.28; cursor: not-allowed; filter: grayscale(0.5) brightness(0.65); }
+.card.unplayable:hover { transform: none; filter: grayscale(0.5) brightness(0.65); }
 
 /* 🌑 永夜暴风雪：盲打卡牌 */
 .card.card-blind {
@@ -1691,4 +1691,14 @@ body {
   border-left: 8px solid transparent;
   border-right: 8px solid transparent;
   border-top: 8px solid rgba(20,15,35,0.95);
+}
+
+/* ── 🔔 敌人攻击预警 ───────────────────────────────────────────────── */
+@keyframes intentPulse {
+  0%, 100% { box-shadow: 0 0 8px rgba(255,50,50,0.4); }
+  50% { box-shadow: 0 0 18px rgba(255,50,50,0.8), 0 0 30px rgba(255,30,30,0.3); }
+}
+.intent-badge.attack {
+  animation: intentPulse 1.5s ease-in-out infinite;
+  border-color: rgba(255,70,70,0.7) !important;
 }
