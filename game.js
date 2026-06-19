@@ -6434,42 +6434,32 @@ el.innerHTML=`<div class="card-type-bar"></div>${rarityTag}<div class="card-cost
         // ⚡ 闪电效果
         Meta._nightLightning = setInterval(() => {
           if (Math.random() < 0.5) {
-            // 白屏闪
             const flash = document.createElement('div');
-            flash.style.cssText = 'position:fixed;inset:0;z-index:92;pointer-events:none;background:rgba(200,180,220,0.12);animation:flashBoom 0.12s ease-out';
+            flash.style.cssText = 'position:fixed;inset:0;z-index:92;pointer-events:none;background:rgba(200,180,220,0.1);animation:flashBoom 0.12s ease-out';
             document.body.appendChild(flash);
-            setTimeout(() => flash.remove(), 180);
-            // 第二道延闪
-            setTimeout(() => {
-              const f2 = document.createElement('div');
-              f2.style.cssText = 'position:fixed;inset:0;z-index:92;pointer-events:none;background:rgba(180,200,240,0.06);animation:flashBoom 0.1s ease-out';
-              document.body.appendChild(f2);
-              setTimeout(() => f2.remove(), 150);
-            }, 80);
-            // ⚡ 闪电形状（双叉）
+            setTimeout(() => flash.remove(), 200);
             const bolt = document.createElement('canvas');
             bolt.style.cssText = 'position:fixed;inset:0;z-index:93;pointer-events:none';
             bolt.width = window.innerWidth; bolt.height = window.innerHeight;
             document.body.appendChild(bolt);
             const bctx = bolt.getContext('2d');
             const startX = Math.random() * bolt.width * 0.5 + bolt.width * 0.2;
-            const drawBolt = (x, y, len, angle, depth) => {
-              if (len < 3 || y > bolt.height || depth > 6) return;
+            const drawBolt = (x, y, len, angle) => {
+              if (len < 5 || y > bolt.height) return;
               bctx.beginPath(); bctx.moveTo(x, y);
               const endX = x + Math.cos(angle) * len;
               const endY = y + Math.sin(angle) * len;
-              const alpha = 1 - depth * 0.12;
-              bctx.strokeStyle = `rgba(220,235,255,${alpha})`;
-              bctx.lineWidth = depth === 0 ? 4 : (len > 25 ? 2.5 : 1.2);
-              bctx.shadowColor = 'rgba(200,220,255,0.9)';
-              bctx.shadowBlur = 8 + depth * 2;
+              bctx.lineTo(endX, endY);
+              bctx.strokeStyle = 'rgba(220,235,255,0.9)';
+              bctx.lineWidth = len > 30 ? 3.5 : (len > 15 ? 2 : 1.2);
+              bctx.shadowColor = 'rgba(180,220,255,0.8)';
+              bctx.shadowBlur = 12;
               bctx.stroke();
-              if (Math.random() < 0.5) drawBolt(endX, endY, len * 0.35, angle + (Math.random() - 0.5) * 1.0, depth + 1);
-              if (Math.random() < 0.3) drawBolt(endX, endY, len * 0.5, angle + (Math.random() - 0.5) * 0.7, depth + 1);
-              else drawBolt(endX, endY, len * 0.75, angle + (Math.random() - 0.5) * 0.4, depth + 1);
+              if (Math.random() < 0.45) drawBolt(endX, endY, len * 0.4, angle + (Math.random()-0.5)*1.3);
+              else drawBolt(endX, endY, len * 0.65, angle + (Math.random()-0.5)*0.7);
             };
-            drawBolt(startX, 0, bolt.height * 0.9, Math.PI * 0.47, 0);
-            setTimeout(() => bolt.remove(), 300);
+            drawBolt(startX, 0, bolt.height * 0.85, Math.PI * 0.48);
+            setTimeout(() => bolt.remove(), 250);
           }
         }, 3000);
         // 💨 横风线
@@ -7608,42 +7598,32 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
       if (!Meta._nightLightning) {
         Meta._nightLightning = setInterval(() => {
           if (Math.random() < 0.5) {
-            // 白屏闪
             const flash = document.createElement('div');
-            flash.style.cssText = 'position:fixed;inset:0;z-index:92;pointer-events:none;background:rgba(200,180,220,0.12);animation:flashBoom 0.12s ease-out';
+            flash.style.cssText = 'position:fixed;inset:0;z-index:92;pointer-events:none;background:rgba(200,180,220,0.1);animation:flashBoom 0.12s ease-out';
             document.body.appendChild(flash);
-            setTimeout(() => flash.remove(), 180);
-            // 第二道延闪
-            setTimeout(() => {
-              const f2 = document.createElement('div');
-              f2.style.cssText = 'position:fixed;inset:0;z-index:92;pointer-events:none;background:rgba(180,200,240,0.06);animation:flashBoom 0.1s ease-out';
-              document.body.appendChild(f2);
-              setTimeout(() => f2.remove(), 150);
-            }, 80);
-            // ⚡ 闪电形状（双叉）
+            setTimeout(() => flash.remove(), 200);
             const bolt = document.createElement('canvas');
             bolt.style.cssText = 'position:fixed;inset:0;z-index:93;pointer-events:none';
             bolt.width = window.innerWidth; bolt.height = window.innerHeight;
             document.body.appendChild(bolt);
             const bctx = bolt.getContext('2d');
             const startX = Math.random() * bolt.width * 0.5 + bolt.width * 0.2;
-            const drawBolt = (x, y, len, angle, depth) => {
-              if (len < 3 || y > bolt.height || depth > 6) return;
+            const drawBolt = (x, y, len, angle) => {
+              if (len < 5 || y > bolt.height) return;
               bctx.beginPath(); bctx.moveTo(x, y);
               const endX = x + Math.cos(angle) * len;
               const endY = y + Math.sin(angle) * len;
-              const alpha = 1 - depth * 0.12;
-              bctx.strokeStyle = `rgba(220,235,255,${alpha})`;
-              bctx.lineWidth = depth === 0 ? 4 : (len > 25 ? 2.5 : 1.2);
-              bctx.shadowColor = 'rgba(200,220,255,0.9)';
-              bctx.shadowBlur = 8 + depth * 2;
+              bctx.lineTo(endX, endY);
+              bctx.strokeStyle = 'rgba(220,235,255,0.9)';
+              bctx.lineWidth = len > 30 ? 3.5 : (len > 15 ? 2 : 1.2);
+              bctx.shadowColor = 'rgba(180,220,255,0.8)';
+              bctx.shadowBlur = 12;
               bctx.stroke();
-              if (Math.random() < 0.5) drawBolt(endX, endY, len * 0.35, angle + (Math.random() - 0.5) * 1.0, depth + 1);
-              if (Math.random() < 0.3) drawBolt(endX, endY, len * 0.5, angle + (Math.random() - 0.5) * 0.7, depth + 1);
-              else drawBolt(endX, endY, len * 0.75, angle + (Math.random() - 0.5) * 0.4, depth + 1);
+              if (Math.random() < 0.45) drawBolt(endX, endY, len * 0.4, angle + (Math.random()-0.5)*1.3);
+              else drawBolt(endX, endY, len * 0.65, angle + (Math.random()-0.5)*0.7);
             };
-            drawBolt(startX, 0, bolt.height * 0.9, Math.PI * 0.47, 0);
-            setTimeout(() => bolt.remove(), 300);
+            drawBolt(startX, 0, bolt.height * 0.85, Math.PI * 0.48);
+            setTimeout(() => bolt.remove(), 250);
           }
         }, 3000);
         // 💨 横风线
