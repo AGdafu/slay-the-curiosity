@@ -3436,9 +3436,7 @@ const Combat = {
       def.effect(cs, targetEnemyIndex); // 额外再执行一次效果
       cs._whistleProc = false;
       // 鼓棒额外攻击后立即检查胜利，避免死亡敌人继续参与后续逻辑
-      cs.enemies.forEach(e=>{if(e.hp<=0&&!e._dead){e._dead=true;e.hp=0;
-        Bestiary.unlockEnemy(e.id);
-      }});
+      cs.enemies.forEach(e=>{if(e.hp<=0&&!e._dead){e._dead=true;e.hp=0;}});
       if(cs.enemies.every(e=>e._dead)){cs.phase='victory';Combat._onVictory();return true;}
     }
     cs.enemies.forEach(e=>{if(e.hp<=0&&!e._dead){e._dead=true;e.hp=0;}});
@@ -3449,10 +3447,7 @@ const Combat = {
       else if (def.type === 'attack') cs._temp = Math.max(0, cs._temp - 1);
     }
     // ── 战斗统计 ──
-    if (def.type === 'attack') cs._totalDmgDealt = (cs._totalDmgDealt||0) + (dmgDealt||0);
     cs._cardsPlayed = (cs._cardsPlayed||0) + 1;
-    // 📚 图鉴解锁：打出过的卡牌
-    Bestiary.unlockCard(cardId);
     return true;
   },
   // 判断一个行动是否属于防御型（格挡/不包含攻击）
