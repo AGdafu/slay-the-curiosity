@@ -2880,8 +2880,8 @@ const Meta = {
         x: Math.random() * canvas.width,
         y: Math.random() * canvas.height,
         r: (Meta._nightActive ? Math.random() * 4 + 1 : Math.random() * 2.5 + 0.8),
-        speed: (Meta._nightActive ? Math.random() * 5 + 2 : Math.random() * 1.2 + 0.4),
-        wind: (Meta._nightActive ? Math.random() * 3 - 1 : Math.random() * 0.6 - 0.3),
+        speed: (Meta._nightActive ? Math.random() * 7 + 3 : Math.random() * 1.2 + 0.4),
+        wind: (Meta._nightActive ? Math.random() * 4 - 1.5 : Math.random() * 0.6 - 0.3),
         opacity: Math.random() * 0.6 + 0.3,
       });
     }
@@ -6417,7 +6417,7 @@ el.innerHTML=`<div class="card-type-bar"></div>${rarityTag}<div class="card-cost
         let veil = document.getElementById('night-veil');
         if (!veil) {
           veil = document.createElement('div'); veil.id = 'night-veil';
-          veil.style.cssText = 'position:fixed;inset:0;z-index:90;pointer-events:none;background:radial-gradient(ellipse at center, rgba(5,0,15,0.25) 30%, rgba(20,2,5,0.45) 70%, rgba(40,5,5,0.6) 100%)';
+          veil.style.cssText = 'position:fixed;inset:0;z-index:90;pointer-events:none;background:radial-gradient(ellipse at center, rgba(5,0,15,0.18) 30%, rgba(20,2,5,0.35) 70%, rgba(40,5,5,0.5) 100%)';
           document.body.appendChild(veil);
         }
         veil.style.display = 'block';
@@ -6478,8 +6478,8 @@ el.innerHTML=`<div class="card-type-bar"></div>${rarityTag}<div class="card-cost
             windLines.forEach(w => {
               wctx.beginPath(); wctx.moveTo(w.x, w.y);
               wctx.lineTo(w.x + w.len, w.y + (Math.random()-0.5)*4);
-              wctx.strokeStyle = `rgba(180,200,230,${w.life*0.12})`;
-              wctx.lineWidth = 1; wctx.stroke();
+              wctx.strokeStyle = `rgba(180,200,230,${w.life*0.25})`;
+              wctx.lineWidth = 1.5; wctx.stroke();
               w.x += w.speed; w.life -= 0.015;
               if (w.life <= 0 || w.x > windC.width + 100) {
                 w.x = -100; w.y = Math.random()*windC.height;
@@ -6514,20 +6514,29 @@ el.innerHTML=`<div class="card-type-bar"></div>${rarityTag}<div class="card-cost
         bt.textContent = '☀️ 关闭暴风雪';
         bt._nightTest = true;
       };
-      // 双击关闭
-      bt.addEventListener('dblclick', () => {
-        if (bt._nightTest) {
-          Meta._nightActive = false;
-          const v = document.getElementById('night-veil'); if (v) v.style.display = 'none';
-          const b = document.getElementById('night-blood'); if (b) b.style.display = 'none';
-          const e = document.getElementById('night-ember'); if (e) e.style.display = 'none';
-          if (Meta._nightLightning) { clearInterval(Meta._nightLightning); Meta._nightLightning = null; }
-          if (Meta._emberInterval) { clearInterval(Meta._emberInterval); Meta._emberInterval = null; }
-          if (Meta._windInterval) { clearInterval(Meta._windInterval); Meta._windInterval = null; }
-          bt.textContent = '🌑 暴风雪测试';
-          bt._nightTest = false;
-        }
+      function closeNight() {
+        Meta._nightActive = false;
+        const v = document.getElementById('night-veil'); if (v) v.style.display = 'none';
+        const b = document.getElementById('night-blood'); if (b) b.style.display = 'none';
+        const e = document.getElementById('night-ember'); if (e) e.style.display = 'none';
+        const w = document.getElementById('night-wind'); if (w) w.style.display = 'none';
+        if (Meta._nightLightning) { clearInterval(Meta._nightLightning); Meta._nightLightning = null; }
+        if (Meta._emberInterval) { clearInterval(Meta._emberInterval); Meta._emberInterval = null; }
+        if (Meta._windInterval) { clearInterval(Meta._windInterval); Meta._windInterval = null; }
+        bt.textContent = '🌑 暴风雪测试';
+        bt._nightTest = false;
+      }
+      // 右键/再次点击关闭
+      bt.addEventListener('contextmenu', (e) => {
+        e.preventDefault(); closeNight();
       });
+      bt._closeNight = closeNight;
+      // 如果已经开启，再次单击关闭
+      const origClick = bt.onclick;
+      bt.onclick = function() {
+        if (bt._nightTest) { closeNight(); return; }
+        origClick.call(this);
+      };
       document.querySelector('.menu-screen')?.appendChild(bt);
     }, 50);
   },
@@ -7624,8 +7633,8 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
             windLines.forEach(w => {
               wctx.beginPath(); wctx.moveTo(w.x, w.y);
               wctx.lineTo(w.x + w.len, w.y + (Math.random()-0.5)*4);
-              wctx.strokeStyle = `rgba(180,200,230,${w.life*0.12})`;
-              wctx.lineWidth = 1; wctx.stroke();
+              wctx.strokeStyle = `rgba(180,200,230,${w.life*0.25})`;
+              wctx.lineWidth = 1.5; wctx.stroke();
               w.x += w.speed; w.life -= 0.015;
               if (w.life <= 0 || w.x > windC.width + 100) {
                 w.x = -100; w.y = Math.random()*windC.height;
