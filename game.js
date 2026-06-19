@@ -2956,19 +2956,19 @@ const Achievements = {
     hp_never_below_50: { name:'坚不可摧', desc:'单局从未低于50%HP并通关', icon:'🛡️', tier:2, next:'hp_never_below_80' },
     hp_never_below_80: { name:'铜墙铁壁', desc:'单局从未低于80%HP并通关', icon:'🏰', tier:3 },
     // 通关成就
-    first_win:     { name:'初次通关',  desc:'第一次击败最终Boss',    icon:'🏆', tier:1 },
+    first_win:     { name:'初次通关',  desc:'第一次击败最终Boss',    icon:'🏆', tier:2 },
     win_boxer:     { name:'拳拳到肉',  desc:'用铁拳通关',            icon:'🥊', tier:1 },
     win_brute:     { name:'力大无穷',  desc:'用重剑通关',            icon:'⚔️', tier:1 },
     win_racer:     { name:'极速传说',  desc:'用狂飙通关',            icon:'🏎️', tier:1 },
     win_archer:    { name:'百步穿杨',  desc:'用银箭通关',            icon:'🏹', tier:1 },
-    all_chars:     { name:'全员集结',  desc:'四个角色全部通关',      icon:'🌟', tier:2 },
-    no_damage_boss:{ name:'完美无伤',  desc:'Boss战全程不受伤害',    icon:'🛡️', tier:3 },
-    // 🔒 隐藏成就（解锁后才显示名字和描述）
+    all_chars:     { name:'全员集结',  desc:'四个角色全部通关',      icon:'🌟', tier:3 },
+    no_damage_boss:{ name:'完美无伤',  desc:'Boss战全程不受伤害',    icon:'🛡️', tier:4 },
+    // 🔒 隐藏成就
     secret_potion: { name:'???', desc:'???', icon:'🔒', tier:1, hidden:true, realName:'药剂师', realDesc:'单局使用5瓶以上药水' },
     secret_curse:  { name:'???', desc:'???', icon:'🔒', tier:2, hidden:true, realName:'受诅者', realDesc:'单局获得3张以上诅咒牌' },
     secret_ember:  { name:'???', desc:'???', icon:'🔒', tier:2, hidden:true, realName:'薪王', realDesc:'永夜模式累计度过10个篝火' },
     secret_oneshot:{ name:'???', desc:'???', icon:'🔒', tier:3, hidden:true, realName:'一击必杀', realDesc:'单次攻击造成100点以上伤害' },
-    secret_speedrun:{ name:'???', desc:'???', icon:'🔒', tier:3, hidden:true, realName:'闪电侠', realDesc:'10回合内击败Boss' },
+    secret_speedrun:{ name:'???', desc:'???', icon:'🔒', tier:4, hidden:true, realName:'闪电侠', realDesc:'10回合内击败Boss' },
   },
 
   load() { try { const r = localStorage.getItem(this._KEY); if (r) this.unlocked = JSON.parse(r); } catch(e) {} },
@@ -2991,12 +2991,15 @@ const Achievements = {
   show() {
     const done = Object.keys(this.unlocked).length;
     const total = Object.keys(this.LIST).length;
-    let html = `<div class="menu-screen slide-up" style="position:relative">
-      <button style="position:absolute;top:12px;right:16px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.2);border-radius:8px;color:#ccc;font-size:1.2rem;padding:6px 14px;cursor:pointer;z-index:10" id="btn-ach-back">✕ 退出</button>
+    let html = `<div class="menu-screen slide-up" style="position:relative;max-height:100vh;overflow:hidden;display:flex;flex-direction:column">
+      <button style="position:absolute;top:12px;right:16px;background:rgba(255,80,80,0.15);border:1px solid rgba(255,80,80,0.35);border-radius:8px;color:#f88;font-size:1.1rem;padding:6px 16px;cursor:pointer;z-index:10" id="btn-ach-back">✕ 退出</button>
       <div class="menu-title" style="font-size:2rem;margin-bottom:4px">🏆 成就殿堂</div>
-      <div style="text-align:center;color:rgba(255,255,255,0.4);margin-bottom:20px;font-size:0.9rem">${done} / ${total} 已解锁</div>`;
-    const tiers = {1:[], 2:[], 3:[]};
+      <div style="text-align:center;color:rgba(255,255,255,0.4);margin-bottom:16px;font-size:0.9rem">${done} / ${total} 已解锁</div>
+      <div style="flex:1;overflow-y:auto;padding:0 8px 20px;scrollbar-width:thin;scrollbar-color:rgba(255,255,255,0.1) transparent">`;
+    const tiers = {1:[], 2:[], 3:[], 4:[]};
     const hiddenUnlocked=[], hiddenLocked=[];
+    const tierColors = {1:'#7f8c8d', 2:'#5dade2', 3:'#af7ac5', 4:'#f39c12'};
+    const tierLabels = {1:'⚪ 普通', 2:'🔵 非凡', 3:'🟣 稀有', 4:'🟠 史诗'};
     for (const [id, a] of Object.entries(this.LIST)) {
       if (a.hidden) {
         (this.unlocked[id] ? hiddenUnlocked : hiddenLocked).push({id, ...a});
@@ -3004,9 +3007,7 @@ const Achievements = {
         (tiers[a.tier||1]||tiers[1]).push({id, ...a});
       }
     }
-    const tierColors = {1:'#8e9eab', 2:'#f0c040', 3:'#e74c3c'};
-    const tierLabels = {1:'🥉 初级', 2:'🥈 中级', 3:'🥇 高级'};
-    for (const t of [1,2,3]) {
+    for (const t of [1,2,3,4]) {
       if (tiers[t].length===0) continue;
       html += `<div style="margin:10px 0 4px;font-size:0.9rem;color:${tierColors[t]};font-weight:800;border-bottom:1px solid rgba(255,255,255,0.06);padding-bottom:4px">${tierLabels[t]} <span style="font-size:0.7rem;opacity:0.5">${tiers[t].filter(a=>this.unlocked[a.id]).length}/${tiers[t].length}</span></div>`;
       html += `<div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:6px">`;
@@ -3031,7 +3032,7 @@ const Achievements = {
         <div style="font-size:0.65rem;color:rgba(255,255,255,0.2)">${isUnlocked ? (a.realDesc||a.desc) : '???'}</div>
       </div>`;
     });
-    html += `</div></div>`;
+    html += `</div></div></div>`;
     UI.app().innerHTML = html;
     document.getElementById('btn-ach-back')?.addEventListener('click', () => UI.menu());
   }
