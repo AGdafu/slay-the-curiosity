@@ -6804,10 +6804,14 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
   characterSelect(){
     let selected=null, cardStates={};
     const profiles = {
-      boxer: { name:'铁拳', title:'愈伤愈狂', bio:'流浪格斗家，人称"铁拳"。他的哲学很简单：被打得越惨，还手就越狠。三年前在拳馆惹了不该惹的人，从此流浪街头，每到一个镇上就去酒馆打架攒钱。' },
-      brute: { name:'重剑', title:'力劈华山', bio:'山中樵夫出身，力大无穷。听说塔顶有个会打人的怪物，本着"砍柴不如砍怪"的心态扛着大剑就来了。不善言辞，性格憨直，但手里的剑从不含糊。' },
-      racer: { name:'狂飙', title:'死亡弯道', bio:'地下赛车手，弯道快才是真的快。因欠下巨额赌债被追杀，逃进这座塔里。把赛车换成了战斗，但档位系统的肌肉记忆刻在骨子里——升挡、降挡、加速、漂移，一样不少。' },
-      archer: { name:'银箭', title:'百步穿杨', bio:'林中猎手，箭无虚发。从小被父亲训练成猎人，能听见百米外松鼠的心跳。她说"风往南"的时候，箭已经在你胸口了。沉默寡言，但每一箭都带故事。' }
+      boxer: { name:'铁拳', title:'愈伤愈狂', bio:'流浪格斗家，人称"铁拳"。被打得越惨，还手就越狠。',
+        lines: '🚪"来吧，拳头痒了三年了。" ✅"谁先动手不重要，谁站着。谁最重要。" 🏆"就这？" 💀"下一次…内脏都练硬给你看。"' },
+      brute: { name:'重剑', title:'力劈华山', bio:'山中樵夫出身，力大无穷。不善言辞，但手里的剑从不含糊。',
+        lines: '🚪"听说…上面有个打人的塔？" ✅"砍。" 🏆"小事。" 💀"我以为能再扛一下。"' },
+      racer: { name:'狂飙', title:'死亡弯道', bio:'地下赛车手，弯道快才是真的快。把赛车换成了战斗，档位的肌肉记忆刻在骨子里。',
+        lines: '🚪"系好安全带——哦，你没有。" ✅"换挡。" 🏆"还没尽兴。" 💀"油…快没了。"' },
+      archer: { name:'银箭', title:'百步穿杨', bio:'林中猎手，箭无虚发。能听见百米外松鼠的心跳。',
+        lines: '🚪"风往南。" ✅"对准就够了。" 🏆"吐气…松弦。" 💀"…还差一点。"' }
     };
     UI.app().innerHTML='<div class="char-select-screen slide-up"><h2 class="screen-title">选择角色</h2><div class="char-grid" id="char-grid"></div><div id="char-detail" style="font-size:0.9rem;color:var(--ink-light);min-height:20px"></div><div style="display:flex;gap:12px;margin-top:4px"><button class="btn" id="btn-back">← 返回</button><button class="btn primary" id="btn-start" disabled>开始冒险 →</button></div></div>';
     const grid=document.getElementById('char-grid');
@@ -6818,7 +6822,7 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
       const counts={};char.startingDeck.forEach(id=>counts[id]=(counts[id]||0)+1);
       const deckNames=Object.entries(counts).map(([id,n])=>Data.cards[id]?.name+'×'+n||id).join(' · ');
       // 初始渲染：保留原 UI 结构
-      card.innerHTML='<div class="char-figure" style="background:'+char.color+'22"><span style="font-size:4.5rem">'+char.emoji+'</span></div><div class="char-info"><div class="char-name" id="ci-name-'+char.id+'">'+char.name+'</div><div class="char-stat" id="ci-desc-'+char.id+'" style="font-size:1.0rem;margin-top:6px;color:rgba(255,255,255,0.75);line-height:1.5">'+char.description+'</div></div>';
+      card.innerHTML='<div class="char-figure" style="background:'+char.color+'22"><span style="font-size:4.5rem">'+char.emoji+'</span></div><div class="char-info"><div class="char-name" id="ci-name-'+char.id+'">'+char.name+'</div><div class="char-stat" id="ci-desc-'+char.id+'" style="font-size:1.0rem;margin-top:6px;color:rgba(255,255,255,0.75);line-height:1.5">❤️ '+char.maxHp+' HP<br><span style="font-size:0.9rem">'+char.description+'</span><br><span style="font-size:0.82rem;color:rgba(255,255,255,0.45)">🃏 '+deckNames+'</span></div></div>';
       card.onclick=()=>{
         cardStates[char.id] = (cardStates[char.id] + 1) % 2;
         const s = cardStates[char.id];
@@ -6832,7 +6836,7 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
         } else {
           nameEl.textContent = (p.name||p.realName||char.name);
           nameEl.style.color = char.color;
-          descEl.innerHTML = '<span style="font-size:0.85rem;color:rgba(255,255,255,0.8);line-height:1.5">'+p.bio+'</span>';
+          descEl.innerHTML = '<span style="font-size:0.85rem;color:rgba(255,255,255,0.8);line-height:1.5">'+p.bio+'</span><div style="margin-top:6px;font-size:0.78rem;color:rgba(255,255,255,0.5)">'+(p.lines||'')+'</div>';
           document.getElementById('char-detail').textContent = '再点返回角色界面';
         }
         // 选中
