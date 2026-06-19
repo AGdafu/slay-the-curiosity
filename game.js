@@ -3920,6 +3920,15 @@ const Combat = {
   },
   _tickDebuffs(entity){ const manual=new Set(['burn','freeze','wound']); Object.keys(entity.debuffs||{}).forEach(k=>{ if(!manual.has(k)) entity.debuffs[k]=Math.max(0,entity.debuffs[k]-1); }); },
   _onVictory(){ Audio.playVictory();
+    // ── 📊 战斗统计悬浮条（固定不消失）──
+    const statsCs=State.run?.combat;
+    if(statsCs){
+      const row = document.createElement('div');
+      row.id = 'victory-stats-bar';
+      row.style.cssText = 'position:fixed;top:5%;left:50%;transform:translateX(-50%);background:rgba(10,15,25,0.95);color:#c8d8f0;font-size:1rem;font-weight:600;padding:14px 28px;border-radius:14px;border:1.5px solid rgba(100,180,220,0.5);z-index:9998;pointer-events:none;box-shadow:0 4px 24px rgba(0,0,0,0.6);text-align:center;line-height:1.8';
+      row.innerHTML = '📊 战斗统计<br>🗡️造成伤害 <b style="color:#ff7a6b">'+(statsCs._totalDmgDealt||0)+'</b>  🛡格挡吸收 <b style="color:#6bc5ff">'+(statsCs._totalBlocked||0)+'</b><br>🃏出牌 <b>'+(statsCs._cardsPlayed||0)+'</b> 张  ⏱回合 <b>'+(statsCs.turn||0)+'</b>';
+      document.body.appendChild(row);
+    }
     // ── 骨灰币结算 ──
     const run=State.run;
     run.character.hp=run.combat.player.hp;run.character.block=0;const node=run.map.nodes.find(n=>n.id===run.currentNodeId);if(node)node.done=true;
@@ -7752,7 +7761,7 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
         </div>
         <div style="flex-shrink:0;font-size:0.8rem;color:rgba(255,255,255,0.5);white-space:nowrap">点击拾取</div>
       </div>` : '';
-    UI.app().innerHTML=`<div style="position:relative;width:100%;height:100%"><div class="reward-screen">${relicSection}${(()=>{const cs=run.combat;return cs?`<div style="display:flex;gap:14px;justify-content:center;padding:8px 0;margin:2px 0 8px;font-size:0.9rem;color:#c8d8f0;flex-wrap:wrap;background:rgba(10,15,25,0.8);border-radius:10px;border:1px solid rgba(100,180,220,0.3)"><span>🗡️造成 <b style="color:#ff7a6b">${cs._totalDmgDealt||0}</b></span><span>🛡格挡 <b style="color:#6bc5ff">${cs._totalBlocked||0}</b></span><span>🃏出牌 <b>${cs._cardsPlayed||0}</b></span><span>⏱回合 <b>${cs.turn||0}</b></span></div>`:'';})()}<div class="reward-title bounce-in" style="font-size:1.3rem;margin-bottom:4px">⚔️ 战斗胜利!</div><div class="reward-subtitle">选择一张卡牌加入牌组</div><div class="reward-cards" id="reward-cards"></div><button class="btn" id="btn-skip" style="margin-top:4px;background:rgba(255,255,255,0.08);border-color:rgba(255,255,255,0.2);color:rgba(255,255,255,0.9)">跳过</button></div></div>`;
+    UI.app().innerHTML=`<div style="position:relative;width:100%;height:100%"><div class="reward-screen">${relicSection}<div class="reward-title bounce-in" style="font-size:1.3rem;margin-bottom:4px">⚔️ 战斗胜利!</div><div class="reward-subtitle">选择一张卡牌加入牌组</div><div class="reward-cards" id="reward-cards"></div><button class="btn" id="btn-skip" style="margin-top:4px;background:rgba(255,255,255,0.08);border-color:rgba(255,255,255,0.2);color:rgba(255,255,255,0.9)">跳过</button></div></div>`;
     const container=document.getElementById('reward-cards');
     rewardCards.forEach((cardId,i)=>{
       const wrap=document.createElement('div');wrap.className='reward-card-wrap';const back=document.createElement('div');back.className='card-back';back.textContent='🎴';wrap.appendChild(back);container.appendChild(wrap);
@@ -7784,6 +7793,7 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
       },80+i*100);
     });
     document.getElementById('btn-skip').onclick=()=>{
+      const bar=document.getElementById('victory-stats-bar'); if(bar)bar.remove();
       run.pendingRelic=null;
       const next = run.pendingNextState || 'map';
       run.pendingNextState = null;
@@ -7810,6 +7820,7 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
   },
 
   _pickReward(cardId){
+    const bar=document.getElementById('victory-stats-bar'); if(bar)bar.remove();
     Audio.playLevelUp();
     const run = State.run;
     run.deck.push(cardId);
