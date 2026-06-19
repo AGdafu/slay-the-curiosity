@@ -2880,8 +2880,8 @@ const Meta = {
         x: Math.random() * canvas.width,
         y: Math.random() * canvas.height,
         r: (Meta._nightActive ? Math.random() * 4 + 1 : Math.random() * 2.5 + 0.8),
-        speed: (Meta._nightActive ? Math.random() * 3.5 + 1.2 : Math.random() * 1.2 + 0.4),
-        wind: (Meta._nightActive ? Math.random() * 2 - 0.7 : Math.random() * 0.6 - 0.3),
+        speed: (Meta._nightActive ? Math.random() * 5 + 2 : Math.random() * 1.2 + 0.4),
+        wind: (Meta._nightActive ? Math.random() * 3 - 1 : Math.random() * 0.6 - 0.3),
         opacity: Math.random() * 0.6 + 0.3,
       });
     }
@@ -6417,7 +6417,7 @@ el.innerHTML=`<div class="card-type-bar"></div>${rarityTag}<div class="card-cost
         let veil = document.getElementById('night-veil');
         if (!veil) {
           veil = document.createElement('div'); veil.id = 'night-veil';
-          veil.style.cssText = 'position:fixed;inset:0;z-index:90;pointer-events:none;background:radial-gradient(ellipse at center, rgba(5,0,15,0.4) 30%, rgba(20,2,5,0.65) 70%, rgba(40,5,5,0.8) 100%)';
+          veil.style.cssText = 'position:fixed;inset:0;z-index:90;pointer-events:none;background:radial-gradient(ellipse at center, rgba(5,0,15,0.25) 30%, rgba(20,2,5,0.45) 70%, rgba(40,5,5,0.6) 100%)';
           document.body.appendChild(veil);
         }
         veil.style.display = 'block';
@@ -6458,10 +6458,36 @@ el.innerHTML=`<div class="card-type-bar"></div>${rarityTag}<div class="card-cost
               if (Math.random() < 0.4) drawBolt(endX, endY, len * 0.4, angle + (Math.random() - 0.5) * 1.2);
               else if (Math.random() < 0.6) drawBolt(endX, endY, len * 0.7, angle + (Math.random() - 0.5) * 0.6);
             };
-            drawBolt(startX, 0, 40 + Math.random() * 30, Math.PI * 0.45);
+            drawBolt(startX, 0, bolt.height * 0.85, Math.PI * 0.48);
             setTimeout(() => bolt.remove(), 250);
           }
         }, 3000);
+        // 💨 横风线
+        if (!document.getElementById('night-wind')) {
+          const windC = document.createElement('canvas'); windC.id = 'night-wind';
+          windC.style.cssText = 'position:fixed;inset:0;z-index:91;pointer-events:none';
+          document.body.appendChild(windC);
+          windC.width = window.innerWidth; windC.height = window.innerHeight;
+          const wctx = windC.getContext('2d');
+          const windLines = Array.from({length:8}, () => ({
+            x: Math.random()*windC.width, y: Math.random()*windC.height,
+            len: 40+Math.random()*100, life: Math.random(), speed: 3+Math.random()*5
+          }));
+          Meta._windInterval = setInterval(() => {
+            wctx.clearRect(0,0,windC.width,windC.height);
+            windLines.forEach(w => {
+              wctx.beginPath(); wctx.moveTo(w.x, w.y);
+              wctx.lineTo(w.x + w.len, w.y + (Math.random()-0.5)*4);
+              wctx.strokeStyle = `rgba(180,200,230,${w.life*0.12})`;
+              wctx.lineWidth = 1; wctx.stroke();
+              w.x += w.speed; w.life -= 0.015;
+              if (w.life <= 0 || w.x > windC.width + 100) {
+                w.x = -100; w.y = Math.random()*windC.height;
+                w.life = 1; w.len = 40+Math.random()*100; w.speed = 3+Math.random()*5;
+              }
+            });
+          }, 50);
+        }
         // 🔥 余烬粒子
         if (!document.getElementById('night-ember')) {
           const ember = document.createElement('canvas'); ember.id = 'night-ember';
@@ -6497,6 +6523,7 @@ el.innerHTML=`<div class="card-type-bar"></div>${rarityTag}<div class="card-cost
           const e = document.getElementById('night-ember'); if (e) e.style.display = 'none';
           if (Meta._nightLightning) { clearInterval(Meta._nightLightning); Meta._nightLightning = null; }
           if (Meta._emberInterval) { clearInterval(Meta._emberInterval); Meta._emberInterval = null; }
+          if (Meta._windInterval) { clearInterval(Meta._windInterval); Meta._windInterval = null; }
           bt.textContent = '🌑 暴风雪测试';
           bt._nightTest = false;
         }
@@ -7577,10 +7604,36 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
               if (Math.random() < 0.4) drawBolt(endX, endY, len * 0.4, angle + (Math.random() - 0.5) * 1.2);
               else if (Math.random() < 0.6) drawBolt(endX, endY, len * 0.7, angle + (Math.random() - 0.5) * 0.6);
             };
-            drawBolt(startX, 0, 40 + Math.random() * 30, Math.PI * 0.45);
+            drawBolt(startX, 0, bolt.height * 0.85, Math.PI * 0.48);
             setTimeout(() => bolt.remove(), 250);
           }
         }, 3000);
+        // 💨 横风线
+        if (!document.getElementById('night-wind')) {
+          const windC = document.createElement('canvas'); windC.id = 'night-wind';
+          windC.style.cssText = 'position:fixed;inset:0;z-index:91;pointer-events:none';
+          document.body.appendChild(windC);
+          windC.width = window.innerWidth; windC.height = window.innerHeight;
+          const wctx = windC.getContext('2d');
+          const windLines = Array.from({length:8}, () => ({
+            x: Math.random()*windC.width, y: Math.random()*windC.height,
+            len: 40+Math.random()*100, life: Math.random(), speed: 3+Math.random()*5
+          }));
+          Meta._windInterval = setInterval(() => {
+            wctx.clearRect(0,0,windC.width,windC.height);
+            windLines.forEach(w => {
+              wctx.beginPath(); wctx.moveTo(w.x, w.y);
+              wctx.lineTo(w.x + w.len, w.y + (Math.random()-0.5)*4);
+              wctx.strokeStyle = `rgba(180,200,230,${w.life*0.12})`;
+              wctx.lineWidth = 1; wctx.stroke();
+              w.x += w.speed; w.life -= 0.015;
+              if (w.life <= 0 || w.x > windC.width + 100) {
+                w.x = -100; w.y = Math.random()*windC.height;
+                w.life = 1; w.len = 40+Math.random()*100; w.speed = 3+Math.random()*5;
+              }
+            });
+          }, 50);
+        }
       }
       // 🔥 余烬
       if (!document.getElementById('night-ember')) {
