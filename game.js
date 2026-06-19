@@ -2881,7 +2881,7 @@ const Meta = {
         y: Math.random() * canvas.height,
         r: (Meta._nightActive ? Math.random() * 4 + 1 : Math.random() * 2.5 + 0.8),
         speed: (Meta._nightActive ? Math.random() * 7 + 3 : Math.random() * 1.2 + 0.4),
-        wind: (Meta._nightActive ? Math.random() * 4 - 1.5 : Math.random() * 0.6 - 0.3),
+        wind: (Meta._nightActive ? -(Math.random() * 4 + 1.5) : Math.random() * 0.6 - 0.3),
         opacity: Math.random() * 0.6 + 0.3,
       });
     }
@@ -6432,7 +6432,7 @@ el.innerHTML=`<div class="card-type-bar"></div>${rarityTag}<div class="card-cost
         blood.style.display = 'block';
         // ⚡ 闪电效果
         Meta._nightLightning = setInterval(() => {
-          if (Math.random() < 0.15) {
+          if (Math.random() < 0.3) {
             const flash = document.createElement('div');
             flash.style.cssText = 'position:fixed;inset:0;z-index:92;pointer-events:none;background:rgba(200,180,220,0.08);animation:flashBoom 0.15s ease-out';
             document.body.appendChild(flash);
@@ -6470,15 +6470,14 @@ el.innerHTML=`<div class="card-type-bar"></div>${rarityTag}<div class="card-cost
           windC.width = window.innerWidth; windC.height = window.innerHeight;
           const wctx = windC.getContext('2d');
           const windLines = Array.from({length:15}, () => ({
-            x: Math.random()*windC.width, y: Math.random()*windC.height,
-            len: 60+Math.random()*120, life: Math.random(), speed: 8+Math.random()*12,
+            x: windC.width + Math.random()*200, y: Math.random()*windC.height*0.5,
+            len: 60+Math.random()*120, life: Math.random(), speed: -(8+Math.random()*12),
             curve: (Math.random()-0.5)*60
           }));
           Meta._windInterval = setInterval(() => {
             wctx.clearRect(0,0,windC.width,windC.height);
             windLines.forEach(w => {
               wctx.beginPath();
-              // 卷曲线
               const midX = w.x + w.len*0.5;
               const midY = w.y + Math.sin(w.life*8) * w.curve;
               wctx.moveTo(w.x, w.y);
@@ -6486,9 +6485,9 @@ el.innerHTML=`<div class="card-type-bar"></div>${rarityTag}<div class="card-cost
               wctx.strokeStyle = `rgba(200,220,245,${w.life*0.35})`;
               wctx.lineWidth = 1.8; wctx.stroke();
               w.x += w.speed; w.life -= 0.008;
-              if (w.life <= 0 || w.x > windC.width + 150) {
-                w.x = -150; w.y = Math.random()*windC.height;
-                w.life = 1; w.len = 60+Math.random()*120; w.speed = 8+Math.random()*12;
+              if (w.life <= 0 || w.x < -150) {
+                w.x = windC.width + Math.random()*200; w.y = Math.random()*windC.height*0.5;
+                w.life = 1; w.len = 60+Math.random()*120; w.speed = -(8+Math.random()*12);
                 w.curve = (Math.random()-0.5)*60;
               }
             });
@@ -7593,7 +7592,7 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
       // ⚡ 闪电
       if (!Meta._nightLightning) {
         Meta._nightLightning = setInterval(() => {
-          if (Math.random() < 0.15) {
+          if (Math.random() < 0.3) {
             const flash = document.createElement('div');
             flash.style.cssText = 'position:fixed;inset:0;z-index:92;pointer-events:none;background:rgba(200,180,220,0.08);animation:flashBoom 0.15s ease-out';
             document.body.appendChild(flash);
@@ -7631,15 +7630,14 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
           windC.width = window.innerWidth; windC.height = window.innerHeight;
           const wctx = windC.getContext('2d');
           const windLines = Array.from({length:15}, () => ({
-            x: Math.random()*windC.width, y: Math.random()*windC.height,
-            len: 60+Math.random()*120, life: Math.random(), speed: 8+Math.random()*12,
+            x: windC.width + Math.random()*200, y: Math.random()*windC.height*0.5,
+            len: 60+Math.random()*120, life: Math.random(), speed: -(8+Math.random()*12),
             curve: (Math.random()-0.5)*60
           }));
           Meta._windInterval = setInterval(() => {
             wctx.clearRect(0,0,windC.width,windC.height);
             windLines.forEach(w => {
               wctx.beginPath();
-              // 卷曲线
               const midX = w.x + w.len*0.5;
               const midY = w.y + Math.sin(w.life*8) * w.curve;
               wctx.moveTo(w.x, w.y);
@@ -7647,9 +7645,9 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
               wctx.strokeStyle = `rgba(200,220,245,${w.life*0.35})`;
               wctx.lineWidth = 1.8; wctx.stroke();
               w.x += w.speed; w.life -= 0.008;
-              if (w.life <= 0 || w.x > windC.width + 150) {
-                w.x = -150; w.y = Math.random()*windC.height;
-                w.life = 1; w.len = 60+Math.random()*120; w.speed = 8+Math.random()*12;
+              if (w.life <= 0 || w.x < -150) {
+                w.x = windC.width + Math.random()*200; w.y = Math.random()*windC.height*0.5;
+                w.life = 1; w.len = 60+Math.random()*120; w.speed = -(8+Math.random()*12);
                 w.curve = (Math.random()-0.5)*60;
               }
             });
