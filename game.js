@@ -6506,7 +6506,6 @@ el.innerHTML=`<div class="card-type-bar"></div>${rarityTag}<div class="card-cost
               }
             });
           }, 33);
-        }
         // 🔥 余烬粒子
         if (!document.getElementById('night-ember')) {
           const ember = document.createElement('canvas'); ember.id = 'night-ember';
@@ -7698,7 +7697,6 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
               }
             });
           }, 33);
-        }
       }
       // 🔥 余烬
       if (!document.getElementById('night-ember')) {
