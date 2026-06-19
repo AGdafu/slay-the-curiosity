@@ -3691,13 +3691,27 @@ const Combat = {
     // 怪物执行行动：攻击/buff行动在此执行（对玩家造成伤害）
     cs.enemies.forEach((e,i)=>{
       if(!e._dead){
-        // 冻结：跳过本回合行动，不推进 actionIndex
-        if((e.debuffs.freeze||0)>0){
-          e.debuffs.freeze=Math.max(0,e.debuffs.freeze-1);
-        } else {
-          const actionName = e.actions[e.actionIndex % e.actions.length];
-          if(!Combat._isDefenseAction(e.id, actionName)){
-            Data.enemies[e.id].doAction(cs,i);
+        // 🔔 丧钟：倒计时
+        if (e._bellTurns > 0) {
+          e._bellTurns--;
+          if (e._bellTurns <= 0) {
+            if (e.boss) Combat.dealDamage(cs, i, e._bellDmg || 40);
+            else { e.hp = 0; e._dead = true; }
+          }
+        }
+        // 🪢 绞索：跳过行动
+        if (e._roped) { e._roped = false; } // 只跳过一次
+        // 🌫️ 雾隐斗篷：第1回合敌人不攻击
+        else if (cs.turn === 1 && State.run?.relics?.includes('mist_cloak')) {}
+        else {
+          // 冻结：跳过本回合行动
+          if((e.debuffs.freeze||0)>0){
+            e.debuffs.freeze=Math.max(0,e.debuffs.freeze-1);
+          } else {
+            const actionName = e.actions[e.actionIndex % e.actions.length];
+            if(!Combat._isDefenseAction(e.id, actionName)){
+              Data.enemies[e.id].doAction(cs,i);
+            }
           }
         }
         // 燃烧：造成等于层数的伤害后层数 -1
@@ -3962,6 +3976,8 @@ const Combat = {
     if (State.run?.relics?.includes('beast_tooth') && enemy.hp === enemy.maxHp) dmg *= 2;
     // 🔪 刃牙：攻击牌对满血敌人+3伤害
     if (State.run?.relics?.includes('blade_fang') && enemy.hp === enemy.maxHp) dmg += 3;
+    // 🪢 绞索：受伤减半
+    if (enemy._ropeDmgHalve) { dmg = Math.floor(dmg / 2); enemy._ropeDmgHalve = false; }
     // 速度感攻击加成
     if(State.run?.character?.id==='racer'){ const _spd=cs.speed||0; if(_spd>=60) dmg+=5; else if(_spd>=30) dmg+=2; } if((enemy.debuffs.vulnerable||0)>0)dmg=Math.floor(dmg*1.5); if((cs.player.debuffs.weak||0)>0)dmg=Math.floor(dmg*0.75); if((cs.player.debuffs.slow||0)>0)dmg=Math.floor(dmg*0.70); const absorbed=Math.min(enemy.block,dmg);enemy.block=Math.max(0,enemy.block-absorbed);const actualDmg=dmg-absorbed;enemy.hp-=actualDmg;
     // 大头的西班牙语书：记录本回合是否对敌人造成过实际伤害
