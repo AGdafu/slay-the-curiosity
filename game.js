@@ -6836,7 +6836,7 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
         } else {
           nameEl.textContent = (p.name||p.realName||char.name);
           nameEl.style.color = char.color;
-          descEl.innerHTML = '<span style="font-size:0.85rem;color:rgba(255,255,255,0.8);line-height:1.5">'+p.bio+'</span><div style="margin-top:6px;font-size:0.78rem;color:rgba(255,255,255,0.5)">'+(p.lines||'')+'</div>';
+          descEl.innerHTML = '<span style="font-size:0.85rem;color:rgba(255,255,255,0.8);line-height:1.5">'+p.bio+'</span>';
           document.getElementById('char-detail').textContent = '再点返回角色界面';
         }
         // 选中
