@@ -6524,14 +6524,14 @@ el.innerHTML=`<div class="card-type-bar"></div>${rarityTag}<div class="card-cost
       function closeNight() {
         Meta._nightActive = false;
         Meta.stopSnow();
-        Meta.startSnow();  // 恢复常驻小雪
+        Meta.startSnow();
+        if (Meta._nightLightning) { clearInterval(Meta._nightLightning); Meta._nightLightning = null; }
+        if (Meta._emberInterval) { clearInterval(Meta._emberInterval); Meta._emberInterval = null; }
+        if (Meta._windInterval) { clearInterval(Meta._windInterval); Meta._windInterval = null; }
         const v = document.getElementById('night-veil'); if (v) v.style.display = 'none';
         const b = document.getElementById('night-blood'); if (b) b.style.display = 'none';
         const e = document.getElementById('night-ember'); if (e) e.style.display = 'none';
         const w = document.getElementById('night-wind'); if (w) w.style.display = 'none';
-        if (Meta._nightLightning) { clearInterval(Meta._nightLightning); Meta._nightLightning = null; }
-        if (Meta._emberInterval) { clearInterval(Meta._emberInterval); Meta._emberInterval = null; }
-        if (Meta._windInterval) { clearInterval(Meta._windInterval); Meta._windInterval = null; }
         bt.textContent = '🌑 暴风雪测试';
         bt._nightTest = false;
       }
@@ -7595,8 +7595,7 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
       }
       blood.style.display = 'block';
       // ⚡ 闪电
-      if (!Meta._nightLightning) {
-        Meta._nightLightning = setInterval(() => {
+      Meta._nightLightning = Meta._nightLightning || setInterval(() => {
           if (Math.random() < 0.5) {
             const flash = document.createElement('div');
             flash.style.cssText = 'position:fixed;inset:0;z-index:92;pointer-events:none;background:rgba(200,180,220,0.1);animation:flashBoom 0.12s ease-out';
@@ -7682,8 +7681,7 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
           });
         }, 40);
       }
-    }
-    UI._renderCombat();
+      UI._renderCombat();
   },
 
   _renderCombat(){
