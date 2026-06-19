@@ -2779,7 +2779,7 @@ const Meta = {
   // ── 商品目录 ──
   // 祭坛永久商品
   ALTAR_ITEMS: {
-    extraPotion:   { name:'🧪 第二药水位', cost:50, desc:'战斗可带 2 瓶药水' },
+    extraPotion:   { name:'🧪 第四药水位', cost:50, desc:'战斗可带 4 瓶药水' },
     ascension:     { name:'🌬️ 塔顶有风',  cost:200, desc:'Ascension 难度 +1' },
     nightMode:     { name:'🌑 永夜模式',   cost:300, desc:'暗黑视觉 + 暴风雪 + 失温值' },
     critFX:        { name:'✨ 暴击特效',   cost:80, desc:'暴击金色数字 + 特殊粒子' },
@@ -6065,7 +6065,9 @@ el.innerHTML=`<div class="card-type-bar"></div>${rarityTag}<div class="card-cost
     UI._hidePotionTooltip();
     UI._initPotionTooltipGuard();
     container.innerHTML = '';
-    const slots = (potions || [null, null, null]).slice(0, 3);
+    const maxSlots = Meta.isPurchased('extraPotion') ? 4 : 3;
+    const slots = (potions || []).slice(0, maxSlots);
+    while (slots.length < maxSlots) slots.push(null);
     slots.forEach((potionId, idx) => {
       const slot = document.createElement('div');
       const pData = potionId ? Data.potions[potionId] : null;
@@ -7319,7 +7321,7 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
     UI.app().innerHTML=`<div class="map-screen slide-up"><div class="map-topbar"><span style="font-size:1.6rem">${run.character.emoji}</span><b style="font-size:1.3rem">${run.character.name}</b><div style="min-width:140px">${UI.renderHpBar(run.character.hp,run.character.maxHp,'140px')}</div><div id="map-relic-bar-slot" style="display:flex;align-items:center"></div><span class="gold-display" style="margin-left:8px;font-size:1.1rem">💰 ${run.gold}</span><span style="font-size:1rem;color:rgba(255,255,255,0.8);background:rgba(255,255,255,0.08);padding:4px 14px;border-radius:20px;border:1px solid rgba(255,255,255,0.12)">${run.act===3?'露营周':run.act===2?'常识周':'第 '+run.floor+' 层'}</span><div class="potion-bar" id="map-potion-bar"></div><button class="btn" id="btn-deck" style="font-size:1rem;padding:6px 14px;background:rgba(255,255,255,0.08);border-color:rgba(255,255,255,0.2);color:rgba(255,255,255,0.8)">🃏 牌组 (${run.deck.length})</button><button class="btn" onclick="Audio.showSettings()" style="font-size:1rem;padding:6px 12px;background:rgba(255,255,255,0.08);border-color:rgba(255,255,255,0.2);color:rgba(255,255,255,0.8)">🎵 音频</button><button class="btn" onclick="UI.showPauseMenu()" style="font-size:1rem;padding:6px 12px;background:rgba(255,255,255,0.08);border-color:rgba(255,255,255,0.2);color:rgba(255,255,255,0.8)">☰ 菜单</button></div><div class="map-container" id="map-container"></div></div>`;
     // 渲染药水槽位
     const potionBarEl = document.getElementById('map-potion-bar');
-    if(potionBarEl){ UI.renderPotionSlots(potionBarEl, run.potions||[null,null,null], false); }
+    if(potionBarEl){ UI.renderPotionSlots(potionBarEl, run.potions||[], false); }
     // 渲染遗物栏（在HP下方）
     const mapRelicSlot = document.getElementById('map-relic-bar-slot');
     if(mapRelicSlot){ mapRelicSlot.innerHTML=''; UI.renderRelicBar(mapRelicSlot); }
