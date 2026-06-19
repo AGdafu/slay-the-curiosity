@@ -6469,24 +6469,30 @@ el.innerHTML=`<div class="card-type-bar"></div>${rarityTag}<div class="card-cost
           document.body.appendChild(windC);
           windC.width = window.innerWidth; windC.height = window.innerHeight;
           const wctx = windC.getContext('2d');
-          const windLines = Array.from({length:8}, () => ({
+          const windLines = Array.from({length:15}, () => ({
             x: Math.random()*windC.width, y: Math.random()*windC.height,
-            len: 40+Math.random()*100, life: Math.random(), speed: 3+Math.random()*5
+            len: 60+Math.random()*120, life: Math.random(), speed: 8+Math.random()*12,
+            curve: (Math.random()-0.5)*60
           }));
           Meta._windInterval = setInterval(() => {
             wctx.clearRect(0,0,windC.width,windC.height);
             windLines.forEach(w => {
-              wctx.beginPath(); wctx.moveTo(w.x, w.y);
-              wctx.lineTo(w.x + w.len, w.y + (Math.random()-0.5)*4);
-              wctx.strokeStyle = `rgba(180,200,230,${w.life*0.25})`;
-              wctx.lineWidth = 1.5; wctx.stroke();
-              w.x += w.speed; w.life -= 0.015;
-              if (w.life <= 0 || w.x > windC.width + 100) {
-                w.x = -100; w.y = Math.random()*windC.height;
-                w.life = 1; w.len = 40+Math.random()*100; w.speed = 3+Math.random()*5;
+              wctx.beginPath();
+              // 卷曲线
+              const midX = w.x + w.len*0.5;
+              const midY = w.y + Math.sin(w.life*8) * w.curve;
+              wctx.moveTo(w.x, w.y);
+              wctx.quadraticCurveTo(midX, midY, w.x + w.len, midY + Math.cos(w.life*5)*15);
+              wctx.strokeStyle = `rgba(200,220,245,${w.life*0.35})`;
+              wctx.lineWidth = 1.8; wctx.stroke();
+              w.x += w.speed; w.life -= 0.008;
+              if (w.life <= 0 || w.x > windC.width + 150) {
+                w.x = -150; w.y = Math.random()*windC.height;
+                w.life = 1; w.len = 60+Math.random()*120; w.speed = 8+Math.random()*12;
+                w.curve = (Math.random()-0.5)*60;
               }
             });
-          }, 50);
+          }, 33);
         }
         // 🔥 余烬粒子
         if (!document.getElementById('night-ember')) {
@@ -7624,24 +7630,30 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
           document.body.appendChild(windC);
           windC.width = window.innerWidth; windC.height = window.innerHeight;
           const wctx = windC.getContext('2d');
-          const windLines = Array.from({length:8}, () => ({
+          const windLines = Array.from({length:15}, () => ({
             x: Math.random()*windC.width, y: Math.random()*windC.height,
-            len: 40+Math.random()*100, life: Math.random(), speed: 3+Math.random()*5
+            len: 60+Math.random()*120, life: Math.random(), speed: 8+Math.random()*12,
+            curve: (Math.random()-0.5)*60
           }));
           Meta._windInterval = setInterval(() => {
             wctx.clearRect(0,0,windC.width,windC.height);
             windLines.forEach(w => {
-              wctx.beginPath(); wctx.moveTo(w.x, w.y);
-              wctx.lineTo(w.x + w.len, w.y + (Math.random()-0.5)*4);
-              wctx.strokeStyle = `rgba(180,200,230,${w.life*0.25})`;
-              wctx.lineWidth = 1.5; wctx.stroke();
-              w.x += w.speed; w.life -= 0.015;
-              if (w.life <= 0 || w.x > windC.width + 100) {
-                w.x = -100; w.y = Math.random()*windC.height;
-                w.life = 1; w.len = 40+Math.random()*100; w.speed = 3+Math.random()*5;
+              wctx.beginPath();
+              // 卷曲线
+              const midX = w.x + w.len*0.5;
+              const midY = w.y + Math.sin(w.life*8) * w.curve;
+              wctx.moveTo(w.x, w.y);
+              wctx.quadraticCurveTo(midX, midY, w.x + w.len, midY + Math.cos(w.life*5)*15);
+              wctx.strokeStyle = `rgba(200,220,245,${w.life*0.35})`;
+              wctx.lineWidth = 1.8; wctx.stroke();
+              w.x += w.speed; w.life -= 0.008;
+              if (w.life <= 0 || w.x > windC.width + 150) {
+                w.x = -150; w.y = Math.random()*windC.height;
+                w.life = 1; w.len = 60+Math.random()*120; w.speed = 8+Math.random()*12;
+                w.curve = (Math.random()-0.5)*60;
               }
             });
-          }, 50);
+          }, 33);
         }
       }
       // 🔥 余烬
