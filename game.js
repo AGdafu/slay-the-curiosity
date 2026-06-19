@@ -6472,10 +6472,13 @@ el.innerHTML=`<div class="card-type-bar"></div>${rarityTag}<div class="card-cost
           }
         }, 3000);
         // 💨 横风线
-        if (!document.getElementById('night-wind')) {
-          const windC = document.createElement('canvas'); windC.id = 'night-wind';
+        let windC = document.getElementById('night-wind');
+        if (!windC) {
+          windC = document.createElement('canvas'); windC.id = 'night-wind';
           windC.style.cssText = 'position:fixed;inset:0;z-index:91;pointer-events:none';
           document.body.appendChild(windC);
+        }
+        windC.style.display = 'block';
           windC.width = window.innerWidth; windC.height = window.innerHeight;
           const wctx = windC.getContext('2d');
           const windLines = Array.from({length:8}, () => ({
@@ -7661,10 +7664,13 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
           }
         }, 3000);
         // 💨 横风线
-        if (!document.getElementById('night-wind')) {
-          const windC = document.createElement('canvas'); windC.id = 'night-wind';
+        let windC = document.getElementById('night-wind');
+        if (!windC) {
+          windC = document.createElement('canvas'); windC.id = 'night-wind';
           windC.style.cssText = 'position:fixed;inset:0;z-index:91;pointer-events:none';
           document.body.appendChild(windC);
+        }
+        windC.style.display = 'block';
           windC.width = window.innerWidth; windC.height = window.innerHeight;
           const wctx = windC.getContext('2d');
           const windLines = Array.from({length:8}, () => ({
