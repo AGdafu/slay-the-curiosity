@@ -9264,6 +9264,7 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
     function renderCharDetail(box, char) {
       box.innerHTML = '';
       box.appendChild(backBtn('角色卡牌', () => renderCards(box)));
+      // ... existing char detail code follows
       // 角色信息条
       const header = document.createElement('div');
       header.style.cssText = `display:flex;align-items:center;gap:16px;padding:16px 20px;background:${char.color}20;border-radius:14px;border-left:5px solid ${char.color};margin-bottom:22px;`;
@@ -9375,6 +9376,71 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
         row.appendChild(card);
       });
       box.appendChild(row);
+    }
+
+    // ════════════════════════════════════════
+    // 角色档案：翻页卡
+    // ════════════════════════════════════════
+    const CHAR_PROFILES = {
+      boxer: {
+        title:'浪人重拳', realName:'方铁拳',
+        bio:'流浪格斗家，三年前在拳馆惹了不该惹的人，从此流浪街头。每到一个镇上就去酒馆打架攒钱，人称"铁拳"。他的哲学很简单：被打得越惨，还手就越狠。',
+        lines: { enter:'来吧，我这拳头痒了三年了。', select:'谁先动手不重要，重要的是谁站着。', victory:'就这？', death:'下一次……我连内脏都练硬给你看。' }
+      },
+      brute: {
+        title:'力气大', realName:'齐重山',
+        bio:'山中樵夫出身，力大无穷。听说塔顶有个会打人的怪物，本着"砍柴不如砍怪"的心态扛着大剑就来了。不善言辞，性格憨直，但手里的剑从不含糊。',
+        lines: { enter:'听说……上面有个会打人的塔？', select:'砍。', victory:'小事。', death:'我以为我能再扛一下。' }
+      },
+      racer: {
+        title:'节奏野兽', realName:'林一档',
+        bio:'地下赛车手，弯道快才是真的快。因欠下巨额赌债被追杀，逃进这座塔里。把赛车换成了战斗，但档位系统的肌肉记忆刻在骨子里——升挡、降挡、加速、漂移，一样不少。',
+        lines: { enter:'系好安全带——哦，没有。', select:'换挡。', victory:'还没尽兴。', death:'油……快没了。' }
+      },
+      archer: {
+        title:'千眼', realName:'苏问月',
+        bio:'林中猎手，箭无虚发。从小被父亲训练成猎人，能听见百米外松鼠的心跳。她说"风往南"的时候，箭已经在你胸口了。沉默寡言，但每一箭都带故事。',
+        lines: { enter:'风往南。', select:'对准就够了。', victory:'吐气……松弦。', death:'……还差一点。' }
+      }
+    };
+
+    function renderCharacters(box) {
+      box.innerHTML = '';
+      const grid = document.createElement('div');
+      grid.style.cssText = 'display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:20px;padding:8px 0;';
+      Data.characters.forEach(char => {
+        const profile = CHAR_PROFILES[char.id] || {};
+        const card = document.createElement('div');
+        card.style.cssText = `perspective:800px;width:100%;min-height:340px;cursor:pointer`;
+        card.innerHTML = `<div class="flip-card-inner" style="position:relative;width:100%;height:100%;transition:transform 0.5s;transform-style:preserve-3d">
+          <!-- 正面 -->
+          <div class="flip-front" style="position:absolute;inset:0;backface-visibility:hidden;background:${char.color}12;border:2px solid ${char.color}44;border-radius:16px;padding:28px 20px;display:flex;flex-direction:column;align-items:center;justify-content:center">
+            <div style="width:100px;height:100px;border-radius:50%;background:${char.color}22;border:2px solid ${char.color}55;display:flex;align-items:center;justify-content:center;font-size:4rem;margin-bottom:14px">${char.emoji}</div>
+            <div style="font-size:1.5rem;font-weight:800;color:#fff">${profile.realName||char.name}</div>
+            <div style="font-size:1rem;color:${char.color};margin-top:4px">「${profile.title||''}」</div>
+            <div style="font-size:0.75rem;color:rgba(255,255,255,0.3);margin-top:14px">点击翻面查看档案 →</div>
+          </div>
+          <!-- 背面 -->
+          <div class="flip-back" style="position:absolute;inset:0;backface-visibility:hidden;transform:rotateY(180deg);background:rgba(15,12,28,0.95);border:2px solid ${char.color}55;border-radius:16px;padding:20px;overflow-y:auto">
+            <div style="font-size:1.1rem;font-weight:700;color:${char.color};margin-bottom:8px">${profile.realName||char.name} · ${profile.title||''}</div>
+            <div style="font-size:0.85rem;color:rgba(255,255,255,0.7);line-height:1.6;margin-bottom:14px">${profile.bio||''}</div>
+            <div style="border-top:1px solid rgba(255,255,255,0.1);padding-top:10px">
+              ${['enter','select','victory','death'].map(k => `
+                <div style="margin-bottom:6px;font-size:0.82rem">
+                  <span style="color:${char.color};opacity:0.7">${ {enter:'🚪入场',select:'✅选中',victory:'🏆胜利',death:'💀死亡'}[k] }</span>
+                  <span style="color:rgba(255,255,255,0.6)">"${profile.lines?.[k]||''}"</span>
+                </div>`).join('')}
+            </div>
+          </div>
+        </div>`;
+        let flipped = false;
+        card.onclick = () => {
+          flipped = !flipped;
+          card.querySelector('.flip-card-inner').style.transform = flipped ? 'rotateY(180deg)' : '';
+        };
+        grid.appendChild(card);
+      });
+      box.appendChild(grid);
     }
 
     // ════════════════════════════════════════
@@ -9497,6 +9563,7 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
       <div style="display:flex;align-items:center;gap:10px;padding:14px 22px;border-bottom:1px solid rgba(255,255,255,0.1);background:rgba(0,0,0,0.35);flex-shrink:0;">
         <div style="font-size:1.2rem;font-weight:800;color:#e8d8ff;margin-right:8px;">📚 游戏图鉴</div>
         <button id="dbt-cards">🃏 角色卡牌</button>
+        <button id="dbt-characters">🧑 角色档案</button>
         <button id="dbt-relics">💎 遗物</button>
         <button id="dbt-potions">🧪 药水</button>
         <button id="dbt-monsters">👾 怪物</button>
@@ -9507,11 +9574,12 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
     const box  = overlay.querySelector('#db-content');
     const btns = {
       cards:    overlay.querySelector('#dbt-cards'),
+      characters: overlay.querySelector('#dbt-characters'),
       relics:   overlay.querySelector('#dbt-relics'),
       potions:  overlay.querySelector('#dbt-potions'),
       monsters: overlay.querySelector('#dbt-monsters'),
     };
-    const renders = { cards: renderCards, relics: renderRelics, potions: renderPotions, monsters: renderMonsters };
+    const renders = { cards: renderCards, characters: renderCharacters, relics: renderRelics, potions: renderPotions, monsters: renderMonsters };
 
     function switchTab(tab) {
       box.scrollTop = 0;
