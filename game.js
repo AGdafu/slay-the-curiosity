@@ -6413,13 +6413,55 @@ el.innerHTML=`<div class="card-type-bar"></div>${rarityTag}<div class="card-cost
       bt.onclick = () => {
         Meta._nightActive = true;
         Meta.startSnow();
+        // 🌑 暗黑猩红覆盖
         let veil = document.getElementById('night-veil');
         if (!veil) {
           veil = document.createElement('div'); veil.id = 'night-veil';
-          veil.style.cssText = 'position:fixed;inset:0;background:rgba(5,0,15,0.55);z-index:90;pointer-events:none';
+          veil.style.cssText = 'position:fixed;inset:0;z-index:90;pointer-events:none;background:radial-gradient(ellipse at center, rgba(5,0,15,0.4) 30%, rgba(20,2,5,0.65) 70%, rgba(40,5,5,0.8) 100%)';
           document.body.appendChild(veil);
         }
         veil.style.display = 'block';
+        // 🩸 血迹边框
+        let blood = document.getElementById('night-blood');
+        if (!blood) {
+          blood = document.createElement('div'); blood.id = 'night-blood';
+          blood.style.cssText = 'position:fixed;inset:0;z-index:91;pointer-events:none';
+          blood.innerHTML = '<div style="position:absolute;top:0;left:0;right:0;height:8px;background:linear-gradient(180deg,rgba(120,10,10,0.7),transparent)"></div><div style="position:absolute;bottom:0;left:0;right:0;height:12px;background:linear-gradient(0deg,rgba(100,5,5,0.6),transparent)"></div><div style="position:absolute;top:10%;left:0;width:6px;height:30%;background:linear-gradient(90deg,rgba(80,5,5,0.4),transparent);border-radius:0 4px 4px 0"></div><div style="position:absolute;top:50%;right:0;width:8px;height:25%;background:linear-gradient(270deg,rgba(80,5,5,0.5),transparent);border-radius:4px 0 0 4px"></div>';
+          document.body.appendChild(blood);
+        }
+        blood.style.display = 'block';
+        // ⚡ 闪电效果
+        Meta._nightLightning = setInterval(() => {
+          if (Math.random() < 0.15) {
+            const flash = document.createElement('div');
+            flash.style.cssText = 'position:fixed;inset:0;z-index:92;pointer-events:none;background:rgba(200,180,220,0.08);animation:flashBoom 0.15s ease-out';
+            document.body.appendChild(flash);
+            setTimeout(() => flash.remove(), 200);
+          }
+        }, 3000);
+        // 🔥 余烬粒子
+        if (!document.getElementById('night-ember')) {
+          const ember = document.createElement('canvas'); ember.id = 'night-ember';
+          ember.style.cssText = 'position:fixed;inset:0;z-index:91;pointer-events:none';
+          document.body.appendChild(ember);
+          ember.width = window.innerWidth; ember.height = window.innerHeight;
+          const ectx = ember.getContext('2d');
+          const embers = Array.from({length:25}, () => ({
+            x: Math.random()*ember.width, y: Math.random()*ember.height,
+            r: Math.random()*2+0.5, life: Math.random(), speed: 0.3+Math.random()*0.8, wind: (Math.random()-0.5)*0.8
+          }));
+          Meta._emberInterval = setInterval(() => {
+            ectx.clearRect(0,0,ember.width,ember.height);
+            embers.forEach(e => {
+              ectx.beginPath(); ectx.arc(e.x, e.y, e.r, 0, Math.PI*2);
+              const alpha = e.life * 0.6;
+              ectx.fillStyle = `rgba(255,${Math.floor(80+e.life*80)},10,${alpha})`;
+              ectx.fill();
+              e.y -= e.speed; e.x += e.wind; e.life -= 0.008;
+              if (e.life <= 0 || e.y < -10) { e.y = ember.height+10; e.x = Math.random()*ember.width; e.life = 1; e.r = Math.random()*2+0.5; }
+            });
+          }, 40);
+        }
         bt.textContent = '☀️ 关闭暴风雪';
         bt._nightTest = true;
       };
@@ -6428,6 +6470,10 @@ el.innerHTML=`<div class="card-type-bar"></div>${rarityTag}<div class="card-cost
         if (bt._nightTest) {
           Meta._nightActive = false;
           const v = document.getElementById('night-veil'); if (v) v.style.display = 'none';
+          const b = document.getElementById('night-blood'); if (b) b.style.display = 'none';
+          const e = document.getElementById('night-ember'); if (e) e.style.display = 'none';
+          if (Meta._nightLightning) { clearInterval(Meta._nightLightning); Meta._nightLightning = null; }
+          if (Meta._emberInterval) { clearInterval(Meta._emberInterval); Meta._emberInterval = null; }
           bt.textContent = '🌑 暴风雪测试';
           bt._nightTest = false;
         }
@@ -7462,15 +7508,56 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
     if (Meta.isPurchased('nightMode')) {
       Meta._nightActive = true;
       Meta.startSnow();
-      // 暗黑覆盖层
+      // 🌑 暗黑猩红覆盖
       let veil = document.getElementById('night-veil');
       if (!veil) {
-        veil = document.createElement('div');
-        veil.id = 'night-veil';
-        veil.style.cssText = 'position:fixed;inset:0;z-index:100;pointer-events:none;background:rgba(5,8,18,0.35);backdrop-filter:brightness(0.75) saturate(0.6);';
+        veil = document.createElement('div'); veil.id = 'night-veil';
+        veil.style.cssText = 'position:fixed;inset:0;z-index:90;pointer-events:none;background:radial-gradient(ellipse at center, rgba(5,0,15,0.4) 30%, rgba(20,2,5,0.65) 70%, rgba(40,5,5,0.8) 100%)';
         document.body.appendChild(veil);
       }
       veil.style.display = 'block';
+      // 🩸 血迹边框
+      let blood = document.getElementById('night-blood');
+      if (!blood) {
+        blood = document.createElement('div'); blood.id = 'night-blood';
+        blood.style.cssText = 'position:fixed;inset:0;z-index:91;pointer-events:none';
+        blood.innerHTML = '<div style="position:absolute;top:0;left:0;right:0;height:8px;background:linear-gradient(180deg,rgba(120,10,10,0.7),transparent)"></div><div style="position:absolute;bottom:0;left:0;right:0;height:12px;background:linear-gradient(0deg,rgba(100,5,5,0.6),transparent)"></div><div style="position:absolute;top:10%;left:0;width:6px;height:30%;background:linear-gradient(90deg,rgba(80,5,5,0.4),transparent);border-radius:0 4px 4px 0"></div><div style="position:absolute;top:50%;right:0;width:8px;height:25%;background:linear-gradient(270deg,rgba(80,5,5,0.5),transparent);border-radius:4px 0 0 4px"></div>';
+        document.body.appendChild(blood);
+      }
+      blood.style.display = 'block';
+      // ⚡ 闪电
+      if (!Meta._nightLightning) {
+        Meta._nightLightning = setInterval(() => {
+          if (Math.random() < 0.15) {
+            const flash = document.createElement('div');
+            flash.style.cssText = 'position:fixed;inset:0;z-index:92;pointer-events:none;background:rgba(200,180,220,0.08);animation:flashBoom 0.15s ease-out';
+            document.body.appendChild(flash);
+            setTimeout(() => flash.remove(), 200);
+          }
+        }, 3000);
+      }
+      // 🔥 余烬
+      if (!document.getElementById('night-ember')) {
+        const ember = document.createElement('canvas'); ember.id = 'night-ember';
+        ember.style.cssText = 'position:fixed;inset:0;z-index:91;pointer-events:none';
+        document.body.appendChild(ember);
+        ember.width = window.innerWidth; ember.height = window.innerHeight;
+        const ectx = ember.getContext('2d');
+        const embers = Array.from({length:25}, () => ({
+          x: Math.random()*ember.width, y: Math.random()*ember.height,
+          r: Math.random()*2+0.5, life: Math.random(), speed: 0.3+Math.random()*0.8, wind: (Math.random()-0.5)*0.8
+        }));
+        Meta._emberInterval = setInterval(() => {
+          ectx.clearRect(0,0,ember.width,ember.height);
+          embers.forEach(e => {
+            ectx.beginPath(); ectx.arc(e.x, e.y, e.r, 0, Math.PI*2);
+            ectx.fillStyle = `rgba(255,${Math.floor(80+e.life*80)},10,${e.life*0.6})`;
+            ectx.fill();
+            e.y -= e.speed; e.x += e.wind; e.life -= 0.008;
+            if (e.life <= 0 || e.y < -10) { e.y = ember.height+10; e.x = Math.random()*ember.width; e.life = 1; }
+          });
+        }, 40);
+      }
     }
     UI._renderCombat();
   },
