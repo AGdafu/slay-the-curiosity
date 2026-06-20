@@ -7812,10 +7812,15 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
           });
         }, 40);
       }
-      UI._renderCombat();
+    }
+    UI._renderCombat();
   },
 
   _renderCombat(){
+    // 非夜模式保持普通雪
+    if (!Meta._nightActive && Meta._snowActive !== false) {
+      Meta.stopSnow(); Meta.startSnow();
+    }
     const run=State.run,cs=run.combat;if(!cs)return;const app=UI.app();app.innerHTML='';
     const screen=document.createElement('div');screen.className='combat-screen';
     screen.innerHTML=`
