@@ -2861,7 +2861,7 @@ const Meta = {
 
   // ── 雪花粒子（Canvas）──
   startSnow() {
-    if (this._snowInterval) { clearInterval(this._snowInterval); this._snowInterval = null; }
+    if (this._snowInterval) { this._snowActive = true; return; }
     let canvas = document.getElementById('night-snow');
     if (!canvas) {
       canvas = document.createElement('canvas');
@@ -2874,40 +2874,38 @@ const Meta = {
     canvas.height = window.innerHeight;
     const ctx = canvas.getContext('2d');
     const flakes = [];
-    // 🌑 暴风雪模式：雪花加倍
-    const flakeCount = Meta._nightActive ? 150 : 60;
-    for (let i = 0; i < flakeCount; i++) {
+    for (let i = 0; i < 60; i++) {
       flakes.push({
         x: Math.random() * canvas.width,
         y: Math.random() * canvas.height,
-        r: (Meta._nightActive ? Math.random() * 4 + 1 : Math.random() * 2.5 + 0.8),
-        speed: (Meta._nightActive ? Math.random() * 7 + 3 : Math.random() * 1.2 + 0.4),
-        wind: (Meta._nightActive ? -(Math.random() * 4 + 1.5) : Math.random() * 0.6 - 0.3),
+        r: Math.random() * 2.5 + 0.8,
+        speed: Math.random() * 1.2 + 0.4,
+        wind: Math.random() * 0.6 - 0.3,
         opacity: Math.random() * 0.6 + 0.3,
       });
     }
     const draw = () => {
-      if (!Meta._snowActive) { ctx.clearRect(0,0,canvas.width,canvas.height); return; }
+      if (!Meta._snowActive && !Meta._nightActive) { ctx.clearRect(0,0,canvas.width,canvas.height); return; }
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       flakes.forEach(f => {
+        const spd = Meta._nightActive ? f.speed * 5 : f.speed;
+        const wnd = Meta._nightActive ? f.wind * 5 : f.wind;
         ctx.beginPath();
         ctx.arc(f.x, f.y, f.r, 0, Math.PI*2);
         ctx.fillStyle = `rgba(220,235,255,${f.opacity})`;
         ctx.fill();
-        f.y += f.speed;
-        f.x += f.wind + Math.sin(f.y * 0.02) * 0.3;
+        f.y += spd;
+        f.x += wnd + Math.sin(f.y * 0.02) * 0.3;
         if (f.y > canvas.height + 10) { f.y = -10; f.x = Math.random() * canvas.width; }
         if (f.x > canvas.width + 10) f.x = -10;
         if (f.x < -10) f.x = canvas.width + 10;
       });
     };
+    this._snowActive = true;
     this._snowInterval = setInterval(draw, 33);
   },
   stopSnow() {
-    if (this._snowInterval) { clearInterval(this._snowInterval); this._snowInterval = null; }
-    // 不删 canvas，只隐藏——保留跨界面
-    const canvas = document.getElementById('night-snow');
-    if (canvas) canvas.style.display = 'none';
+    this._snowActive = false;
   },
 
 };
