@@ -7222,6 +7222,7 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
   characterSelect(){
     Meta._snowActive = true;
     Meta.stopSnow(); Meta.startSnow();
+    Meta.stopSnow(); Meta.startSnow();
     let selected=null, cardStates={};
     const profiles = {
       boxer: { name:'铁拳', title:'愈伤愈狂', bio:'流浪格斗家，人称"铁拳"。被打得越惨，还手就越狠。',
