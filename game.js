@@ -7332,6 +7332,7 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
   },
 
   dayanSelect(){
+    Meta._snowActive = true; Meta.stopSnow(); Meta.startSnow();
     const run = State.run;
     // 从5个遗物中随机抽3个
     const pool = [...Data.dayanRelics];
@@ -7410,6 +7411,7 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
 
 
   map(){
+    Meta._snowActive = true; Meta.stopSnow(); Meta.startSnow();
     const run=State.run;
     UI.app().innerHTML=`<div class="map-screen slide-up"><div class="map-topbar"><span style="font-size:1.6rem">${run.character.emoji}</span><b style="font-size:1.3rem">${run.character.name}</b><div style="min-width:140px">${UI.renderHpBar(run.character.hp,run.character.maxHp,'140px')}</div><div id="map-relic-bar-slot" style="display:flex;align-items:center"></div><span class="gold-display" style="margin-left:8px;font-size:1.1rem">💰 ${run.gold}</span><span style="font-size:1rem;color:rgba(255,255,255,0.8);background:rgba(255,255,255,0.08);padding:4px 14px;border-radius:20px;border:1px solid rgba(255,255,255,0.12)">${run.act===3?'露营周':run.act===2?'常识周':'第 '+run.floor+' 层'}</span><div class="potion-bar" id="map-potion-bar"></div><button class="btn" id="btn-deck" style="font-size:1rem;padding:6px 14px;background:rgba(255,255,255,0.08);border-color:rgba(255,255,255,0.2);color:rgba(255,255,255,0.8)">🃏 牌组 (${run.deck.length})</button><button class="btn" onclick="Audio.showSettings()" style="font-size:1rem;padding:6px 12px;background:rgba(255,255,255,0.08);border-color:rgba(255,255,255,0.2);color:rgba(255,255,255,0.8)">🎵 音频</button><button class="btn" onclick="UI.showPauseMenu()" style="font-size:1rem;padding:6px 12px;background:rgba(255,255,255,0.08);border-color:rgba(255,255,255,0.2);color:rgba(255,255,255,0.8)">☰ 菜单</button></div><div class="map-container" id="map-container"></div></div>`;
     // 渲染药水槽位
@@ -9044,6 +9046,7 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
 
   // ── 🎴 开局前购买消耗型物品（角色选择后调用）──
   showPreGameShop(charId) {
+    Meta._snowActive = true; Meta.stopSnow(); Meta.startSnow();
     const char = Data.characters.find(c => c.id === charId);
     if (!char) return;
     const items = Meta.PREGAME_ITEMS;
@@ -9086,6 +9089,7 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
 
   // ── 🎴 起手选牌（消耗 starterPick 后弹出 3 选 1）──
   showStarterPick(charId) {
+    Meta._snowActive = true; Meta.stopSnow(); Meta.startSnow();
     const char = Data.characters.find(c => c.id === charId);
     if (!char) return;
     // 从角色卡池随机抽 3 张
