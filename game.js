@@ -9981,18 +9981,17 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
       const row = document.createElement('div');
       row.style.cssText = 'display:flex;flex-wrap:wrap;gap:14px;';
       relicGroups[tier].forEach(r => {
-        const isKnown = !!Bestiary.relics[r.id];
-        const iconHtml = !isKnown
-          ? `<span style="font-size:2.2rem;opacity:0.15;filter:blur(3px);line-height:1;flex-shrink:0;">👁️</span>`
-          : (r.img ? `<img src="${r.img}" style="width:48px;height:48px;object-fit:contain;flex-shrink:0;">` : `<span style="font-size:2.6rem;line-height:1;flex-shrink:0;">${r.icon||'❓'}</span>`);
+        const iconHtml = r.img
+          ? `<img src="${r.img}" style="width:48px;height:48px;object-fit:contain;flex-shrink:0;">`
+          : `<span style="font-size:2.6rem;line-height:1;flex-shrink:0;">${r.icon||'❓'}</span>`;
         const card = document.createElement('div');
         card.style.cssText = `background:rgba(255,255,255,0.05);border:1.5px solid ${tc}44;border-radius:14px;padding:16px 18px;width:250px;box-sizing:border-box;flex-shrink:0;`;
         card.innerHTML = `
           <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px;">
             ${iconHtml}
-            <div style="font-weight:800;color:${isKnown?'#fff':'rgba(255,255,255,0.2)'};font-size:1rem;flex:1;">${isKnown ? r.name : '???'}</div>
+            <div style="font-weight:800;color:#fff;font-size:1rem;flex:1;">${r.name}</div>
           </div>
-          <div style="font-size:0.83rem;color:${isKnown?'rgba(255,255,255,0.75)':'rgba(255,255,255,0.12)'};line-height:1.55;">${isKnown ? (r.desc||'') : '尚未发现此遗物'}</div>`;
+          <div style="font-size:0.83rem;color:rgba(255,255,255,0.75);line-height:1.55;">${r.desc||''}</div>`;
         row.appendChild(card);
       });
       box.appendChild(row);
@@ -10071,23 +10070,22 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
       const grid = document.createElement('div');
       grid.style.cssText = 'display:grid;grid-template-columns:repeat(2,1fr);gap:20px;padding:8px 0;';
       Object.values(Data.potions).forEach(p => {
-        const isKnown = !!Bestiary.potions[p.id];
         const tier = p.tier || 'uncommon';
         const tc = TC[tier] || '#94a3b8';
-        const imgHtml = !isKnown
-          ? `<span style="font-size:2.8rem;opacity:0.15;filter:blur(3px);line-height:1;">🧪</span>`
-          : (p.img ? `<img src="${p.img}" style="width:56px;height:56px;object-fit:contain;">` : `<span style="font-size:3.2rem;line-height:1;">${p.emoji||'🧪'}</span>`);
+        const imgHtml = p.img
+          ? `<img src="${p.img}" style="width:56px;height:56px;object-fit:contain;">`
+          : `<span style="font-size:3.2rem;line-height:1;">${p.emoji||'🧪'}</span>`;
         const tile = document.createElement('div');
-        tile.style.cssText = `background:${isKnown?TBG[tier]:'rgba(255,255,255,0.02)'};border:2px solid ${isKnown?tc+'55':'rgba(255,255,255,0.05)'};border-radius:20px;padding:28px 24px;box-sizing:border-box;opacity:${isKnown?1:0.35}`;
+        tile.style.cssText = `background:${TBG[tier]||'rgba(148,163,184,0.1)'};border:2px solid ${tc}55;border-radius:20px;padding:28px 24px;box-sizing:border-box;`;
         tile.innerHTML = `
           <div style="display:flex;align-items:center;gap:18px;margin-bottom:14px;">
             ${imgHtml}
             <div>
-              <div style="font-size:1.25rem;font-weight:800;color:${isKnown?'#fff':'rgba(255,255,255,0.2)'};margin-bottom:4px;">${isKnown ? p.name : '???'}</div>
-              <div style="font-size:0.8rem;color:${isKnown?tc:'rgba(255,255,255,0.1)'};font-weight:700;">${isKnown ? (TN[tier]||'') : '???'}</div>
+              <div style="font-size:1.25rem;font-weight:800;color:#fff;margin-bottom:4px;">${p.name}</div>
+              <div style="font-size:0.8rem;color:${tc};font-weight:700;">${TN[tier]||''}</div>
             </div>
           </div>
-          <div style="font-size:0.88rem;color:${isKnown?'rgba(255,255,255,0.8)':'rgba(255,255,255,0.1)'};line-height:1.6;">${isKnown ? (p.desc||'') : '尚未发现此药水'}</div>`;
+          <div style="font-size:0.88rem;color:rgba(255,255,255,0.8);line-height:1.6;">${p.desc||''}</div>`;
         grid.appendChild(tile);
       });
       box.appendChild(grid);
@@ -10156,18 +10154,17 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
       row.style.cssText = 'display:flex;flex-wrap:wrap;gap:20px;';
       g.ids.filter(id => Data.enemies[id]).forEach(id => {
         const e = Data.enemies[id];
-        const isKnown = !!Bestiary.enemies[id];
         const card = document.createElement('div');
-        card.style.cssText = `background:rgba(255,255,255,${isKnown?0.05:0.02});border:1.5px solid ${isKnown?g.color+'44':'rgba(255,255,255,0.05)'};border-radius:20px;padding:24px 26px;width:360px;box-sizing:border-box;flex-shrink:0;opacity:${isKnown?1:0.35}`;
+        card.style.cssText = `background:rgba(255,255,255,0.05);border:1.5px solid ${g.color}44;border-radius:20px;padding:24px 26px;width:360px;box-sizing:border-box;flex-shrink:0;`;
         card.innerHTML = `
           <div style="display:flex;align-items:center;gap:16px;margin-bottom:16px;">
-            <span style="font-size:3.8rem;line-height:1;${isKnown?'':'filter:blur(4px);opacity:0.1'}">${isKnown ? e.emoji : '👤'}</span>
+            <span style="font-size:3.8rem;line-height:1;">${e.emoji}</span>
             <div>
-              <div style="font-weight:800;color:${isKnown?'#fff':'rgba(255,255,255,0.2)'};font-size:1.35rem;">${isKnown ? e.name : '???'}</div>
-              <div style="font-size:0.95rem;color:${isKnown?'rgba(255,255,255,0.5)':'rgba(255,255,255,0.1)'};margin-top:5px;">❤️ ${isKnown ? e.maxHp + ' HP' : '???'}</div>
+              <div style="font-weight:800;color:#fff;font-size:1.35rem;">${e.name}</div>
+              <div style="font-size:0.95rem;color:rgba(255,255,255,0.5);margin-top:5px;">❤️ ${e.maxHp} HP</div>
             </div>
           </div>
-          <div style="border-top:1px solid rgba(255,255,255,${isKnown?0.1:0.03});padding-top:14px;">${isKnown ? getEnemyActions(e) : '<span style="color:rgba(255,255,255,0.1)">尚未遇到此怪物</span>'}</div>`;
+          <div style="border-top:1px solid rgba(255,255,255,0.1);padding-top:14px;">${getEnemyActions(e)}</div>`;
         row.appendChild(card);
       });
       box.appendChild(row);
@@ -10182,12 +10179,12 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
     const overlay = document.createElement('div');
     overlay.style.cssText = 'position:fixed;inset:0;background:rgba(6,6,18,0.97);z-index:9500;display:flex;flex-direction:column;overflow:hidden;font-family:var(--font);';
     overlay.innerHTML = `
-      <div style="display:flex;align-items:center;gap:10px;padding:14px 22px;border-bottom:1px solid rgba(255,255,255,0.1);background:rgba(0,0,0,0.35);flex-shrink:0;flex-wrap:wrap">
+      <div style="display:flex;align-items:center;gap:10px;padding:14px 22px;border-bottom:1px solid rgba(255,255,255,0.1);background:rgba(0,0,0,0.35);flex-shrink:0;">
         <div style="font-size:1.2rem;font-weight:800;color:#e8d8ff;margin-right:8px;">📚 游戏图鉴</div>
         <button id="dbt-cards">🃏 角色卡牌</button>
-        <button id="dbt-relics">💎 遗物 <span style="font-size:0.7rem;opacity:0.5">${Object.keys(Bestiary.relics).length}/${allRelics.length}</span></button>
-        <button id="dbt-potions">🧪 药水 <span style="font-size:0.7rem;opacity:0.5">${Object.keys(Bestiary.potions).length}/${Object.keys(Data.potions).length}</span></button>
-        <button id="dbt-monsters">👾 怪物 <span style="font-size:0.7rem;opacity:0.5">${Object.keys(Bestiary.enemies).length}/${Object.keys(Data.enemies).length}</span></button>
+        <button id="dbt-relics">💎 遗物</button>
+        <button id="dbt-potions">🧪 药水</button>
+        <button id="dbt-monsters">👾 怪物</button>
         <button id="db-close" style="margin-left:auto;background:rgba(255,255,255,0.08);border:1.5px solid rgba(255,255,255,0.2);color:#fff;border-radius:10px;padding:8px 18px;cursor:pointer;font-size:0.95rem;font-family:var(--font);">✕ 关闭</button>
       </div>
       <div id="db-content" style="flex:1;overflow-y:auto;padding:24px 28px;"></div>`;
