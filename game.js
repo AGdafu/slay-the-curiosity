@@ -2889,7 +2889,7 @@ const Meta = {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       flakes.forEach(f => {
         const spd = Meta._nightActive ? f.speed * 5 : f.speed;
-        const wnd = Meta._nightActive ? f.wind * 5 : f.wind;
+        const wnd = Meta._nightActive ? -(1.5 + Math.random() * 2.5) : f.wind;
         ctx.beginPath();
         ctx.arc(f.x, f.y, f.r, 0, Math.PI*2);
         ctx.fillStyle = `rgba(220,235,255,${f.opacity})`;
@@ -4171,6 +4171,9 @@ const Combat = {
   },
   _tickDebuffs(entity){ const manual=new Set(['burn','freeze','wound']); Object.keys(entity.debuffs||{}).forEach(k=>{ if(!manual.has(k)) entity.debuffs[k]=Math.max(0,entity.debuffs[k]-1); }); },
   _onVictory(){ Audio.playVictory();
+    // 🔥 战斗结束—清理余烬
+    if (Meta._emberInterval) { clearInterval(Meta._emberInterval); Meta._emberInterval = null; }
+    const e = document.getElementById("night-ember"); if (e) e.style.display = "none";
     // 💬 胜利台词
     UI.charLineFromId(State.run?.character?.id, 'victory');
     // ── 📊 战斗统计悬浮条（固定不消失）──
@@ -4377,7 +4380,7 @@ const Combat = {
     if(typeof UI !== 'undefined' && UI._renderHand && State.run?.character?.id === 'archer'){
       setTimeout(()=>{ const _cs=State.run?.combat; if(_cs) UI._renderHand(_cs); }, 0);
     }
-  },  _onDeath(){ setTimeout(()=>State.go('game-over'),600); },
+  },  _onDeath(){ if(Meta._emberInterval){clearInterval(Meta._emberInterval);Meta._emberInterval=null;} const e=document.getElementById("night-ember");if(e)e.style.display="none"; setTimeout(()=>State.go("game-over"),600); },
 
   // ── 赛车手档位系统核心方法 ────────────────────────────────────────────────────────────────────────────────
   // 获取 full_throttle 的实际伤害加成（考虑升级等级）
@@ -7815,6 +7818,34 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
   },
 
   _renderCombat(){
+    // 🔥 余烬粒子 — 战斗常驻（普通+暴风雪）
+    if (!document.getElementById("night-ember")) {
+      const ember = document.createElement("canvas"); ember.id = "night-ember";
+      ember.style.cssText = "position:fixed;inset:0;z-index:91;pointer-events:none";
+      document.body.appendChild(ember);
+      ember.width = window.innerWidth; ember.height = window.innerHeight;
+      const ectx = ember.getContext("2d");
+      const embers = Array.from({length:25}, () => ({
+        x: Math.random()*ember.width, y: Math.random()*ember.height,
+        r: Math.random()*2+0.5, life: Math.random(), speed: 0.3+Math.random()*0.8, wind: (Math.random()-0.5)*0.8
+      }));
+      Meta._emberInterval = Meta._emberInterval || setInterval(() => {
+        const emb = document.getElementById("night-ember");
+        if (!emb) { clearInterval(Meta._emberInterval); Meta._emberInterval = null; return; }
+        const ec = emb.getContext("2d");
+        ec.clearRect(0,0,emb.width,emb.height);
+        embers.forEach(e => {
+          ec.beginPath(); ec.arc(e.x, e.y, e.r, 0, Math.PI*2);
+          ec.fillStyle = `rgba(255,${Math.floor(80+e.life*80)},10,${e.life*0.6})`;
+          ec.fill();
+          e.y -= e.speed; e.x += e.wind; e.life -= 0.008;
+          if (e.life <= 0 || e.y < -10) { e.y = emb.height+10; e.x = Math.random()*emb.width; e.life = 1; }
+        });
+      }, 40);
+    } else {
+      const emb = document.getElementById("night-ember");
+      if (emb) { emb.style.display = "block"; emb.width = window.innerWidth; emb.height = window.innerHeight; }
+    }
     const run=State.run,cs=run.combat;if(!cs)return;const app=UI.app();app.innerHTML='';
     const screen=document.createElement('div');screen.className='combat-screen';
     screen.innerHTML=`
