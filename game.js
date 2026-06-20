@@ -7232,6 +7232,16 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
         lines: { enter:'风往南。', select:'对准就够了。', victory:'吐气…松弦。', death:'…还差一点。' } }
     };
     UI.app().innerHTML='<div class="char-select-screen slide-up"><h2 class="screen-title">选择角色</h2><div class="char-grid" id="char-grid"></div><div id="char-detail" style="font-size:0.9rem;color:var(--ink-light);min-height:20px"></div><div style="display:flex;gap:12px;margin-top:4px"><button class="btn" id="btn-back">← 返回</button><button class="btn primary" id="btn-start" disabled>开始冒险 →</button></div></div>';
+    // ✨ 确保星星在跑
+    if (!document.getElementById('bg-stars')) {
+      const sc = document.createElement('canvas'); sc.id = 'bg-stars';
+      sc.style.cssText = 'position:fixed;inset:0;z-index:0;pointer-events:none';
+      document.body.insertBefore(sc, document.body.firstChild);
+      sc.width = window.innerWidth; sc.height = window.innerHeight;
+      const sctx = sc.getContext('2d');
+      const stars = Array.from({length:80}, () => ({ x: Math.random()*sc.width, y: Math.random()*sc.height, r: Math.random()*1.5+0.3, twinkle: Math.random()*Math.PI*2 }));
+      setInterval(() => { sctx.clearRect(0,0,sc.width,sc.height); stars.forEach(s => { sctx.beginPath(); sctx.arc(s.x,s.y,s.r,0,Math.PI*2); sctx.fillStyle = `rgba(200,220,255,${0.2+Math.sin(s.twinkle)*0.2})`; sctx.fill(); s.twinkle += 0.02; }); }, 50);
+    }
     const grid=document.getElementById('char-grid');
     Data.characters.forEach(char=>{
       const p = profiles[char.id] || {};
