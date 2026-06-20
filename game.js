@@ -12583,11 +12583,13 @@ window.addEventListener('DOMContentLoaded', () => {
   Achievements.load();
   CharStats.load();
   Meta.startSnow();  // 雪花常驻
-  // ✨ 全局星星背景
+  // ✨ 全局星星背景——塞进 #app 内部
   (() => {
+    const app = document.getElementById('app');
+    if (!app) return;
     const sc = document.createElement('canvas'); sc.id = 'bg-stars';
-    sc.style.cssText = 'position:fixed;inset:0;z-index:1;pointer-events:none;background:transparent';
-    document.body.appendChild(sc);
+    sc.style.cssText = 'position:absolute;inset:0;z-index:0;pointer-events:none';
+    app.insertBefore(sc, app.firstChild);
     sc.width = window.innerWidth; sc.height = window.innerHeight;
     const sctx = sc.getContext('2d');
     const stars = Array.from({length:80}, () => ({ x: Math.random()*sc.width, y: Math.random()*sc.height, r: Math.random()*1.5+0.3, twinkle: Math.random()*Math.PI*2 }));
