@@ -7048,6 +7048,7 @@ el.innerHTML=`<div class="card-type-bar"></div>${rarityTag}<div class="card-cost
   },
 
   tutorial(){
+    Meta.stopSnow(); Meta.startSnow();
     const pages=[
       {
         icon:'🎮',title:'欢迎来到 Slay the Curiosity！',
@@ -7152,7 +7153,8 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
   },
 
   showSaveSlots(mode){
-    const saves=Save.list();const overlay=document.createElement('div');overlay.className='overlay';
+    Meta.stopSnow(); Meta.startSnow();
+    const saves=Save.list();
     overlay.innerHTML=`<div class="panel bounce-in" style="min-width:320px;max-width:90vw"><h3 class="screen-title" style="margin-bottom:16px">${mode==='load'?'📂 选择存档':'💾 存档管理'}</h3><div id="save-slots" style="display:flex;flex-direction:column;gap:10px"></div><button class="btn" id="close-saves" style="margin-top:16px;width:100%">关闭</button></div>`;
     const slotsEl=overlay.querySelector('#save-slots');
     saves.forEach(({slot,run})=>{
@@ -9002,6 +9004,7 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
 
   // ── 🕯️ 祭坛 ──────────────────────────────────────────────────────────────────
   showAltar() {
+    Meta.stopSnow(); Meta.startSnow();
     const app = UI.app();
     app.innerHTML = `<div class="altar-screen slide-up" style="padding:30px 20px;color:#e0d8f0">
       <div style="max-width:520px;margin:0 auto;width:100%">
@@ -9697,6 +9700,7 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
           <div id="pause-quit-sub" style="display:none;flex-direction:column;gap:8px;padding:8px;background:rgba(255,255,255,0.05);border-radius:8px"></div>
           <button class="btn danger" id="pause-abandon-btn" style="font-size:1.1rem">🗑 放弃存档，退出游戏</button>
           <hr style="border:none;border-top:1px solid rgba(255,255,255,0.1);margin:4px 0">
+          <button class="btn" id="pause-snow-btn" style="font-size:1.1rem;background:rgba(255,255,255,0.05)">${Meta._snowActive ? '❄️ 关闭下雪' : '🌨️ 开启下雪'}</button>
           <button class="btn" id="pause-close-btn" style="font-size:1.1rem;background:rgba(255,255,255,0.05)">✖ 继续游戏</button>
         </div>
       </div>`;
@@ -9778,12 +9782,21 @@ HP降到0 = 游戏失败，提前规划好格挡量是胜利关键。`
 
     // 继续游戏
     overlay.querySelector('#pause-close-btn').onclick = () => overlay.remove();
+    // 雪花开关
+    const snowBtn = overlay.querySelector('#pause-snow-btn');
+    if (snowBtn) snowBtn.onclick = () => {
+      Meta._snowActive = !Meta._snowActive;
+      if (Meta._snowActive) { Meta.stopSnow(); Meta.startSnow(); }
+      else Meta.stopSnow();
+      snowBtn.textContent = Meta._snowActive ? '❄️ 关闭下雪' : '🌨️ 开启下雪';
+    };
     overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
     document.body.appendChild(overlay);
   },
 
   // ── 游戏图鉴 ──────────────────────────────────────────────────────────────
   showDatabase() {
+    Meta.stopSnow(); Meta.startSnow();
     // ── 常量 ──
     const TC = { epic:'#c084fc', rare:'#60a5fa', uncommon:'#4ade80', common:'#94a3b8' };
     const TN = { epic:'史诗', rare:'稀有', uncommon:'非凡', common:'普通' };
